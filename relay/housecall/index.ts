@@ -1,14 +1,17 @@
 // Housecall relay: a Supabase Edge Function.
 //
 // It holds what must never be in the public script -- the Anthropic API key
-// and the Google Authenticator secret -- and does four things, chosen by the
-// "action" field of a JSON POST:
+// and the Google Authenticator secret -- and does the following, chosen by
+// the "action" field of a JSON POST:
 //
 //   unlock      a 6-digit Authenticator code -> a session token (4 hours)
 //   chat        one round of the AI chat: forwards the conversation to Claude
 //               with Housecall's system prompt and tools, returns the reply
 //   visit_get   the last visits recorded for a PC
 //   visit_save  records a visit
+//   visit_delete  removes one visit of a PC (its invoice is kept)
+//   settings_get / settings_save   business details and prices for invoices
+//   invoice_create  numbers and stores an invoice, totals worked out here
 //   health      which secrets are set (booleans only), for setup
 //
 // Everything except health and unlock needs the token. The token is signed
@@ -268,7 +271,7 @@ const PC = /^[0-9a-f]{64}$/;
 async function visitGet(pc: unknown): Promise<Response> {
   if (typeof pc !== "string" || !PC.test(pc)) return json({ error: "bad_pc" }, 400);
   const { data, error } = await database().from("visits")
-    .select("visited_at, label, lang, problems, changes")
+    .select("id, visited_at, label, lang, problems, changes, invoice_number")
     .eq("pc", pc).order("visited_at", { ascending: false }).limit(5);
   if (error) return json({ error: "database" }, 500);
   return json({ visits: data });
@@ -276,7 +279,7 @@ async function visitGet(pc: unknown): Promise<Response> {
 
 // deno-lint-ignore no-explicit-any
 async function visitSave(body: any): Promise<Response> {
-  const { pc, label, lang, os, problems, changes } = body;
+  const { pc, label, lang, os, problems, changes, invoice_number } = body;
   if (typeof pc !== "string" || !PC.test(pc)) return json({ error: "bad_pc" }, 400);
   if (label != null && (typeof label !== "string" || label.length > 80)) return json({ error: "bad_label" }, 400);
   if (lang !== "nl" && lang !== "en") return json({ error: "bad_lang" }, 400);
@@ -288,13 +291,129 @@ async function visitSave(body: any): Promise<Response> {
   if (!Array.isArray(changes) || changes.length > 30 || changes.some((c) => typeof c !== "string" || c.length > 200)) {
     return json({ error: "bad_changes" }, 400);
   }
-  const { error } = await database().from("visits").insert({
+  if (invoice_number != null && (typeof invoice_number !== "string" || !/^\d{4}-\d{4,}$/.test(invoice_number))) {
+    return json({ error: "bad_invoice_number" }, 400);
+  }
+  const { data, error } = await database().from("visits").insert({
     pc, label: label || null, lang, os: typeof os === "string" ? os.slice(0, 80) : null,
     problems: problems.map((p: { code: string; finding: string }) => ({ code: p.code, finding: p.finding })),
-    changes,
+    changes, invoice_number: invoice_number ?? null,
+  }).select("id").single();
+  if (error) return json({ error: "database" }, 500);
+  return json({ saved: true, id: data.id });
+}
+
+async function visitDelete(pc: unknown, id: unknown): Promise<Response> {
+  if (typeof pc !== "string" || !PC.test(pc)) return json({ error: "bad_pc" }, 400);
+  if (typeof id !== "number" || !Number.isInteger(id)) return json({ error: "bad_id" }, 400);
+  // Only a visit of this same PC can be deleted from it.
+  const { data, error } = await database().from("visits").delete().eq("id", id).eq("pc", pc).select("id");
+  if (error) return json({ error: "database" }, 500);
+  return json({ deleted: (data ?? []).length });
+}
+
+// ------------------------------------------------------------ invoices --
+
+const SETTING_TEXT: Record<string, number> = {
+  business_name: 100, owner_name: 100, address: 120, postcode_city: 120, kvk: 20,
+  btw_number: 30, iban: 40, email: 120, phone: 30,
+};
+
+async function settingsGet(): Promise<Response> {
+  const { data, error } = await database().from("settings").select("*").eq("id", 1).maybeSingle();
+  if (error) return json({ error: "database" }, 500);
+  return json({ settings: data });
+}
+
+// deno-lint-ignore no-explicit-any
+async function settingsSave(input: any): Promise<Response> {
+  if (typeof input !== "object" || input === null) return json({ error: "bad_settings" }, 400);
+  const row: Record<string, unknown> = { id: 1, updated_at: new Date().toISOString() };
+  for (const [key, max] of Object.entries(SETTING_TEXT)) {
+    if (!(key in input)) continue;
+    const v = input[key];
+    if (v !== null && (typeof v !== "string" || v.length > max)) return json({ error: "bad_settings", field: key }, 400);
+    row[key] = v === "" ? null : v;
+  }
+  for (const key of ["hourly_rate", "callout_fee"]) {
+    if (!(key in input)) continue;
+    const v = input[key];
+    if (v !== null && (typeof v !== "number" || v < 0 || v > 10000)) return json({ error: "bad_settings", field: key }, 400);
+    row[key] = v;
+  }
+  if ("btw_mode" in input) {
+    if (!["unset", "kor", "21"].includes(input.btw_mode)) return json({ error: "bad_settings", field: "btw_mode" }, 400);
+    row.btw_mode = input.btw_mode;
+  }
+  if ("payment_days" in input) {
+    const v = input.payment_days;
+    if (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v > 90) return json({ error: "bad_settings", field: "payment_days" }, 400);
+    row.payment_days = v;
+  }
+  const { error } = await database().from("settings").upsert(row);
+  if (error) return json({ error: "database" }, 500);
+  return settingsGet();
+}
+
+const cents = (n: number) => Math.round(n * 100);
+
+// The client composes the lines (it knows the language); the numbers, the
+// totals, the BTW and the seller's details are decided here.
+// deno-lint-ignore no-explicit-any
+async function invoiceCreate(body: any): Promise<Response> {
+  const db = database();
+  const { data: settings } = await db.from("settings").select("*").eq("id", 1).maybeSingle();
+  if (!settings?.business_name) return json({ error: "no_settings" }, 400);
+
+  const { pc, lang, client, lines, payment, problems, changes } = body;
+  if (pc != null && (typeof pc !== "string" || !PC.test(pc))) return json({ error: "bad_pc" }, 400);
+  if (lang !== "nl" && lang !== "en") return json({ error: "bad_lang" }, 400);
+  if (typeof client?.name !== "string" || client.name.trim() === "" || client.name.length > 100) return json({ error: "bad_client" }, 400);
+  for (const k of ["address", "postcode_city", "email"]) {
+    if (client[k] != null && (typeof client[k] !== "string" || client[k].length > 120)) return json({ error: "bad_client" }, 400);
+  }
+  if (!["pin", "cash", "transfer"].includes(payment)) return json({ error: "bad_payment" }, 400);
+  if (!Array.isArray(lines) || lines.length === 0 || lines.length > 30) return json({ error: "bad_lines" }, 400);
+  const clean: { description: string; amount: number }[] = [];
+  for (const l of lines) {
+    if (typeof l?.description !== "string" || l.description.trim() === "" || l.description.length > 120) return json({ error: "bad_lines" }, 400);
+    if (typeof l?.amount !== "number" || !Number.isFinite(l.amount) || l.amount < 0 || l.amount > 100000) return json({ error: "bad_lines" }, 400);
+    clean.push({ description: l.description.trim(), amount: cents(l.amount) / 100 });
+  }
+
+  // Prices include BTW when there is BTW: the total is what the client pays.
+  const totalCents = clean.reduce((sum, l) => sum + cents(l.amount), 0);
+  let subtotalCents = totalCents;
+  let btwCents = 0;
+  if (settings.btw_mode === "21") {
+    subtotalCents = Math.round(totalCents / 1.21);
+    btwCents = totalCents - subtotalCents;
+  }
+  let due: string | null = null;
+  if (payment === "transfer") {
+    const d = new Date(Date.now() + (settings.payment_days ?? 14) * 86400_000);
+    due = d.toISOString().slice(0, 10);
+  }
+  const seller = {
+    business_name: settings.business_name, owner_name: settings.owner_name, address: settings.address,
+    postcode_city: settings.postcode_city, kvk: settings.kvk, btw_number: settings.btw_number,
+    iban: settings.iban, email: settings.email, phone: settings.phone,
+  };
+  const { data, error } = await db.rpc("issue_invoice", {
+    inv: {
+      pc: pc ?? null, lang,
+      client_name: client.name.trim(), client_address: client.address || null,
+      client_postcode_city: client.postcode_city || null, client_email: client.email || null,
+      lines: clean, btw_mode: settings.btw_mode,
+      subtotal: subtotalCents / 100, btw_amount: btwCents / 100, total: totalCents / 100,
+      payment, due_date: due,
+      problems: Array.isArray(problems) ? problems.slice(0, 20) : [],
+      changes: Array.isArray(changes) ? changes.filter((c: unknown) => typeof c === "string").slice(0, 30) : [],
+      seller,
+    },
   });
   if (error) return json({ error: "database" }, 500);
-  return json({ saved: true });
+  return json({ invoice: data });
 }
 
 Deno.serve(async (req: Request) => {
@@ -330,6 +449,14 @@ Deno.serve(async (req: Request) => {
       return visitGet(body.pc);
     case "visit_save":
       return visitSave(body);
+    case "visit_delete":
+      return visitDelete(body.pc, body.id);
+    case "settings_get":
+      return settingsGet();
+    case "settings_save":
+      return settingsSave(body.settings);
+    case "invoice_create":
+      return invoiceCreate(body);
     default:
       return json({ error: "unknown_action" }, 400);
   }

@@ -61,6 +61,7 @@ function Get-HcRelayMessage {
         'unreachable' { T 'relay.unreachable' }
         'ai_key'      { T 'relay.aiKey' }
         'ai_busy'     { T 'relay.aiBusy' }
+        'no_settings' { T 'inv.noSettings' }
         default       { T 'relay.error' $Code }
     }
 }
@@ -148,7 +149,8 @@ function Show-HcKnownPc {
     Write-Step (T 'mem.known' $shown (Format-HcVisitLine $last))
 }
 
-# H on the menu: the visit history of this PC.
+# H on the menu: the visit history of this PC, with a number to delete one.
+# Deleting a visit never deletes its invoice: invoices are kept 7 years.
 function Show-HcHistory {
     param([pscustomobject]$Environment)
     Clear-HcScreen
@@ -158,20 +160,33 @@ function Show-HcHistory {
     if (-not $Environment.Online) {
         Write-Warn2 (T 'ai.offline')
     } elseif (Unlock-HcRelay) {
-        $result = Get-HcVisits
-        $visits = @($result.Visits)
-        if (-not $result.Ok) {
-            Write-Warn2 (Get-HcRelayMessage $result.Error)
-        } elseif ($visits.Count -eq 0) {
-            Write-Dim (T 'mem.none')
-        } else {
+        while ($true) {
+            $result = Get-HcVisits
+            $visits = @($result.Visits)
+            if (-not $result.Ok) { Write-Warn2 (Get-HcRelayMessage $result.Error); break }
+            if ($visits.Count -eq 0) { Write-Dim (T 'mem.none'); break }
             Write-Host ''
-            foreach ($v in $visits) {
+            for ($i = 0; $i -lt $visits.Count; $i++) {
+                $v = $visits[$i]
                 $label = if ($v.label) { "  [$($v.label)]" } else { '' }
-                Write-Host ('  ' + (Format-HcVisitLine $v) + $label)
-                foreach ($p in @($v.problems)) { Write-Dim ('   ' + $p.code + '  ' + (T "problem.$($p.code)")) }
-                foreach ($c in @($v.changes)) { Write-Dim ('   + ' + $c) }
+                $invoiceNo = if ($v.invoice_number) { '  ' + (T 'mem.invoice' $v.invoice_number) } else { '' }
+                Write-Option ([string]($i + 1)) ((Format-HcVisitLine $v) + $label + $invoiceNo)
+                foreach ($p in @($v.problems)) { Write-Dim ('     ' + $p.code + '  ' + (T "problem.$($p.code)")) }
+                foreach ($c in @($v.changes)) { Write-Dim ('     + ' + $c) }
             }
+            Write-Host ''
+            $pick = "$(Read-HcLine (T 'mem.deleteAsk'))".Trim()
+            $n = 0
+            if (-not [int]::TryParse($pick, [ref]$n) -or $n -lt 1 -or $n -gt $visits.Count) { return }
+            $chosen = $visits[$n - 1]
+            if (-not (Test-HcYes (Read-HcLine (T 'mem.deleteConfirm' (Format-HcVisitLine $chosen))))) {
+                Write-Dim (T 'fix.cancelled')
+                continue
+            }
+            $r = Invoke-HcRelay @{ action = 'visit_delete'; token = $script:HcToken; pc = (Get-HcPcId); id = [long]$chosen.id }
+            if (-not $r.Ok) { Write-Warn2 (Get-HcRelayMessage $r.Error); continue }
+            Write-Ok (T 'mem.deleted')
+            if ($chosen.invoice_number) { Write-Dim (T 'mem.invoiceKept' $chosen.invoice_number) }
         }
     }
     Write-Host ''
@@ -185,13 +200,18 @@ function Show-HcHistory {
     or when no problem was opened.
 #>
 function Save-HcVisitRecord {
-    param([pscustomobject]$Environment)
-    if ($script:HcVisit.Count -eq 0 -or $script:DryRun -or -not $Environment.Online) { return }
+    param([pscustomobject]$Environment, $Invoice)
+    if ($script:HcVisit.Count -eq 0 -or $script:DryRun -or -not $Environment.Online -or $script:HcQuitSkipped) { return }
     Write-Host ''
     if (-not (Unlock-HcRelay 'mem.saveAsk')) { return }
-    $current = if ($script:HcKnownLabel) { $script:HcKnownLabel } else { T 'mem.noLabel' }
-    $typed = "$(Read-HcLine (T 'mem.labelAsk' $current))".Trim()
-    $label = if ($typed -and $typed -ne 'Q') { $typed } else { $script:HcKnownLabel }
+    if ($Invoice) {
+        # The invoice already names the client: no need to ask again.
+        $label = [string]$Invoice.client_name
+    } else {
+        $current = if ($script:HcKnownLabel) { $script:HcKnownLabel } else { T 'mem.noLabel' }
+        $typed = "$(Read-HcLine (T 'mem.labelAsk' $current))".Trim()
+        $label = if ($typed -and $typed -ne 'Q') { $typed } else { $script:HcKnownLabel }
+    }
     if ($label -and $label.Length -gt 80) { $label = $label.Substring(0, 80) }
 
     $r = Invoke-HcRelay @{
@@ -203,6 +223,7 @@ function Save-HcVisitRecord {
         os       = $Environment.Os
         problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
         changes  = @($script:HcChanges | ForEach-Object { $_.Label })
+        invoice_number = $(if ($Invoice) { [string]$Invoice.number } else { $null })
     }
     if ($r.Ok) { Write-Ok (T 'mem.saved') } else { Write-Warn2 (T 'mem.notSaved' (Get-HcRelayMessage $r.Error)) }
 }

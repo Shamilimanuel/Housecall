@@ -38,13 +38,25 @@ function Save-HcVisit {
 #>
 function Get-HcNoteBlocks {
     param([datetime]$Date = (Get-Date))
-    $visits = @($script:HcVisit)
-    if ($visits.Count -eq 0) { return @() }
+    if (@($script:HcVisit).Count -eq 0) { return @() }
     $block = { param($style, $text) [pscustomobject]@{ Style = $style; Text = $text } }
     $culture = if ($script:Lang -eq 'nl') { 'nl-NL' } else { 'en-GB' }
 
     & $block 'title' (T 'note.title' $Date.ToString('d MMMM yyyy', [Globalization.CultureInfo]::GetCultureInfo($culture)))
+    foreach ($b in @(Get-HcVisitBlocks)) { $b }
 
+    if ($script:Contact) {
+        & $block 'heading' (T 'note.contact')
+        foreach ($line in @($script:Contact)) { & $block 'text' $line }
+    }
+    & $block 'small' (T 'note.footer')
+}
+
+# What the client asked, what was found and what was done: the middle of
+# both the note and the invoice.
+function Get-HcVisitBlocks {
+    $visits = @($script:HcVisit)
+    $block = { param($style, $text) [pscustomobject]@{ Style = $style; Text = $text } }
     & $block 'heading' (T 'note.asked')
     foreach ($v in $visits) { & $block 'text' (T "problem.$($v.Code)") }
 
@@ -61,49 +73,54 @@ function Get-HcNoteBlocks {
     } else {
         foreach ($c in $changes) { & $block 'text' $c.Label }
     }
-
-    if ($script:Contact) {
-        & $block 'heading' (T 'note.contact')
-        foreach ($line in @($script:Contact)) { & $block 'text' $line }
-    }
-    & $block 'small' (T 'note.footer')
 }
 
 function Show-HcNote {
     $blocks = @(Get-HcNoteBlocks)
     if ($blocks.Count -eq 0) { return }
+    Show-HcDocument $blocks (T 'note.windowTitle')
+}
 
-    # A scripted run (the tests) prints the note instead of opening a window.
+# The note or the invoice: in its own window, or printed to the console when
+# there is no one to look at a window.
+function Show-HcDocument {
+    param([object[]]$Blocks, [string]$Title)
+    # A scripted run (the tests) prints the document instead of opening a window.
     if ($null -ne $script:HcInputQueue) {
         Write-Host ''
-        foreach ($b in $blocks) { Write-Host ('  [note] ' + $b.Text) }
+        foreach ($b in $Blocks) { Write-Host ('  [note] ' + $b.Text) }
         return
     }
     try {
         if ($script:NoConsole) { throw 'nobody to close a window' }
         Add-Type -AssemblyName System.Windows.Forms, System.Drawing -ErrorAction Stop
-        Show-HcNoteWindow $blocks
+        Show-HcNoteWindow $Blocks $Title
     } catch {
-        # No desktop to show a window on: show the note in the console.
+        # No desktop to show a window on: show the document in the console.
         Write-Host ''
-        foreach ($b in $blocks) { Write-Host ('  ' + $b.Text) }
+        foreach ($b in $Blocks) { Write-Host ('  ' + $b.Text) }
     }
 }
 
 function Show-HcNoteWindow {
-    param([object[]]$Blocks)
+    param([object[]]$Blocks, [string]$Title)
     [Windows.Forms.Application]::EnableVisualStyles()
     $family = 'Segoe UI'
     $script:HcNoteFonts = @{
         title   = New-Object Drawing.Font($family, 20, [Drawing.FontStyle]::Bold)
         heading = New-Object Drawing.Font($family, 14, [Drawing.FontStyle]::Bold)
         text    = New-Object Drawing.Font($family, 13)
+        # The payment line under the total: normal text, with space above it.
+        payment = New-Object Drawing.Font($family, 13)
         small   = New-Object Drawing.Font($family, 10, [Drawing.FontStyle]::Italic)
+        # Money rows: a fixed-width font keeps the amounts in one column.
+        row     = New-Object Drawing.Font('Consolas', 11)
+        rowBold = New-Object Drawing.Font('Consolas', 11, [Drawing.FontStyle]::Bold)
     }
     $script:HcNoteBlocks = $Blocks
 
     $form = New-Object Windows.Forms.Form
-    $form.Text = T 'note.windowTitle'
+    $form.Text = $Title
     $form.StartPosition = 'CenterScreen'
     $form.Size = New-Object Drawing.Size(680, 760)
     $form.MinimumSize = New-Object Drawing.Size(480, 400)
@@ -122,7 +139,7 @@ function Show-HcNoteWindow {
         $box.SelectionStart = $box.TextLength
         $box.SelectionFont = $script:HcNoteFonts[$b.Style]
         $box.SelectionColor = if ($b.Style -eq 'small') { [Drawing.Color]::DimGray } else { [Drawing.Color]::Black }
-        $gap = if ($b.Style -in @('heading', 'small')) { "`n" } else { '' }
+        $gap = if ($b.Style -in @('heading', 'small', 'payment')) { "`n" } else { '' }
         $box.AppendText($gap + $b.Text + "`n")
     }
 
@@ -172,7 +189,7 @@ function Invoke-HcNotePrint {
         while ($script:HcNotePrintAt -lt $script:HcNoteBlocks.Count) {
             $b = $script:HcNoteBlocks[$script:HcNotePrintAt]
             $font = $script:HcNoteFonts[$b.Style]
-            if ($b.Style -in @('heading', 'small')) { $y += $font.GetHeight($e.Graphics) * 0.6 }
+            if ($b.Style -in @('heading', 'small', 'payment')) { $y += $font.GetHeight($e.Graphics) * 0.6 }
             $size = $e.Graphics.MeasureString($b.Text, $font, $area.Width)
             if ($y + $size.Height -gt $area.Bottom -and $y -gt $area.Top) { $e.HasMorePages = $true; return }
             $rect = New-Object Drawing.RectangleF([single]$area.Left, $y, [single]$area.Width, $size.Height)

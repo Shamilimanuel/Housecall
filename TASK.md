@@ -1,7 +1,7 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 91%** `██████████████████░░` 41 of 45 done · 0 in progress · 4 open · 0 blocked · 0 waiting on a decision
+**Progress: 92%** `██████████████████░░` 45 of 49 done · 0 in progress · 4 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
@@ -9,13 +9,13 @@
 | Next up | `░░░░░░░░░░` | 0% (0/3) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (34/34) |
-| Found in testing | `█████░░░░░` | 67% (2/3) |
+| Found in testing | `████████░░` | 86% (6/7) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
 
 Working notes, kept so a new chat can pick up without re-deriving anything.
-Last updated: **26 September 2026, end of session**: everything built; the AI setup is halfway (see *Where we stopped*).
+Last updated: **26 September 2026**: setup done (three times OK), H works, and after Shamil's first test the **invoice** and **delete in H** are built.
 
 **How we work this list:** items are worked top to bottom. Pick one, say the
 name, and it gets built. When it is done it moves to *Recently done* and we go
@@ -50,12 +50,13 @@ irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex
 - The Anthropic account has **no credit yet**. Until it has, `?` shows
   "De relay gaf een fout (ai_request)"; H and saving visits work without it.
 
-**First thing next session:**
-1. Shamil runs the check (full path, because PowerShell often opens in
-   `C:\WINDOWS\system32`):
-   `powershell -ExecutionPolicy Bypass -File "C:\Users\shami\OneDrive\Documents\My Claude\Visual Studio Code\Housecall\tools\setup-ai.ps1" -Check`
-   → three times OK.
-2. Try H again (should say "Geen eerdere bezoeken") and save a visit (Q). Setup check: done, three times OK (26 Sep).
+**Next:**
+1. Shamil fills in his business details once (full path, because
+   PowerShell often opens in `C:\WINDOWS\system32`):
+   `powershell -ExecutionPolicy Bypass -File "C:\Users\shami\OneDrive\Documents\My Claude\Visual Studio Code\Housecall\tools\setup-invoice.ps1"`
+2. A test visit: a check, then Q, fill in the form, see the invoice, print
+   it to PDF. Then H: the visit shows its invoice number; delete it (the
+   invoice stays). The first real invoice will be 2026-0001.
 3. Build *No credit: a clear message* (under Found in testing).
 4. Once there is credit: the first real AI chat, and watch it once.
 5. Then Shamil's testing round (below).
@@ -473,6 +474,27 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Found in testing
 
+- [x] **A delete option in H** *(Shamil, 26 Sep)*: the history numbers the
+      visits; a number, then J, deletes that visit (relay `visit_delete`,
+      only for this same PC). Its invoice is kept, and Housecall says so
+- [x] **A proper invoice instead of the note** *(Shamil, 26 Sep)*. Decided:
+      one document (the invoice includes what was wrong and what was done);
+      hourly rate + call-out fee; BTW a setting (not decided yet: the
+      invoice then says so); payment asked each time. At Q: the code, then
+      a form (client name, address, postcode and city, email, minutes
+      suggested from how long Housecall ran rounded up to 15, call-out fee
+      J/N, extra lines like "Draadloze muis 19,95", payment 1/2/3, confirm
+      the total). The relay numbers it (`issue_invoice`: YYYY-NNNN,
+      consecutive, in one transaction), works out subtotal/BTW/total from
+      the settings, and stores it with a copy of the seller's details, in
+      `invoices`, apart from `visits` (fiscale bewaarplicht, 7 years). The
+      window shows seller, number, date, client, the visit, the costs in a
+      fixed-width column, and paid-by-card/cash or transfer-before-date with
+      the IBAN. Enter at the code, 0 in the form, or no settings: the plain
+      note, as before. Business details come from
+      `tools/setup-invoice.ps1` into Supabase `settings`, never the public
+      script. Checked on screen once. 8 new tests, 239 in total
+
 - [ ] **No credit: a clear message.** With an API key but no credit,
       Anthropic answers "credit balance too low" and the relay turns that
       into the vague `ai_request`. Make the relay return `ai_credit` for it
@@ -570,6 +592,12 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
   dates move every year and would need updating in the code.
 - **The DISM + SFC repair runs inside the Housecall window** and prints its
   own progress. It needs internet for DISM and takes 15–30 minutes.
+- **Invoice numbers never go back.** A number is used the moment the relay
+  makes the invoice, even if the window is then closed. A wrong invoice is
+  corrected with a credit invoice, not by deleting it (not built yet).
+- **BTW is "not set" until Shamil decides.** Check with the Belastingdienst
+  (KOR or not) and set it in `setup-invoice.ps1` before the first real
+  invoice.
 - **Free Supabase projects pause after a week without use.** Then `?` and
   H say "the relay cannot be reached", and the project needs Restore in the
   Supabase dashboard. Using Housecall at least weekly avoids it.
@@ -612,7 +640,8 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Relay | `relay/housecall/index.ts` (deployed to Supabase project `housecall`, id `btwbtxjawubtgeizcrir`); redeploy after editing it |
 | Relay client, memory | `src/relay.ps1`: `Invoke-HcRelay`, `Unlock-HcRelay`, `Get-HcPcId`, `Show-HcHistory` (H), `Save-HcVisitRecord` (Q) |
 | AI chat | `src/ai.ps1`: `Invoke-HcAiConversation` (the loop), `Invoke-HcAi` (the screen); the system prompt and tools live in the relay |
-| Setup | `tools/setup-ai.ps1` (`-Check` to only test) |
+| Setup | `tools/setup-ai.ps1` (`-Check` to only test); `tools/setup-invoice.ps1` (business details, prices, BTW) |
+| Invoice | `src/invoice.ps1`: the form (`Read-HcInvoiceForm`), `Invoke-HcInvoice` (at Q), `Get-HcInvoiceBlocks` (the document); the relay's `invoice_create` and the database function `issue_invoice` |
 | Area B | `src/checks/sound.ps1`: `Test-HcSound` (B1), `Test-HcCalls` (B2), `Test-HcScreen` (B3); `src/checks/audio-interop.ps1`: the C# for Core Audio |
 | Area C | `src/checks/devices.ps1`: `Test-HcPrinter` (C1), `Test-HcInputDevices` (C2), `Test-HcBluetooth` (C3), `Add-HcDeviceProblem` (shared by C2 and C3) |
 | Area D | `src/checks/performance.ps1`: `Test-HcSlow` (D1), `Test-HcSlowStart` (D2), `Test-HcCrashes` (D3), `Test-HcDiskSpace` (D4) |

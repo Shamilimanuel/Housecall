@@ -197,6 +197,8 @@ function Start-Housecall {
     $script:HandedOff = $false
     $script:HcToken = $null
     $script:HcKnownLabel = $null
+    $script:HcQuitSkipped = $false
+    $script:HcStartedAt = Get-Date
     $script:Lang = if ($script:Strings.ContainsKey("$Lang".ToLowerInvariant())) { "$Lang".ToLowerInvariant() } else { Get-HcDefaultLanguage }
     $script:HcInputQueue = $null
     if ($PSBoundParameters.ContainsKey('Answers')) {
@@ -240,8 +242,10 @@ function Start-Housecall {
             'history'  { Show-HcHistory $environment }
             'unknown'  { $message = T 'menu.unknown' $choice.Value }
             'quit'     {
-                Save-HcVisitRecord $environment
-                Show-HcNote
+                # The invoice (or, without one, the plain note), and the visit saved with it.
+                $invoice = Invoke-HcInvoice $environment
+                Save-HcVisitRecord $environment $invoice
+                if ($invoice) { Show-HcInvoice $invoice } else { Show-HcNote }
                 Write-Host ''
                 if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
                 Write-Host ''

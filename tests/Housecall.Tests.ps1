@@ -21,6 +21,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\fixes.ps1')
 . (Join-Path $root 'src\note.ps1')
 . (Join-Path $root 'src\relay.ps1')
+. (Join-Path $root 'src\invoice.ps1')
 . (Join-Path $root 'src\ai.ps1')
 
 # Housecall's own source, put together the way dev.ps1 does it.
@@ -965,6 +966,133 @@ Describe 'Relay: unlock and visit memory' {
     }
 }
 
+Describe 'The invoice' {
+    $script:Lang = 'nl'
+    $euro = [string][char]0x20AC
+
+    It 'writes money the Dutch way and reads amounts people type' {
+        Format-HcMoney 30 | Should Be "$euro 30,00"
+        Format-HcMoney 1234.5 | Should Be "$euro 1.234,50"
+        ConvertTo-HcAmount '19,95' | Should Be 19.95
+        ConvertTo-HcAmount "$euro 12.50" | Should Be 12.5
+        ConvertTo-HcAmount 'twintig' | Should Be $null
+        $line = ConvertTo-HcExtraLine 'Draadloze muis 19,95'
+        $line.Description | Should Be 'Draadloze muis'
+        $line.Amount | Should Be 19.95
+        ConvertTo-HcExtraLine 'alleen tekst' | Should Be $null
+    }
+
+    It 'suggests the time spent, rounded up to a quarter of an hour' {
+        $script:HcStartedAt = (Get-Date).AddMinutes(-37)
+        Get-HcSuggestedMinutes | Should Be 45
+        $script:HcStartedAt = (Get-Date).AddMinutes(-3)
+        Get-HcSuggestedMinutes | Should Be 15
+    }
+
+    $seller = [pscustomobject]@{ business_name = 'Shamil PC Hulp'; owner_name = 'Shamil'; address = 'Straat 1'; postcode_city = '1234 AB Utrecht'
+        kvk = '12345678'; btw_number = $null; iban = 'NL00BANK0123456789'; email = 'shamilimanuel@outlook.com'; phone = $null }
+    $invoice = { param([hashtable]$c = @{})
+        $i = [pscustomobject]@{ number = '2026-0001'; issued_at = '2026-09-26T12:00:00Z'; seller = $seller
+            client_name = 'Mevr. de Vries'; client_address = 'Dorpsstraat 1'; client_postcode_city = '1234 AB Utrecht'; client_email = $null
+            lines = @([pscustomobject]@{ description = 'Arbeid: 45 min'; amount = 30 }, [pscustomobject]@{ description = 'Voorrijkosten'; amount = 15 })
+            btw_mode = 'kor'; subtotal = 45; btw_amount = 0; total = 45; payment = 'pin'; due_date = $null }
+        foreach ($k in $c.Keys) { $i.$k = $c[$k] }
+        $i }
+
+    It 'shows the number, the seller, the client, the costs and how it was paid' {
+        $script:HcVisit.Clear(); $script:HcChanges.Clear()
+        $r = New-HcReport; Set-HcFinding $r 'noAddress'; Save-HcVisit 'A1' $r
+        $text = @(Get-HcInvoiceBlocks (& $invoice)) | ForEach-Object { $_.Text }
+        $all = $text -join "`n"
+        $text[0] | Should Be 'FACTUUR 2026-0001'
+        $all | Should Match 'Shamil PC Hulp'
+        $all | Should Match 'KvK 12345678'
+        $all | Should Match 'Mevr\. de Vries'
+        $all | Should Match 'Helemaal geen internet'
+        $all | Should Match 'Betaald met pin op 26 september 2026'
+        $all | Should Match 'kleineondernemersregeling'
+        $total = @($text | Where-Object { $_ -like 'Totaal*' })[0]
+        $total | Should Match "$euro 45,00$"
+        # The amounts line up in one column.
+        @($text | Where-Object { $_ -like 'Arbeid*' })[0].Length | Should Be $total.Length
+    }
+
+    It 'splits out 21% BTW, and asks for a transfer with the IBAN and number' {
+        $i = & $invoice @{ btw_mode = '21'; subtotal = 37.19; btw_amount = 7.81; payment = 'transfer'; due_date = '2026-10-10' }
+        $all = (@(Get-HcInvoiceBlocks $i) | ForEach-Object { $_.Text }) -join "`n"
+        $all | Should Match 'Subtotaal excl\. btw'
+        $all | Should Match "Btw 21%\s+$euro 7,81"
+        $all | Should Match 'overmaken voor 10 oktober 2026 naar NL00BANK0123456789, onder vermelding van factuurnummer 2026-0001'
+        $all | Should Not Match 'kleineondernemersregeling'
+    }
+
+    Mock Get-HcEnvironment { [pscustomobject]@{ IsWindows = $true; PSVersion = [version]'5.1'; Os = 'Windows 11 Home'; IsAdmin = $false; Online = $true } }
+    Mock Get-HcNetworkFacts { New-FakeFacts }
+    $ok = { param($data) [pscustomobject]@{ Ok = $true; Status = 200; Data = $data; Error = $null } }
+
+    It 'at Q: asks the form, makes the invoice, saves the visit with it, and shows the invoice' {
+        $script:Sent = @{}
+        Mock Invoke-HcRelay {
+            $script:Sent[$Body.action] = $Body
+            switch ($Body.action) {
+                'unlock'         { & $ok ([pscustomobject]@{ token = 't.s'; expires = (Get-Date).AddHours(4).ToUniversalTime().ToString('o') }) }
+                'settings_get'   { & $ok ([pscustomobject]@{ settings = [pscustomobject]@{ business_name = 'Shamil PC Hulp'; hourly_rate = 40; callout_fee = 15; btw_mode = 'unset' } }) }
+                'invoice_create' { & $ok ([pscustomobject]@{ invoice = (& $invoice @{ client_name = $Body.client.name }) }) }
+                default          { & $ok ([pscustomobject]@{ visits = @(); saved = $true; id = 1 }) }
+            }
+        }
+        $out = Start-Housecall -Lang nl -Answers @('A1', '', 'Q', '123456', 'Mevr. de Vries', 'Dorpsstraat 1', '1234 AB Utrecht', '', '45', '', 'Draadloze muis 19,95', '', '1', 'j') 6>&1 | Out-String
+        $lines = @($script:Sent['invoice_create'].lines)
+        $lines.Count | Should Be 3
+        $lines[0].description | Should Be "Arbeid: 45 min, $euro 40,00 per uur"
+        $lines[0].amount | Should Be 30
+        $lines[1].description | Should Be 'Voorrijkosten'
+        $lines[2].description | Should Be 'Draadloze muis'
+        $lines[2].amount | Should Be 19.95
+        $script:Sent['invoice_create'].payment | Should Be 'pin'
+        $script:Sent['visit_save'].label | Should Be 'Mevr. de Vries'
+        $script:Sent['visit_save'].invoice_number | Should Be '2026-0001'
+        $out | Should Match 'FACTUUR 2026-0001'
+    }
+
+    It 'Enter at the code: no invoice, no second question, the plain note' {
+        $script:Sent = @{}
+        Mock Invoke-HcRelay { $script:Sent[$Body.action] = $Body; & $ok ([pscustomobject]@{}) }
+        $out = Start-Housecall -Lang nl -Answers @('A1', '', 'Q', '', 'extra') 6>&1 | Out-String
+        $script:Sent.Count | Should Be 0
+        $out | Should Match 'Waar u hulp bij vroeg'
+        $out | Should Not MatchExactly 'FACTUUR'
+    }
+
+    It 'without invoice settings: says so, and shows the note' {
+        $script:HcToken = $null
+        Mock Invoke-HcRelay {
+            if ($Body.action -eq 'unlock') { return & $ok ([pscustomobject]@{ token = 't.s'; expires = (Get-Date).AddHours(4).ToUniversalTime().ToString('o') }) }
+            & $ok ([pscustomobject]@{ settings = $null; visits = @() })
+        }
+        $out = Start-Housecall -Lang nl -Answers @('A1', '', 'Q', '123456', '') 6>&1 | Out-String
+        $out | Should Match 'setup-invoice\.ps1'
+        $out | Should Match 'Waar u hulp bij vroeg'
+    }
+
+    It 'deletes a visit from the history after a yes, and says the invoice is kept' {
+        $script:HcToken = 't.s'; $script:HcTokenExpires = (Get-Date).AddHours(1)
+        $script:Deleted = $null
+        Mock Invoke-HcRelay {
+            if ($Body.action -eq 'visit_delete') { $script:Deleted = $Body.id; return & $ok ([pscustomobject]@{ deleted = 1 }) }
+            if ($script:Deleted) { return & $ok ([pscustomobject]@{ visits = @() }) }
+            & $ok ([pscustomobject]@{ visits = @([pscustomobject]@{ id = 7; visited_at = '2026-09-26T12:00:00Z'; label = 'Mevr. de Vries'; problems = @(); changes = @(); invoice_number = '2026-0001' }) })
+        }
+        $script:HcInputQueue = New-Object System.Collections.Queue
+        foreach ($a in @('1', 'j', '')) { $script:HcInputQueue.Enqueue($a) }
+        $out = Show-HcHistory ([pscustomobject]@{ Online = $true; Os = 'x'; IsAdmin = $false; PSVersion = [version]'5.1' }) 6>&1 | Out-String
+        $script:HcInputQueue = $null
+        $script:Deleted | Should Be 7
+        $out | Should Match 'factuur 2026-0001'
+        $out | Should Match 'Factuur 2026-0001 blijft bewaard'
+    }
+}
+
 Describe 'The AI chat' {
     $script:Lang = 'en'
     Mock Get-HcEnvironment { [pscustomobject]@{ IsWindows = $true; PSVersion = [version]'5.1'; Os = 'Windows 11 Home'; IsAdmin = $false; Online = $true } }
@@ -1325,7 +1453,7 @@ Describe 'Findings' {
 Describe 'Source files' {
     It 'are plain ASCII, so PowerShell 5.1 reads them correctly' {
         $files = @(Get-ChildItem (Join-Path $root 'src') -Filter *.ps1 -Recurse) +
-                 @(Get-Item (Join-Path $root 'dev.ps1'), (Join-Path $root 'build.ps1'), (Join-Path $root 'tools\setup-ai.ps1'))
+                 @(Get-Item (Join-Path $root 'dev.ps1'), (Join-Path $root 'build.ps1'), (Join-Path $root 'tools\setup-ai.ps1'), (Join-Path $root 'tools\setup-invoice.ps1'))
         foreach ($f in $files) {
             $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
             @($bytes | Where-Object { $_ -gt 127 }).Count | Should Be 0

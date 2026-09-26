@@ -857,6 +857,51 @@ $script:Strings = @{
         'ai.steps'           = 'Steps:'
         'ai.refused'         = 'The AI did not answer this question. Choose a letter from the menu.'
         'ai.noAnswer'        = 'The AI did not reach an answer. Choose a letter from the menu.'
+
+        # ---- the invoice
+        'inv.askCode'     = 'Code from Google Authenticator for the invoice (Enter = no invoice, just the client note)'
+        'inv.title'       = 'Invoice'
+        'inv.intro'       = 'Enter = the suggestion in brackets, 0 = no invoice (the client note instead)'
+        'inv.clientName'  = 'Client name [{0}]'
+        'inv.address'     = 'Street and number'
+        'inv.postcode'    = 'Postcode and city'
+        'inv.email'       = 'Email (optional)'
+        'inv.minutes'     = 'Time worked in minutes [{0}]'
+        'inv.minutesBad'  = 'Type a number of minutes, e.g. 45.'
+        'inv.labour'      = 'Labour: {0} min at {1} per hour'
+        'inv.callout'     = 'Charge the call-out fee of {0}? (Y/N) [Y]'
+        'inv.calloutLine' = 'Call-out fee'
+        'inv.extra'       = 'Extra line, e.g. "Wireless mouse 19,95" (Enter = done)'
+        'inv.extraBad'    = 'Type a description and then an amount, e.g. "USB stick 12,50".'
+        'inv.noLines'     = 'There is nothing to invoice: the client note is shown instead.'
+        'inv.payment'     = 'Payment: [1] card  [2] cash  [3] bank transfer'
+        'inv.confirm'     = 'Total {0}. Make the invoice? (Y/N)'
+        'inv.noSettings'  = 'Your invoice details are not set up yet: run tools\setup-invoice.ps1. The client note is shown instead.'
+        'inv.failed'      = 'The invoice could not be made: {0} The client note is shown instead.'
+        'inv.skipped'     = 'No invoice: the client note is shown instead.'
+        'inv.made'        = 'Invoice {0} made.'
+        'doc.invoice'     = 'INVOICE {0}'
+        'doc.date'        = 'Invoice date: {0}'
+        'doc.kvk'         = 'KvK {0}'
+        'doc.btwNumber'   = 'VAT no. {0}'
+        'doc.iban'        = 'IBAN {0}'
+        'doc.to'          = 'Invoice to'
+        'doc.costs'       = 'Costs'
+        'doc.subtotal'    = 'Subtotal excl. VAT'
+        'doc.btw'         = 'VAT 21%'
+        'doc.total'       = 'Total'
+        'doc.paidPin'     = 'Paid by card on {0}.'
+        'doc.paidCash'    = 'Paid in cash on {0}.'
+        'doc.transfer'    = 'Please transfer {0} before {1} to {2}, stating invoice number {3}.'
+        'doc.kor'         = 'Exempt from VAT under the small business scheme (KOR).'
+        'doc.btwUnset'    = 'VAT not set up yet.'
+        'doc.thanks'      = 'Thank you for your trust.'
+        'doc.windowTitle' = 'Housecall - invoice {0}'
+        'mem.invoice'       = 'invoice {0}'
+        'mem.deleteAsk'     = 'Number of a visit to delete (Enter = back)'
+        'mem.deleteConfirm' = 'Delete the visit of {0}? (Y/N)'
+        'mem.deleted'       = 'Visit deleted.'
+        'mem.invoiceKept'   = 'Invoice {0} is kept: invoices must be kept for 7 years.'
     }
 
     nl = @{
@@ -1657,6 +1702,51 @@ $script:Strings = @{
         'ai.steps'           = 'Stappen:'
         'ai.refused'         = 'De AI heeft deze vraag niet beantwoord. Kies een letter uit het menu.'
         'ai.noAnswer'        = 'De AI kwam niet tot een antwoord. Kies een letter uit het menu.'
+
+        # ---- the invoice
+        'inv.askCode'     = 'Code uit Google Authenticator voor de factuur (Enter = geen factuur, alleen het briefje)'
+        'inv.title'       = 'Factuur'
+        'inv.intro'       = 'Enter = de suggestie tussen haakjes, 0 = geen factuur (dan het briefje)'
+        'inv.clientName'  = 'Naam van de klant [{0}]'
+        'inv.address'     = 'Straat en huisnummer'
+        'inv.postcode'    = 'Postcode en plaats'
+        'inv.email'       = 'E-mail (niet verplicht)'
+        'inv.minutes'     = 'Gewerkte tijd in minuten [{0}]'
+        'inv.minutesBad'  = 'Typ een aantal minuten, bijv. 45.'
+        'inv.labour'      = 'Arbeid: {0} min, {1} per uur'
+        'inv.callout'     = 'Voorrijkosten van {0} rekenen? (J/N) [J]'
+        'inv.calloutLine' = 'Voorrijkosten'
+        'inv.extra'       = 'Extra regel, bijv. "Draadloze muis 19,95" (Enter = klaar)'
+        'inv.extraBad'    = 'Typ een omschrijving en dan een bedrag, bijv. "USB-stick 12,50".'
+        'inv.noLines'     = 'Er is niets te factureren: het briefje wordt getoond.'
+        'inv.payment'     = 'Betaling: [1] pin  [2] contant  [3] overmaken'
+        'inv.confirm'     = 'Totaal {0}. Factuur maken? (J/N)'
+        'inv.noSettings'  = 'Uw factuurgegevens zijn nog niet ingesteld: start tools\setup-invoice.ps1. Het briefje wordt getoond.'
+        'inv.failed'      = 'De factuur kon niet worden gemaakt: {0} Het briefje wordt getoond.'
+        'inv.skipped'     = 'Geen factuur: het briefje wordt getoond.'
+        'inv.made'        = 'Factuur {0} gemaakt.'
+        'doc.invoice'     = 'FACTUUR {0}'
+        'doc.date'        = 'Factuurdatum: {0}'
+        'doc.kvk'         = 'KvK {0}'
+        'doc.btwNumber'   = 'Btw-id {0}'
+        'doc.iban'        = 'IBAN {0}'
+        'doc.to'          = 'Factuur aan'
+        'doc.costs'       = 'Kosten'
+        'doc.subtotal'    = 'Subtotaal excl. btw'
+        'doc.btw'         = 'Btw 21%'
+        'doc.total'       = 'Totaal'
+        'doc.paidPin'     = 'Betaald met pin op {0}.'
+        'doc.paidCash'    = 'Contant betaald op {0}.'
+        'doc.transfer'    = 'Graag {0} overmaken voor {1} naar {2}, onder vermelding van factuurnummer {3}.'
+        'doc.kor'         = 'Vrijgesteld van btw op grond van de kleineondernemersregeling (KOR).'
+        'doc.btwUnset'    = 'Btw nog niet ingesteld.'
+        'doc.thanks'      = 'Bedankt voor uw vertrouwen.'
+        'doc.windowTitle' = 'Housecall - factuur {0}'
+        'mem.invoice'       = 'factuur {0}'
+        'mem.deleteAsk'     = 'Nummer van een bezoek om te verwijderen (Enter = terug)'
+        'mem.deleteConfirm' = 'Het bezoek van {0} verwijderen? (J/N)'
+        'mem.deleted'       = 'Bezoek verwijderd.'
+        'mem.invoiceKept'   = 'Factuur {0} blijft bewaard: facturen moeten 7 jaar bewaard worden.'
     }
 }
 
@@ -2101,6 +2191,8 @@ function Start-Housecall {
     $script:HandedOff = $false
     $script:HcToken = $null
     $script:HcKnownLabel = $null
+    $script:HcQuitSkipped = $false
+    $script:HcStartedAt = Get-Date
     $script:Lang = if ($script:Strings.ContainsKey("$Lang".ToLowerInvariant())) { "$Lang".ToLowerInvariant() } else { Get-HcDefaultLanguage }
     $script:HcInputQueue = $null
     if ($PSBoundParameters.ContainsKey('Answers')) {
@@ -2144,8 +2236,10 @@ function Start-Housecall {
             'history'  { Show-HcHistory $environment }
             'unknown'  { $message = T 'menu.unknown' $choice.Value }
             'quit'     {
-                Save-HcVisitRecord $environment
-                Show-HcNote
+                # The invoice (or, without one, the plain note), and the visit saved with it.
+                $invoice = Invoke-HcInvoice $environment
+                Save-HcVisitRecord $environment $invoice
+                if ($invoice) { Show-HcInvoice $invoice } else { Show-HcNote }
                 Write-Host ''
                 if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
                 Write-Host ''
@@ -5349,13 +5443,25 @@ function Save-HcVisit {
 #>
 function Get-HcNoteBlocks {
     param([datetime]$Date = (Get-Date))
-    $visits = @($script:HcVisit)
-    if ($visits.Count -eq 0) { return @() }
+    if (@($script:HcVisit).Count -eq 0) { return @() }
     $block = { param($style, $text) [pscustomobject]@{ Style = $style; Text = $text } }
     $culture = if ($script:Lang -eq 'nl') { 'nl-NL' } else { 'en-GB' }
 
     & $block 'title' (T 'note.title' $Date.ToString('d MMMM yyyy', [Globalization.CultureInfo]::GetCultureInfo($culture)))
+    foreach ($b in @(Get-HcVisitBlocks)) { $b }
 
+    if ($script:Contact) {
+        & $block 'heading' (T 'note.contact')
+        foreach ($line in @($script:Contact)) { & $block 'text' $line }
+    }
+    & $block 'small' (T 'note.footer')
+}
+
+# What the client asked, what was found and what was done: the middle of
+# both the note and the invoice.
+function Get-HcVisitBlocks {
+    $visits = @($script:HcVisit)
+    $block = { param($style, $text) [pscustomobject]@{ Style = $style; Text = $text } }
     & $block 'heading' (T 'note.asked')
     foreach ($v in $visits) { & $block 'text' (T "problem.$($v.Code)") }
 
@@ -5372,49 +5478,54 @@ function Get-HcNoteBlocks {
     } else {
         foreach ($c in $changes) { & $block 'text' $c.Label }
     }
-
-    if ($script:Contact) {
-        & $block 'heading' (T 'note.contact')
-        foreach ($line in @($script:Contact)) { & $block 'text' $line }
-    }
-    & $block 'small' (T 'note.footer')
 }
 
 function Show-HcNote {
     $blocks = @(Get-HcNoteBlocks)
     if ($blocks.Count -eq 0) { return }
+    Show-HcDocument $blocks (T 'note.windowTitle')
+}
 
-    # A scripted run (the tests) prints the note instead of opening a window.
+# The note or the invoice: in its own window, or printed to the console when
+# there is no one to look at a window.
+function Show-HcDocument {
+    param([object[]]$Blocks, [string]$Title)
+    # A scripted run (the tests) prints the document instead of opening a window.
     if ($null -ne $script:HcInputQueue) {
         Write-Host ''
-        foreach ($b in $blocks) { Write-Host ('  [note] ' + $b.Text) }
+        foreach ($b in $Blocks) { Write-Host ('  [note] ' + $b.Text) }
         return
     }
     try {
         if ($script:NoConsole) { throw 'nobody to close a window' }
         Add-Type -AssemblyName System.Windows.Forms, System.Drawing -ErrorAction Stop
-        Show-HcNoteWindow $blocks
+        Show-HcNoteWindow $Blocks $Title
     } catch {
-        # No desktop to show a window on: show the note in the console.
+        # No desktop to show a window on: show the document in the console.
         Write-Host ''
-        foreach ($b in $blocks) { Write-Host ('  ' + $b.Text) }
+        foreach ($b in $Blocks) { Write-Host ('  ' + $b.Text) }
     }
 }
 
 function Show-HcNoteWindow {
-    param([object[]]$Blocks)
+    param([object[]]$Blocks, [string]$Title)
     [Windows.Forms.Application]::EnableVisualStyles()
     $family = 'Segoe UI'
     $script:HcNoteFonts = @{
         title   = New-Object Drawing.Font($family, 20, [Drawing.FontStyle]::Bold)
         heading = New-Object Drawing.Font($family, 14, [Drawing.FontStyle]::Bold)
         text    = New-Object Drawing.Font($family, 13)
+        # The payment line under the total: normal text, with space above it.
+        payment = New-Object Drawing.Font($family, 13)
         small   = New-Object Drawing.Font($family, 10, [Drawing.FontStyle]::Italic)
+        # Money rows: a fixed-width font keeps the amounts in one column.
+        row     = New-Object Drawing.Font('Consolas', 11)
+        rowBold = New-Object Drawing.Font('Consolas', 11, [Drawing.FontStyle]::Bold)
     }
     $script:HcNoteBlocks = $Blocks
 
     $form = New-Object Windows.Forms.Form
-    $form.Text = T 'note.windowTitle'
+    $form.Text = $Title
     $form.StartPosition = 'CenterScreen'
     $form.Size = New-Object Drawing.Size(680, 760)
     $form.MinimumSize = New-Object Drawing.Size(480, 400)
@@ -5433,7 +5544,7 @@ function Show-HcNoteWindow {
         $box.SelectionStart = $box.TextLength
         $box.SelectionFont = $script:HcNoteFonts[$b.Style]
         $box.SelectionColor = if ($b.Style -eq 'small') { [Drawing.Color]::DimGray } else { [Drawing.Color]::Black }
-        $gap = if ($b.Style -in @('heading', 'small')) { "`n" } else { '' }
+        $gap = if ($b.Style -in @('heading', 'small', 'payment')) { "`n" } else { '' }
         $box.AppendText($gap + $b.Text + "`n")
     }
 
@@ -5483,7 +5594,7 @@ function Invoke-HcNotePrint {
         while ($script:HcNotePrintAt -lt $script:HcNoteBlocks.Count) {
             $b = $script:HcNoteBlocks[$script:HcNotePrintAt]
             $font = $script:HcNoteFonts[$b.Style]
-            if ($b.Style -in @('heading', 'small')) { $y += $font.GetHeight($e.Graphics) * 0.6 }
+            if ($b.Style -in @('heading', 'small', 'payment')) { $y += $font.GetHeight($e.Graphics) * 0.6 }
             $size = $e.Graphics.MeasureString($b.Text, $font, $area.Width)
             if ($y + $size.Height -gt $area.Bottom -and $y -gt $area.Top) { $e.HasMorePages = $true; return }
             $rect = New-Object Drawing.RectangleF([single]$area.Left, $y, [single]$area.Width, $size.Height)
@@ -5566,6 +5677,7 @@ function Get-HcRelayMessage {
         'unreachable' { T 'relay.unreachable' }
         'ai_key'      { T 'relay.aiKey' }
         'ai_busy'     { T 'relay.aiBusy' }
+        'no_settings' { T 'inv.noSettings' }
         default       { T 'relay.error' $Code }
     }
 }
@@ -5653,7 +5765,8 @@ function Show-HcKnownPc {
     Write-Step (T 'mem.known' $shown (Format-HcVisitLine $last))
 }
 
-# H on the menu: the visit history of this PC.
+# H on the menu: the visit history of this PC, with a number to delete one.
+# Deleting a visit never deletes its invoice: invoices are kept 7 years.
 function Show-HcHistory {
     param([pscustomobject]$Environment)
     Clear-HcScreen
@@ -5663,20 +5776,33 @@ function Show-HcHistory {
     if (-not $Environment.Online) {
         Write-Warn2 (T 'ai.offline')
     } elseif (Unlock-HcRelay) {
-        $result = Get-HcVisits
-        $visits = @($result.Visits)
-        if (-not $result.Ok) {
-            Write-Warn2 (Get-HcRelayMessage $result.Error)
-        } elseif ($visits.Count -eq 0) {
-            Write-Dim (T 'mem.none')
-        } else {
+        while ($true) {
+            $result = Get-HcVisits
+            $visits = @($result.Visits)
+            if (-not $result.Ok) { Write-Warn2 (Get-HcRelayMessage $result.Error); break }
+            if ($visits.Count -eq 0) { Write-Dim (T 'mem.none'); break }
             Write-Host ''
-            foreach ($v in $visits) {
+            for ($i = 0; $i -lt $visits.Count; $i++) {
+                $v = $visits[$i]
                 $label = if ($v.label) { "  [$($v.label)]" } else { '' }
-                Write-Host ('  ' + (Format-HcVisitLine $v) + $label)
-                foreach ($p in @($v.problems)) { Write-Dim ('   ' + $p.code + '  ' + (T "problem.$($p.code)")) }
-                foreach ($c in @($v.changes)) { Write-Dim ('   + ' + $c) }
+                $invoiceNo = if ($v.invoice_number) { '  ' + (T 'mem.invoice' $v.invoice_number) } else { '' }
+                Write-Option ([string]($i + 1)) ((Format-HcVisitLine $v) + $label + $invoiceNo)
+                foreach ($p in @($v.problems)) { Write-Dim ('     ' + $p.code + '  ' + (T "problem.$($p.code)")) }
+                foreach ($c in @($v.changes)) { Write-Dim ('     + ' + $c) }
             }
+            Write-Host ''
+            $pick = "$(Read-HcLine (T 'mem.deleteAsk'))".Trim()
+            $n = 0
+            if (-not [int]::TryParse($pick, [ref]$n) -or $n -lt 1 -or $n -gt $visits.Count) { return }
+            $chosen = $visits[$n - 1]
+            if (-not (Test-HcYes (Read-HcLine (T 'mem.deleteConfirm' (Format-HcVisitLine $chosen))))) {
+                Write-Dim (T 'fix.cancelled')
+                continue
+            }
+            $r = Invoke-HcRelay @{ action = 'visit_delete'; token = $script:HcToken; pc = (Get-HcPcId); id = [long]$chosen.id }
+            if (-not $r.Ok) { Write-Warn2 (Get-HcRelayMessage $r.Error); continue }
+            Write-Ok (T 'mem.deleted')
+            if ($chosen.invoice_number) { Write-Dim (T 'mem.invoiceKept' $chosen.invoice_number) }
         }
     }
     Write-Host ''
@@ -5690,13 +5816,18 @@ function Show-HcHistory {
     or when no problem was opened.
 #>
 function Save-HcVisitRecord {
-    param([pscustomobject]$Environment)
-    if ($script:HcVisit.Count -eq 0 -or $script:DryRun -or -not $Environment.Online) { return }
+    param([pscustomobject]$Environment, $Invoice)
+    if ($script:HcVisit.Count -eq 0 -or $script:DryRun -or -not $Environment.Online -or $script:HcQuitSkipped) { return }
     Write-Host ''
     if (-not (Unlock-HcRelay 'mem.saveAsk')) { return }
-    $current = if ($script:HcKnownLabel) { $script:HcKnownLabel } else { T 'mem.noLabel' }
-    $typed = "$(Read-HcLine (T 'mem.labelAsk' $current))".Trim()
-    $label = if ($typed -and $typed -ne 'Q') { $typed } else { $script:HcKnownLabel }
+    if ($Invoice) {
+        # The invoice already names the client: no need to ask again.
+        $label = [string]$Invoice.client_name
+    } else {
+        $current = if ($script:HcKnownLabel) { $script:HcKnownLabel } else { T 'mem.noLabel' }
+        $typed = "$(Read-HcLine (T 'mem.labelAsk' $current))".Trim()
+        $label = if ($typed -and $typed -ne 'Q') { $typed } else { $script:HcKnownLabel }
+    }
     if ($label -and $label.Length -gt 80) { $label = $label.Substring(0, 80) }
 
     $r = Invoke-HcRelay @{
@@ -5708,8 +5839,264 @@ function Save-HcVisitRecord {
         os       = $Environment.Os
         problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
         changes  = @($script:HcChanges | ForEach-Object { $_.Label })
+        invoice_number = $(if ($Invoice) { [string]$Invoice.number } else { $null })
     }
     if ($r.Ok) { Write-Ok (T 'mem.saved') } else { Write-Warn2 (T 'mem.notSaved' (Get-HcRelayMessage $r.Error)) }
+}
+
+# ==================================================== src\invoice.ps1 ==
+<#
+    The invoice: at the end of a visit (Q), a short form, then a proper
+    invoice instead of the plain client note.
+
+    Shamil's business details, hourly rate, call-out fee and BTW setting
+    live in his Supabase (tools\setup-invoice.ps1 fills them in), never in
+    this public script. The relay gives out the consecutive invoice number,
+    works out the totals and BTW, and keeps the invoice (7 years: fiscale
+    bewaarplicht) apart from the visit history.
+
+    Without an unlock, without settings, or with 0 in the form, the client
+    still gets the plain note, so a visit never ends without a document.
+#>
+
+$script:HcStartedAt = Get-Date
+
+# 30,00 as "EUR 30,00" with the euro sign, in Dutch notation. The sign is
+# built from its char code, since source files stay plain ASCII.
+function Format-HcMoney {
+    param([decimal]$Amount)
+    $nl = [Globalization.CultureInfo]::GetCultureInfo('nl-NL')
+    [string][char]0x20AC + ' ' + $Amount.ToString('N2', $nl)
+}
+
+# "19,95", "19.95", "EUR 19,95" -> 19.95; $null when it is not an amount.
+function ConvertTo-HcAmount {
+    param([string]$Text)
+    $t = ("$Text" -replace [string][char]0x20AC, '' -replace '(?i)eur', '').Trim()
+    if ($t -notmatch '^\d{1,6}([.,]\d{1,2})?$') { return $null }
+    [decimal]::Parse(($t -replace ',', '.'), [Globalization.CultureInfo]::InvariantCulture)
+}
+
+# "Draadloze muis 19,95" -> description and amount; $null when there is no amount at the end.
+function ConvertTo-HcExtraLine {
+    param([string]$Text)
+    $t = ("$Text" -replace [string][char]0x20AC, ' ').Trim()
+    if ($t -notmatch '^(.+?)\s+(?:EUR\s*)?(\d{1,6}(?:[.,]\d{1,2})?)$') { return $null }
+    $amount = ConvertTo-HcAmount $Matches[2]
+    if ($null -eq $amount) { return $null }
+    [pscustomobject]@{ Description = $Matches[1].Trim(); Amount = $amount }
+}
+
+# Minutes since Housecall started, rounded up to a quarter of an hour.
+function Get-HcSuggestedMinutes {
+    param([datetime]$Now = (Get-Date))
+    $minutes = [Math]::Ceiling(($Now - $script:HcStartedAt).TotalMinutes / 15) * 15
+    [int][Math]::Max(15, $minutes)
+}
+
+function Get-HcSettings {
+    $r = Invoke-HcRelay @{ action = 'settings_get'; token = $script:HcToken }
+    if (-not $r.Ok) { return [pscustomobject]@{ Ok = $false; Settings = $null; Error = $r.Error } }
+    [pscustomobject]@{ Ok = $true; Settings = $r.Data.settings; Error = $null }
+}
+
+# Asks a question with a suggestion; Enter takes the suggestion, 0 cancels.
+function Read-HcField {
+    param([string]$Prompt, [string]$Default = '')
+    $answer = "$(Read-HcLine $Prompt)".Trim()
+    if ($answer -eq '0') { return $null }
+    if (-not $answer) { return $Default }
+    $answer
+}
+
+<#
+    The form. Returns the client, the lines and the payment, or $null when
+    Shamil cancels (0) -- then the plain note is shown instead.
+#>
+function Read-HcInvoiceForm {
+    param($Settings)
+    Write-Host ''
+    Write-Host ('  ' + (T 'inv.title')) -ForegroundColor Yellow
+    Write-Dim (T 'inv.intro')
+    Write-Host ''
+
+    $suggestName = if ($script:HcKnownLabel) { $script:HcKnownLabel } else { '' }
+    $name = Read-HcField (T 'inv.clientName' $suggestName) $suggestName
+    if ($null -eq $name) { return $null }
+    while (-not $name) {
+        $name = Read-HcField (T 'inv.clientName' '') ''
+        if ($null -eq $name) { return $null }
+    }
+    $address = Read-HcField (T 'inv.address'); if ($null -eq $address) { return $null }
+    $postcode = Read-HcField (T 'inv.postcode'); if ($null -eq $postcode) { return $null }
+    $email = Read-HcField (T 'inv.email'); if ($null -eq $email) { return $null }
+
+    $lines = New-Object System.Collections.ArrayList
+    $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
+    $suggested = Get-HcSuggestedMinutes
+    $minutes = $null
+    while ($null -eq $minutes) {
+        $typed = Read-HcField (T 'inv.minutes' $suggested) "$suggested"
+        if ($null -eq $typed) { return $null }
+        if ($typed -match '^\d{1,4}$') { $minutes = [int]$typed } else { Write-Warn2 (T 'inv.minutesBad') }
+    }
+    if ($minutes -gt 0 -and $rate -gt 0) {
+        $amount = [Math]::Round($rate * $minutes / 60, 2)
+        [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.labour' $minutes (Format-HcMoney $rate)); Amount = $amount })
+    }
+
+    $fee = [decimal]$(if ($Settings.callout_fee) { $Settings.callout_fee } else { 0 })
+    if ($fee -gt 0) {
+        $yes = Read-HcField (T 'inv.callout' (Format-HcMoney $fee)) 'j'
+        if ($null -eq $yes) { return $null }
+        if (Test-HcYes $yes) { [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.calloutLine'); Amount = $fee }) }
+    }
+
+    while ($true) {
+        $typed = "$(Read-HcLine (T 'inv.extra'))".Trim()
+        if (-not $typed -or $typed -eq 'Q') { break }
+        $extra = ConvertTo-HcExtraLine $typed
+        if ($extra) { [void]$lines.Add($extra) } else { Write-Warn2 (T 'inv.extraBad') }
+    }
+    if ($lines.Count -eq 0) {
+        Write-Warn2 (T 'inv.noLines')
+        return $null
+    }
+
+    $payment = $null
+    while (-not $payment) {
+        $typed = "$(Read-HcLine (T 'inv.payment'))".Trim()
+        switch ($typed) {
+            '1' { $payment = 'pin' }
+            '2' { $payment = 'cash' }
+            '3' { $payment = 'transfer' }
+            '0' { return $null }
+            'Q' { return $null }
+        }
+    }
+
+    $total = [decimal]0
+    foreach ($l in $lines) { $total += [decimal]$l.Amount }
+    if (-not (Test-HcYes (Read-HcLine (T 'inv.confirm' (Format-HcMoney $total))))) { return $null }
+
+    [pscustomobject]@{
+        Client  = @{ name = $name; address = $address; postcode_city = $postcode; email = $email }
+        Lines   = @($lines)
+        Payment = $payment
+    }
+}
+
+<#
+    The whole invoice step at Q. Returns the invoice from the relay (with its
+    number, totals and the seller's details), or $null for the plain note.
+#>
+function Invoke-HcInvoice {
+    param([pscustomobject]$Environment)
+    if ($script:HcVisit.Count -eq 0 -or $script:DryRun -or -not $Environment.Online) { return $null }
+    Write-Host ''
+    if (-not (Unlock-HcRelay 'inv.askCode')) {
+        # Enter at the code: no invoice, and no second question to save the visit.
+        $script:HcQuitSkipped = $true
+        return $null
+    }
+    $s = Get-HcSettings
+    if (-not $s.Ok) { Write-Warn2 (T 'inv.failed' (Get-HcRelayMessage $s.Error)); return $null }
+    if (-not $s.Settings -or -not $s.Settings.business_name) { Write-Warn2 (T 'inv.noSettings'); return $null }
+
+    $form = Read-HcInvoiceForm $s.Settings
+    if (-not $form) { Write-Dim (T 'inv.skipped'); return $null }
+
+    $r = Invoke-HcRelay @{
+        action   = 'invoice_create'
+        token    = $script:HcToken
+        pc       = (Get-HcPcId)
+        lang     = $script:Lang
+        client   = $form.Client
+        lines    = @($form.Lines | ForEach-Object { @{ description = $_.Description; amount = [double]$_.Amount } })
+        payment  = $form.Payment
+        problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
+        changes  = @($script:HcChanges | ForEach-Object { $_.Label })
+    }
+    if (-not $r.Ok) { Write-Warn2 (T 'inv.failed' (Get-HcRelayMessage $r.Error)); return $null }
+    Write-Ok (T 'inv.made' $r.Data.invoice.number)
+    $r.Data.invoice
+}
+
+# ----------------------------------------------------------------- document --
+
+function Format-HcLongDate {
+    param([datetime]$Date)
+    $culture = if ($script:Lang -eq 'nl') { 'nl-NL' } else { 'en-GB' }
+    $Date.ToString('d MMMM yyyy', [Globalization.CultureInfo]::GetCultureInfo($culture))
+}
+
+# A money row: description on the left, amount on the right, in a fixed-width
+# font so the amounts line up on screen and on paper.
+function New-HcMoneyRow {
+    param([string]$Description, [decimal]$Amount, [string]$Style = 'row')
+    $width = 44
+    $d = if ($Description.Length -gt $width) { $Description.Substring(0, $width - 3) + '...' } else { $Description }
+    [pscustomobject]@{ Style = $Style; Text = $d.PadRight($width) + (Format-HcMoney $Amount).PadLeft(14) }
+}
+
+<#
+    The invoice as blocks for the same window and printout as the note:
+    seller, number and date, client, what was wrong and done, the money,
+    and how to pay.
+#>
+function Get-HcInvoiceBlocks {
+    param($Invoice)
+    $block = { param($style, $text) [pscustomobject]@{ Style = $style; Text = $text } }
+    $s = $Invoice.seller
+    $issued = [datetime]::Parse([string]$Invoice.issued_at, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime()
+
+    & $block 'title' (T 'doc.invoice' $Invoice.number)
+    & $block 'small' (T 'doc.date' (Format-HcLongDate $issued))
+
+    $seller = @($s.business_name, $s.owner_name, $s.address, $s.postcode_city) | Where-Object { $_ }
+    & $block 'text' ($seller -join "`n")
+    $ids = @()
+    if ($s.kvk) { $ids += T 'doc.kvk' $s.kvk }
+    if ($s.btw_number) { $ids += T 'doc.btwNumber' $s.btw_number }
+    if ($s.iban) { $ids += T 'doc.iban' $s.iban }
+    $contact = @($s.email, $s.phone) | Where-Object { $_ }
+    if ($ids.Count) { & $block 'small' ($ids -join '   ') }
+    if ($contact.Count) { & $block 'small' ($contact -join '   ') }
+
+    & $block 'heading' (T 'doc.to')
+    $client = @($Invoice.client_name, $Invoice.client_address, $Invoice.client_postcode_city, $Invoice.client_email) | Where-Object { $_ }
+    & $block 'text' ($client -join "`n")
+
+    foreach ($b in @(Get-HcVisitBlocks)) { $b }
+
+    & $block 'heading' (T 'doc.costs')
+    foreach ($l in @($Invoice.lines)) { New-HcMoneyRow $l.description ([decimal]$l.amount) }
+    & $block 'row' ('-' * 58)
+    if ($Invoice.btw_mode -eq '21') {
+        New-HcMoneyRow (T 'doc.subtotal') ([decimal]$Invoice.subtotal)
+        New-HcMoneyRow (T 'doc.btw') ([decimal]$Invoice.btw_amount)
+    }
+    New-HcMoneyRow (T 'doc.total') ([decimal]$Invoice.total) 'rowBold'
+
+    $paidOn = Format-HcLongDate $issued
+    switch ($Invoice.payment) {
+        'pin'      { & $block 'payment' (T 'doc.paidPin' $paidOn) }
+        'cash'     { & $block 'payment' (T 'doc.paidCash' $paidOn) }
+        'transfer' {
+            $due = Format-HcLongDate ([datetime]::Parse([string]$Invoice.due_date, [Globalization.CultureInfo]::InvariantCulture))
+            & $block 'payment' (T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number)
+        }
+    }
+    switch ($Invoice.btw_mode) {
+        'kor'   { & $block 'small' (T 'doc.kor') }
+        'unset' { & $block 'small' (T 'doc.btwUnset') }
+    }
+    & $block 'small' (T 'doc.thanks')
+}
+
+function Show-HcInvoice {
+    param($Invoice)
+    Show-HcDocument @(Get-HcInvoiceBlocks $Invoice) (T 'doc.windowTitle' $Invoice.number)
 }
 
 # ==================================================== src\ai.ps1 ==

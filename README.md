@@ -41,7 +41,8 @@ $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
 | E | Windows & updates | E1 updates, E2 error message, E3 won't shut down: working |
 | F | Safety & scams | F1 fake virus pop-up, F2 someone got into my PC (AnyDesk, TeamViewer, …), F3 full check: working |
 | ? | AI chat | working, after a one-time setup (below) |
-| H | Visit history | working, after the same setup |
+| H | Visit history | working, after the same setup; delete a visit with its number |
+| Q | Invoice | at the end of a visit: a short form, then a numbered invoice (print or PDF); details via `tools\setup-invoice.ps1` |
 
 ## AI chat and visit history: one-time setup
 
