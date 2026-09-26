@@ -13,6 +13,8 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\checks\network.ps1')
 . (Join-Path $root 'src\checks\security.ps1')
 . (Join-Path $root 'src\checks\devices.ps1')
+. (Join-Path $root 'src\checks\audio-interop.ps1')
+. (Join-Path $root 'src\checks\sound.ps1')
 . (Join-Path $root 'src\fixes.ps1')
 . (Join-Path $root 'src\note.ps1')
 
@@ -461,6 +463,137 @@ Describe 'C: printer and devices' {
     }
 }
 
+Describe 'B: sound, video calls and screen' {
+    $script:Lang = 'en'
+    $out = { param($name, $default = $false, $muted = $false, $volume = 40)
+        [pscustomobject]@{ Id = "id-$name"; Name = $name; IsDefault = $default; Muted = $muted; Volume = $volume } }
+    $sound = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{ ServiceRunning = $true; Problems = @()
+            Outputs = @((& $out 'Speakers (Realtek(R) Audio)' $true), (& $out '2 - VG27AQML1A (AMD High Definition Audio Device)'), (& $out 'Headphones (Elgato Wave:3)')) }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+
+    $soundCases = @(
+        @{ Name = 'sound works';                   Change = @{};                                                         Finding = 'soundOk' }
+        @{ Name = 'the sound service stopped';     Change = @{ ServiceRunning = $false };                               Finding = 'audioServiceStopped' }
+        @{ Name = 'audio unreachable';             Change = @{ Outputs = $null };                                       Finding = 'audioServiceStopped' }
+        @{ Name = 'no outputs at all';             Change = @{ Outputs = @() };                                          Finding = 'noOutput' }
+        @{ Name = 'the speakers are muted';        Change = @{ Outputs = @((& $out 'Speakers' $true $true)) };           Finding = 'muted' }
+        @{ Name = 'the volume is at 2%';           Change = @{ Outputs = @((& $out 'Speakers' $true $false 2)) };        Finding = 'volumeLow' }
+        @{ Name = 'sound goes to the monitor';     Change = @{ Outputs = @((& $out 'Speakers'), (& $out 'LG TV (NVIDIA High Definition Audio)' $true)) }; Finding = 'defaultScreen' }
+        @{ Name = 'only a monitor, it is default'; Change = @{ Outputs = @((& $out 'LG TV (NVIDIA High Definition Audio)' $true)) }; Finding = 'soundOk' }
+        @{ Name = 'sound card switched off';       Change = @{ Problems = @([pscustomobject]@{ Name = 'Realtek Audio'; Class = 'MEDIA'; Code = 22; InstanceId = 'HDAUDIO\x' }) }; Finding = 'deviceDisabled' }
+    )
+    foreach ($c in $soundCases) {
+        It "B1 finds '$($c.Finding)' when: $($c.Name)" { (Test-HcSound (& $sound $c.Change)).FindingId | Should Be $c.Finding }
+    }
+
+    It 'B1 offers speakers before screens, then a test sound, and can switch back' {
+        $r = Test-HcSound (& $sound @{ Outputs = @((& $out 'LG TV (NVIDIA High Definition Audio)' $true), (& $out 'Dell U2415 (AMD High Definition Audio Device)'), (& $out 'Speakers')) })
+        @($r.Actions | ForEach-Object { $_.FixId }) | Should Be @('setDefaultAudio', 'setDefaultAudio', 'testSound')
+        $r.Actions[0].Target.Label | Should Be 'Speakers'
+        $r.Actions[0].Target.PreviousId | Should Be 'id-LG TV (NVIDIA High Definition Audio)'
+    }
+
+    It 'B1 offers to unmute and to turn up, remembering the old volume' {
+        $muted = Test-HcSound (& $sound @{ Outputs = @((& $out 'Speakers' $true $true 2)) })
+        @($muted.Actions | ForEach-Object { $_.FixId }) | Should Be @('unmute', 'setVolume', 'testSound')
+        $muted.Actions[1].Target.Previous | Should Be 2
+    }
+
+    It 'B1 names the output in the all-good finding' {
+        (Test-HcSound (& $sound)).FindingArgs | Should Be @('Speakers (Realtek(R) Audio)')
+    }
+
+    $calls = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{
+            Microphones = @([pscustomobject]@{ Id = 'm1'; Name = 'Microphone (Webcam)'; IsDefault = $true; Muted = $false; Volume = 80 })
+            Cameras = @('HD Webcam'); Problems = @(); Blocks = @() }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+    $block = { param($cap, $who, $name = $null, $machine = $false)
+        [pscustomobject]@{ Capability = $cap; Who = $who; Name = $name; Key = "HKCU:\x\$cap"; Machine = $machine } }
+    $callCases = @(
+        @{ Name = 'everything allowed';              Change = @{};                                                           Finding = 'callsOk' }
+        @{ Name = 'WhatsApp may not use the camera'; Change = @{ Blocks = @(& $block 'webcam' 'app' 'WhatsApp') };           Finding = 'privacyBlocked' }
+        @{ Name = 'microphone off for the whole PC'; Change = @{ Blocks = @(& $block 'microphone' 'all' $null $true) };      Finding = 'privacyBlocked' }
+        @{ Name = 'the microphone is muted';         Change = @{ Microphones = @([pscustomobject]@{ Id = 'm1'; Name = 'Mic'; IsDefault = $true; Muted = $true; Volume = 80 }) }; Finding = 'micMuted' }
+        @{ Name = 'the microphone is at 3%';         Change = @{ Microphones = @([pscustomobject]@{ Id = 'm1'; Name = 'Mic'; IsDefault = $true; Muted = $false; Volume = 3 }) }; Finding = 'micLow' }
+        @{ Name = 'no microphone';                   Change = @{ Microphones = @() };                                        Finding = 'noMic' }
+        @{ Name = 'no camera';                       Change = @{ Cameras = @() };                                            Finding = 'noCamera' }
+    )
+    foreach ($c in $callCases) {
+        It "B2 finds '$($c.Finding)' when: $($c.Name)" { (Test-HcCalls (& $calls $c.Change)).FindingId | Should Be $c.Finding }
+    }
+
+    It 'B2 says who is blocked from what, and allows it with the right fix' {
+        $r = Test-HcCalls (& $calls @{ Blocks = @((& $block 'webcam' 'app' 'WhatsApp'), (& $block 'microphone' 'all' $null $true)) })
+        $r.FindingArgs | Should Be @('No app on this PC', 'microphone')
+        @($r.Actions | ForEach-Object { $_.FixId }) | Should Be @('allowAccessMachine', 'allowAccess')
+        $r.Actions[1].Target.Label | Should Be 'WhatsApp, camera'
+    }
+
+    $screen = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{ Brightness = $null; ColorFilter = $false; HighContrast = $false; Magnifier = $false; Portrait = $false; Scale = 100; TextSize = 100 }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+    It 'B3 finds a dark screen, colour filter, high contrast, magnifier and a turned screen' {
+        (Test-HcScreen (& $screen)).FindingId | Should Be 'screenOk'
+        (Test-HcScreen (& $screen @{ Brightness = 60 })).FindingId | Should Be 'screenOk'
+        $dark = Test-HcScreen (& $screen @{ Brightness = 10 })
+        $dark.FindingId | Should Be 'tooDark'
+        $dark.Actions[0].Target.Previous | Should Be 10
+        (Test-HcScreen (& $screen @{ ColorFilter = $true })).FindingId | Should Be 'colorFilter'
+        (Test-HcScreen (& $screen @{ HighContrast = $true })).FindingId | Should Be 'highContrast'
+        $mag = Test-HcScreen (& $screen @{ Magnifier = $true })
+        $mag.FindingId | Should Be 'magnifier'
+        $mag.Actions[0].FixId | Should Be 'closeMagnifier'
+        (Test-HcScreen (& $screen @{ Portrait = $true })).FindingId | Should Be 'rotated'
+    }
+
+    It 'reads a privacy block from the registry, per app' {
+        $script:ConsentStoreSaved = $script:ConsentStore
+        $script:ConsentStore = 'Software\HousecallTest\ConsentStore'
+        $base = "HKCU:\$script:ConsentStore\webcam"
+        New-Item "$base\5319275A.WhatsAppDesktop_cv1g1gvanyjgm" -Force | Out-Null
+        New-Item "$base\NonPackaged" -Force | Out-Null
+        Set-ItemProperty $base -Name Value -Value 'Allow'
+        Set-ItemProperty "$base\5319275A.WhatsAppDesktop_cv1g1gvanyjgm" -Name Value -Value 'Deny'
+        Set-ItemProperty "$base\NonPackaged" -Name Value -Value 'Allow'
+        try {
+            $blocks = @(Get-HcPrivacyBlocks 'webcam')
+            $blocks.Count | Should Be 1
+            $blocks[0].Name | Should Be 'WhatsApp'
+            $blocks[0].Key | Should Be "$base\5319275A.WhatsAppDesktop_cv1g1gvanyjgm"
+        } finally {
+            Remove-Item 'HKCU:\Software\HousecallTest' -Recurse -Force
+            $script:ConsentStore = $script:ConsentStoreSaved
+        }
+    }
+
+    It 'the audio bridge compiles and lists this PC''s outputs' {
+        $outs = Get-HcAudioDevices 0
+        $null -eq $outs | Should Be $false
+        @($outs | Where-Object { $_.IsDefault }).Count | Should BeLessThan 2
+    }
+
+    It 'never shows a missing-string marker, in either language' {
+        foreach ($lang in @('en', 'nl')) {
+            $script:Lang = $lang
+            $reports = @($soundCases | ForEach-Object { Test-HcSound (& $sound $_.Change) }) +
+                       @($callCases | ForEach-Object { Test-HcCalls (& $calls $_.Change) }) +
+                       @((Test-HcScreen (& $screen @{ Brightness = 10; Magnifier = $true; ColorFilter = $true; Portrait = $true })))
+            foreach ($r in $reports) {
+                @($r.Results | Where-Object { $_.Text -match '\[\w+(\.\w+)+\]' }).Count | Should Be 0
+                @($r.Actions | ForEach-Object { Get-HcFixLabel $_ } | Where-Object { $_ -match '\[\w+(\.\w+)+\]' }).Count | Should Be 0
+                $all = @('finding.' + $r.FindingId) + @($r.FindingArgs)
+                (T @all) | Should Not Match '\{\d\}|^\['
+            }
+        }
+        $script:Lang = 'en'
+    }
+}
+
 Describe 'Fixes offered by the checks' {
     $script:Lang = 'en'
     $task = { param($name, $command, $level = 'weak', $disabled = $false)
@@ -709,7 +842,7 @@ Describe 'Findings' {
         $ids += $script:SecurityPriority
         $ids += @($script:SecurityChecks.Values | ForEach-Object { $_.Clean })
         # Area C names its findings as $found['id'], Set-HcFinding $r 'id', or the clean id last on Select-HcFinding.
-        $ids += @(Get-Content (Join-Path $root 'src\checks\devices.ps1') | ForEach-Object {
+        $ids += @(Get-Content (Join-Path $root 'src\checks\devices.ps1'), (Join-Path $root 'src\checks\sound.ps1') | ForEach-Object {
             [regex]::Matches($_, "\`$found\['(\w+)'\]|Set-HcFinding \`$r '(\w+)'|Select-HcFinding .* '(\w+)'\s*$") | ForEach-Object {
                 @($_.Groups[1].Value, $_.Groups[2].Value, $_.Groups[3].Value) | Where-Object { $_ }
             }

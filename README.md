@@ -34,7 +34,7 @@ $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
 | | Area | Status |
 |---|---|---|
 | A | Internet & Wi-Fi | A1 no internet, A2 slow or dropping, A3 one website: working. A4 email: planned |
-| B | Sound, screen & video calls | planned |
+| B | Sound, screen & video calls | B1 no sound, B2 microphone or camera, B3 screen: working |
 | C | Printer & devices | C1 printer won't print, C2 mouse, keyboard or USB stick, C3 Bluetooth: working |
 | D | Slow or freezing | planned |
 | E | Windows & updates | planned |

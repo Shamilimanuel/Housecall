@@ -48,6 +48,8 @@ $HcSource = @(
     'checks\network.ps1'
     'checks\security.ps1'
     'checks\devices.ps1'
+    'checks\audio-interop.ps1'
+    'checks\sound.ps1'
     'fixes.ps1'
     'note.ps1'
 ) | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $PSScriptRoot 'src') $_)) }

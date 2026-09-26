@@ -142,6 +142,75 @@ $script:Fixes = @{
         }
         Undo = $null
     }
+    # ---- B: sound, video calls, screen
+    # Restarting the endpoint builder restarts Windows Audio with it.
+    restartAudio = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            foreach ($name in 'AudioEndpointBuilder', 'Audiosrv') {
+                if ([string](Get-Service $name).StartType -eq 'Disabled') { Set-Service $name -StartupType Automatic -ErrorAction Stop }
+            }
+            Restart-Service AudioEndpointBuilder -Force -ErrorAction Stop
+            Start-Service Audiosrv -ErrorAction Stop
+        }
+        Undo = $null
+    }
+    setDefaultAudio = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetDefault($t.Id) }
+        Undo  = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetDefault($t.PreviousId) }
+    }
+    unmute = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetMute($t.Id, $false) }
+        Undo  = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetMute($t.Id, $true) }
+    }
+    setVolume = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetVolume($t.Id, $t.Percent) }
+        Undo  = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetVolume($t.Id, $t.Previous) }
+    }
+    # A check more than a change: it is not listed on the note.
+    testSound = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = {
+            param($t)
+            $wav = Join-Path $env:WINDIR 'Media\Windows Notify System Generic.wav'
+            if (-not (Test-Path $wav)) { $wav = Join-Path $env:WINDIR 'Media\chimes.wav' }
+            (New-Object Media.SoundPlayer $wav).PlaySync()
+        }
+        Undo = $null
+    }
+    allowAccess = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) $t.Saved = (Get-ItemProperty $t.Key).Value; Set-ItemProperty $t.Key -Name Value -Value 'Allow' -ErrorAction Stop }
+        Undo  = { param($t) Set-ItemProperty $t.Key -Name Value -Value $t.Saved -ErrorAction Stop }
+    }
+    allowAccessMachine = @{
+        Note = 'undo'; Admin = $true
+        Apply = { param($t) $t.Saved = (Get-ItemProperty $t.Key).Value; Set-ItemProperty $t.Key -Name Value -Value 'Allow' -ErrorAction Stop }
+        Undo  = { param($t) Set-ItemProperty $t.Key -Name Value -Value $t.Saved -ErrorAction Stop }
+    }
+    setBrightness = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            $m = Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorBrightnessMethods -ErrorAction Stop | Select-Object -First 1
+            [void](Invoke-CimMethod -InputObject $m -MethodName WmiSetBrightness -Arguments @{ Timeout = [uint32]1; Brightness = [byte]$t.Percent } -ErrorAction Stop)
+        }
+        Undo = {
+            param($t)
+            $m = Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorBrightnessMethods -ErrorAction Stop | Select-Object -First 1
+            [void](Invoke-CimMethod -InputObject $m -MethodName WmiSetBrightness -Arguments @{ Timeout = [uint32]1; Brightness = [byte]$t.Previous } -ErrorAction Stop)
+        }
+    }
+    closeMagnifier = @{
+        Note = 'restart'; Admin = $false
+        Apply = { param($t) Get-Process -Name Magnify -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction Stop }
+        Undo  = $null
+    }
+
     startBtService = @{
         Note = 'safe'; Admin = $true
         Apply = {
@@ -255,8 +324,10 @@ function Invoke-HcActionMenu {
         Write-Warn2 (T 'fix.failed' $_.Exception.Message)
         return 'none'
     }
-    $done = T ('fix.' + $action.FixId + '.done') $action.Target.Label
-    [void]$script:HcChanges.Add([pscustomobject]@{ FixId = $action.FixId; Target = $action.Target; Label = $done })
+    if (-not $fix.NoLog) {
+        $done = T ('fix.' + $action.FixId + '.done') $action.Target.Label
+        [void]$script:HcChanges.Add([pscustomobject]@{ FixId = $action.FixId; Target = $action.Target; Label = $done })
+    }
     Write-Ok (T 'fix.done')
     'changed'
 }

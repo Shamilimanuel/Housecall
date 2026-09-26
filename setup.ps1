@@ -485,6 +485,115 @@ $script:Strings = @{
         'steps.btNoAdapter'        = 'Check whether this PC has Bluetooth at all: many desktop PCs do not. | Laptop: make sure airplane mode is off (network icon at the bottom right). | No Bluetooth? A small USB Bluetooth adapter solves it: plug it in and choose C3 again.'
         'steps.btServiceStopped'   = 'Choose the fix above to start it (needs admin), or do it by hand. | Type Services in Start and open it. | Find Bluetooth Support Service and double-click it. | Set Startup type to Manual, click Start, then OK. | Choose C3 again to check.'
         'steps.btOk'               = 'Open Settings (Windows key + I) > Bluetooth & devices and check that Bluetooth is On. | Switch the device (headphones, speaker, mouse) off and on, and put it in pairing mode: often, hold its Bluetooth button until a light blinks. | In Settings, click the three dots next to the device and choose Remove device. | Click Add device > Bluetooth and choose the device from the list. | Choose C3 again to check.'
+
+        # ---- B: check lines
+        'snd.serviceStopped' = 'The sound service (Windows Audio) is not running'
+        'snd.serviceOk'      = 'The sound service is running'
+        'snd.noOutput'       = 'No speaker or headphones found'
+        'snd.default'        = 'Sound goes to {0}, volume {1}%'
+        'snd.muted'          = '{0} is muted'
+        'snd.volumeLow'      = 'The volume of {0} is at {1}%'
+        'snd.defaultScreen'  = '{0} is a screen or digital output: without speakers there, nothing is heard'
+        'snd.others'         = 'Other outputs: {0}'
+        'call.mic'           = 'Microphone: {0}, level {1}%'
+        'call.noMic'         = 'No microphone found'
+        'call.micMuted'      = 'Microphone {0} is muted'
+        'call.micLow'        = 'Microphone {0} is set very low ({1}%)'
+        'call.camera'        = 'Camera: {0}'
+        'call.noCamera'      = 'No camera found'
+        'call.privacyOk'     = 'Apps may use the {0}'
+        'call.blocked'       = '{0} may not use the {1}'
+        'priv.microphone'    = 'microphone'
+        'priv.webcam'        = 'camera'
+        'priv.all'           = 'No app on this PC'
+        'priv.apps'          = 'Apps'
+        'priv.desktop'       = 'Desktop programs (Zoom, Teams, Skype)'
+        'scr.brightness'     = 'Brightness: {0}%'
+        'scr.tooDark'        = 'The screen brightness is very low ({0}%)'
+        'scr.colorFilter'    = 'A colour filter is on (for example black and white)'
+        'scr.highContrast'   = 'High contrast is on'
+        'scr.magnifier'      = 'The Magnifier is open'
+        'scr.normal'         = 'No colour filter, high contrast or Magnifier on'
+        'scr.rotated'        = 'The main screen stands upright (portrait)'
+        'scr.scale'          = 'Scale {0}%, text size {1}%'
+
+        # ---- B: findings, and what to do about each
+        'finding.audioServiceStopped' = 'The sound service is not running, so no sound can play.'
+        'advice.audioServiceStopped'  = 'Housecall can restart it below (needs admin).'
+        'finding.noOutput'            = 'Windows finds no speaker or headphones.'
+        'advice.noOutput'             = 'Check that the speakers are plugged in and switched on. A screen used for sound must be on.'
+        'finding.muted'               = 'The sound is muted on {0}.'
+        'advice.muted'                = 'Housecall can turn it back on below (it can be undone).'
+        'finding.volumeLow'           = 'The volume of {0} is almost off ({1}%).'
+        'advice.volumeLow'            = 'Housecall can turn it up below (it can be undone).'
+        'finding.defaultScreen'       = 'Sound goes to {0}, which is probably not where the client listens.'
+        'advice.defaultScreen'        = 'Choose the speakers or headphones below. It can be undone.'
+        'finding.soundOk'             = 'Windows sends sound to {0}, and it is on.'
+        'advice.soundOk'              = 'Play a test sound below. Hear nothing? Check the speaker''s power and volume knob, or choose another output below.'
+        'finding.privacyBlocked'      = '{0} may not use the {1}. That is why the other person cannot hear or see the client.'
+        'advice.privacyBlocked'       = 'Housecall can allow it below (it can be undone).'
+        'finding.micMuted'            = 'The microphone {0} is muted.'
+        'advice.micMuted'             = 'Housecall can unmute it below (it can be undone).'
+        'finding.noMic'               = 'Windows finds no microphone.'
+        'advice.noMic'                = 'Plug in the headset or webcam that has the microphone, or check its cable.'
+        'finding.micLow'              = 'The microphone {0} is set very low.'
+        'advice.micLow'               = 'Housecall can turn it up below (it can be undone).'
+        'finding.noCamera'            = 'Windows finds no camera.'
+        'advice.noCamera'             = 'Plug in the webcam. On a laptop, check for a small privacy slider over the lens, or a camera key.'
+        'finding.callsOk'             = 'The microphone and camera work, and apps may use them.'
+        'advice.callsOk'              = 'In the call app itself, check which microphone and camera are chosen (often under Settings > Audio & video).'
+        'finding.tooDark'             = 'The screen is set very dark ({0}%).'
+        'advice.tooDark'              = 'Housecall can make it brighter below (it can be undone).'
+        'finding.colorFilter'         = 'A colour filter is on, which makes the screen black and white or oddly coloured. It is often switched on by accident with Windows key + Ctrl + C.'
+        'advice.colorFilter'          = 'Press Windows key + Ctrl + C, or switch it off in Settings. The steps below go through it.'
+        'finding.highContrast'        = 'High contrast is on: a black background and bright colours. It is often switched on by accident.'
+        'advice.highContrast'         = 'Press Left Alt + Left Shift + Print Screen, or switch it off in Settings. The steps below go through it.'
+        'finding.magnifier'           = 'The Magnifier is open: it makes everything big and follows the mouse.'
+        'advice.magnifier'            = 'Housecall can close it below. Windows key + Esc also closes it.'
+        'finding.rotated'             = 'The main screen is turned on its side.'
+        'advice.rotated'              = 'Turn it back with the steps below. If the screen really stands upright, this is fine.'
+        'finding.screenOk'            = 'Nothing is switched on that changes how the screen looks.'
+        'advice.screenOk'             = 'To make everything bigger for the client, see the steps below.'
+
+        # ---- B: fixes
+        'fix.restartAudio'            = 'Restart the sound service'
+        'fix.restartAudio.done'       = 'Restarted the sound service'
+        'fix.setDefaultAudio'         = 'Play sound through {0}'
+        'fix.setDefaultAudio.done'    = 'Sound now plays through {0}'
+        'fix.unmute'                  = 'Unmute {0}'
+        'fix.unmute.done'             = 'Unmuted {0}'
+        'fix.setVolume'               = 'Turn up the volume of {0}'
+        'fix.setVolume.done'          = 'Turned up the volume of {0}'
+        'fix.testSound'               = 'Play a test sound'
+        'fix.testSound.done'          = 'Played a test sound'
+        'fix.allowAccess'             = 'Allow: {0}'
+        'fix.allowAccess.done'        = 'Allowed: {0}'
+        'fix.allowAccessMachine'      = 'Allow for the whole PC: {0}'
+        'fix.allowAccessMachine.done' = 'Allowed for the whole PC: {0}'
+        'fix.setBrightness'           = 'Make the screen brighter (80%)'
+        'fix.setBrightness.done'      = 'Made the screen brighter'
+        'fix.closeMagnifier'          = 'Close the Magnifier'
+        'fix.closeMagnifier.done'     = 'Closed the Magnifier'
+
+        # ---- B: step-by-step guides
+        'steps.audioServiceStopped' = 'Choose the fix above to restart it (needs admin), or do it by hand. | Type Services in Start and open it. | Find Windows Audio, right-click it and choose Restart (or Start). | Choose B1 again to check.'
+        'steps.noOutput'            = 'Check that the speakers or headphones are plugged in (the green socket on a desktop) and switched on. | Using the sound of a screen or TV? Switch it on, and check its own volume. | Bluetooth headphones: choose C3 to check the connection. | Restart the PC and choose B1 again.'
+        'steps.muted'               = 'Choose the fix above to unmute it, or do it by hand. | Click the speaker icon at the bottom right, next to the clock. | Click the speaker symbol next to the volume slider, so it no longer shows a cross. | Play something to check.'
+        'steps.volumeLow'           = 'Choose the fix above to turn it up, or do it by hand. | Click the speaker icon at the bottom right, next to the clock. | Drag the volume slider to about halfway. | Also check the volume knob on the speakers themselves.'
+        'steps.defaultScreen'       = 'Choose the right output above (it can be undone), or do it by hand. | Click the speaker icon at the bottom right, then the arrow next to the volume slider. | Choose the speakers or headphones from the list. | Play something to check.'
+        'steps.soundOk'             = 'Choose "Play a test sound" above and listen. | Hear nothing? Check the power, the cable and the volume knob of the speakers. | Try another output above, for example the headphones. | Sound only missing in one program (a browser tab, a video)? Check the volume inside that program, and right-click the speaker icon > Volume mixer.'
+        'steps.privacyBlocked'      = 'Choose the fix above to allow it (it can be undone), or do it by hand. | Open Settings (Windows key + I) > Privacy & security > Microphone (or Camera). | Switch on "Microphone access", "Let apps access your microphone" and "Let desktop apps access your microphone" (for the camera: the same three). | In the list below it, switch on the call app (WhatsApp, Teams, ...). | Close the call app, open it again, and try a call.'
+        'steps.micMuted'            = 'Choose the fix above to unmute it, or do it by hand. | Open Settings (Windows key + I) > System > Sound. | Under Input, click the microphone and make sure it is not muted. Set the volume to about 80. | Also check for a mute button on the headset or its cable.'
+        'steps.noMic'               = 'Plug in the headset or webcam with the microphone. Headset with two plugs: the pink one is the microphone. | Open Settings > System > Sound and look under Input. | Still nothing? Choose C2 to look for devices with problems.'
+        'steps.micLow'              = 'Choose the fix above to turn it up, or do it by hand. | Open Settings (Windows key + I) > System > Sound. | Under Input, click the microphone and set its volume to about 80. | Test it: the bar under "Test your microphone" moves when the client speaks.'
+        'steps.noCamera'            = 'Plug in the webcam, if the PC uses one. | Laptop: look for a small slider over the camera lens, or a key with a camera picture. | Choose C2 to look for devices with problems. | Restart the PC and choose B2 again.'
+        'steps.callsOk'             = 'Open the call app (WhatsApp, Teams, Zoom). | In its settings, often under Audio & video, choose the right microphone, speaker and camera. | Make a test call, for example to a family member. | Still silent in calls only? Close other programs that may be using the camera or microphone.'
+        'steps.tooDark'             = 'Choose the fix above to make it brighter (it can be undone), or do it by hand. | Click the network or speaker icon at the bottom right: the brightness slider is at the bottom of that panel. | Drag it to the right. | Laptop: the keys with a sun symbol (often with Fn) also change brightness.'
+        'steps.colorFilter'         = 'Press the Windows key + Ctrl + C together. | Still grey? Open Settings (Windows key + I) > Accessibility > Color filters. | Switch Color filters off. | Also switch off the "Keyboard shortcut for color filters", so it cannot happen by accident again.'
+        'steps.highContrast'        = 'Press Left Alt + Left Shift + Print Screen together, and confirm with Yes if asked. | Or open Settings (Windows key + I) > Accessibility > Contrast themes. | Choose None and click Apply.'
+        'steps.magnifier'           = 'Choose the fix above to close it, or press the Windows key + Esc. | So it does not come back: Settings > Accessibility > Magnifier, and switch off the keyboard shortcut and "start before sign-in". '
+        'steps.rotated'             = 'Press Ctrl + Alt + the Up arrow key (works on some PCs). | Or open Settings (Windows key + I) > System > Display. | Click the right screen at the top, and under Display orientation choose Landscape. | Click Keep changes.'
+        'steps.screenOk'            = 'Make the text bigger: Settings (Windows key + I) > Accessibility > Text size. Drag the slider and click Apply. | Make everything bigger: Settings > System > Display > Scale, choose 125% or 150%. | Check the resolution under Display resolution: the one marked (Recommended) is the sharpest. | Hard to see the mouse pointer? Settings > Accessibility > Mouse pointer and touch: make it bigger or a brighter colour.'
     }
 
     nl = @{
@@ -916,6 +1025,115 @@ $script:Strings = @{
         'steps.btNoAdapter'        = 'Kijk of deze pc wel Bluetooth heeft: veel desktop-pc''s niet. | Laptop: controleer of de vliegtuigstand uit staat (netwerk-icoon rechtsonder). | Geen Bluetooth? Een kleine USB Bluetooth-adapter lost het op: steek hem erin en kies opnieuw C3.'
         'steps.btServiceStopped'   = 'Kies hierboven de oplossing om hem te starten (beheerder nodig), of doe het met de hand. | Typ Services in Start en open het. | Zoek Bluetooth-ondersteuningsservice en dubbelklik erop. | Zet Opstarttype op Handmatig, klik op Starten en daarna op OK. | Kies opnieuw C3 om te controleren.'
         'steps.btOk'               = 'Open Instellingen (Windows-toets + I) > Bluetooth en apparaten en controleer of Bluetooth op Aan staat. | Zet het apparaat (koptelefoon, speaker, muis) uit en aan, en zet het in koppelstand: vaak de Bluetooth-knop ingedrukt houden tot een lampje knippert. | Klik in Instellingen op de drie puntjes naast het apparaat en kies Apparaat verwijderen. | Klik op Apparaat toevoegen > Bluetooth en kies het apparaat uit de lijst. | Kies opnieuw C3 om te controleren.'
+
+        # ---- B: check lines
+        'snd.serviceStopped' = 'De geluidsservice (Windows Audio) draait niet'
+        'snd.serviceOk'      = 'De geluidsservice draait'
+        'snd.noOutput'       = 'Geen luidspreker of koptelefoon gevonden'
+        'snd.default'        = 'Geluid gaat naar {0}, volume {1}%'
+        'snd.muted'          = '{0} staat gedempt'
+        'snd.volumeLow'      = 'Het volume van {0} staat op {1}%'
+        'snd.defaultScreen'  = '{0} is een beeldscherm of digitale uitgang: zonder speakers daar hoort u niets'
+        'snd.others'         = 'Andere uitgangen: {0}'
+        'call.mic'           = 'Microfoon: {0}, niveau {1}%'
+        'call.noMic'         = 'Geen microfoon gevonden'
+        'call.micMuted'      = 'Microfoon {0} staat gedempt'
+        'call.micLow'        = 'Microfoon {0} staat heel zacht ({1}%)'
+        'call.camera'        = 'Camera: {0}'
+        'call.noCamera'      = 'Geen camera gevonden'
+        'call.privacyOk'     = 'Apps mogen de {0} gebruiken'
+        'call.blocked'       = '{0} mag de {1} niet gebruiken'
+        'priv.microphone'    = 'microfoon'
+        'priv.webcam'        = 'camera'
+        'priv.all'           = 'Geen enkele app op deze pc'
+        'priv.apps'          = 'Apps'
+        'priv.desktop'       = 'Bureaubladprogramma''s (Zoom, Teams, Skype)'
+        'scr.brightness'     = 'Helderheid: {0}%'
+        'scr.tooDark'        = 'De helderheid van het scherm staat heel laag ({0}%)'
+        'scr.colorFilter'    = 'Er staat een kleurenfilter aan (bijvoorbeeld zwart-wit)'
+        'scr.highContrast'   = 'Hoog contrast staat aan'
+        'scr.magnifier'      = 'Het Vergrootglas staat open'
+        'scr.normal'         = 'Geen kleurenfilter, hoog contrast of Vergrootglas aan'
+        'scr.rotated'        = 'Het hoofdscherm staat rechtop (staand)'
+        'scr.scale'          = 'Schaal {0}%, tekstgrootte {1}%'
+
+        # ---- B: findings, and what to do about each
+        'finding.audioServiceStopped' = 'De geluidsservice draait niet, dus er kan geen geluid klinken.'
+        'advice.audioServiceStopped'  = 'Housecall kan hem hieronder herstarten (beheerder nodig).'
+        'finding.noOutput'            = 'Windows vindt geen luidspreker of koptelefoon.'
+        'advice.noOutput'             = 'Controleer of de speakers zijn aangesloten en aan staan. Een scherm dat voor geluid wordt gebruikt, moet aan staan.'
+        'finding.muted'               = 'Het geluid staat gedempt op {0}.'
+        'advice.muted'                = 'Housecall kan het hieronder weer aanzetten (kan worden teruggedraaid).'
+        'finding.volumeLow'           = 'Het volume van {0} staat bijna uit ({1}%).'
+        'advice.volumeLow'            = 'Housecall kan het hieronder harder zetten (kan worden teruggedraaid).'
+        'finding.defaultScreen'       = 'Geluid gaat naar {0}, en dat is waarschijnlijk niet waar de klant luistert.'
+        'advice.defaultScreen'        = 'Kies hieronder de speakers of koptelefoon. Kan worden teruggedraaid.'
+        'finding.soundOk'             = 'Windows stuurt geluid naar {0}, en dat staat aan.'
+        'advice.soundOk'              = 'Speel hieronder een testgeluid af. Hoort u niets? Controleer de stroom en de volumeknop van de speaker, of kies hieronder een andere uitgang.'
+        'finding.privacyBlocked'      = '{0} mag de {1} niet gebruiken. Daarom kan de ander de klant niet horen of zien.'
+        'advice.privacyBlocked'       = 'Housecall kan het hieronder toestaan (kan worden teruggedraaid).'
+        'finding.micMuted'            = 'De microfoon {0} staat gedempt.'
+        'advice.micMuted'             = 'Housecall kan het dempen hieronder opheffen (kan worden teruggedraaid).'
+        'finding.noMic'               = 'Windows vindt geen microfoon.'
+        'advice.noMic'                = 'Sluit de headset of webcam met de microfoon aan, of controleer de kabel.'
+        'finding.micLow'              = 'De microfoon {0} staat heel zacht.'
+        'advice.micLow'               = 'Housecall kan hem hieronder harder zetten (kan worden teruggedraaid).'
+        'finding.noCamera'            = 'Windows vindt geen camera.'
+        'advice.noCamera'             = 'Sluit de webcam aan. Kijk op een laptop of er een klein schuifje voor de lens zit, of een cameratoets.'
+        'finding.callsOk'             = 'De microfoon en camera werken, en apps mogen ze gebruiken.'
+        'advice.callsOk'              = 'Kijk in de belapp zelf welke microfoon en camera er gekozen zijn (vaak onder Instellingen > Audio en video).'
+        'finding.tooDark'             = 'Het scherm staat heel donker ({0}%).'
+        'advice.tooDark'              = 'Housecall kan het hieronder lichter maken (kan worden teruggedraaid).'
+        'finding.colorFilter'         = 'Er staat een kleurenfilter aan, waardoor het scherm zwart-wit of vreemd gekleurd is. Vaak per ongeluk aangezet met Windows-toets + Ctrl + C.'
+        'advice.colorFilter'          = 'Druk op Windows-toets + Ctrl + C, of zet het uit in Instellingen. De stappen hieronder lopen het door.'
+        'finding.highContrast'        = 'Hoog contrast staat aan: een zwarte achtergrond en felle kleuren. Vaak per ongeluk aangezet.'
+        'advice.highContrast'         = 'Druk op linker Alt + linker Shift + Print Screen, of zet het uit in Instellingen. De stappen hieronder lopen het door.'
+        'finding.magnifier'           = 'Het Vergrootglas staat open: het maakt alles groot en volgt de muis.'
+        'advice.magnifier'            = 'Housecall kan het hieronder sluiten. Windows-toets + Esc sluit het ook.'
+        'finding.rotated'             = 'Het hoofdscherm staat op zijn kant.'
+        'advice.rotated'              = 'Draai het terug met de stappen hieronder. Staat het scherm echt rechtop, dan is dit in orde.'
+        'finding.screenOk'            = 'Er staat niets aan dat het uiterlijk van het scherm verandert.'
+        'advice.screenOk'             = 'Om alles groter te maken voor de klant: zie de stappen hieronder.'
+
+        # ---- B: fixes
+        'fix.restartAudio'            = 'De geluidsservice herstarten'
+        'fix.restartAudio.done'       = 'Geluidsservice herstart'
+        'fix.setDefaultAudio'         = 'Geluid afspelen via {0}'
+        'fix.setDefaultAudio.done'    = 'Geluid gaat nu via {0}'
+        'fix.unmute'                  = '{0} niet meer dempen'
+        'fix.unmute.done'             = '{0} niet meer gedempt'
+        'fix.setVolume'               = 'Het volume van {0} hoger zetten'
+        'fix.setVolume.done'          = 'Volume van {0} hoger gezet'
+        'fix.testSound'               = 'Een testgeluid afspelen'
+        'fix.testSound.done'          = 'Testgeluid afgespeeld'
+        'fix.allowAccess'             = 'Toestaan: {0}'
+        'fix.allowAccess.done'        = 'Toegestaan: {0}'
+        'fix.allowAccessMachine'      = 'Toestaan voor de hele pc: {0}'
+        'fix.allowAccessMachine.done' = 'Toegestaan voor de hele pc: {0}'
+        'fix.setBrightness'           = 'Het scherm lichter maken (80%)'
+        'fix.setBrightness.done'      = 'Scherm lichter gemaakt'
+        'fix.closeMagnifier'          = 'Het Vergrootglas sluiten'
+        'fix.closeMagnifier.done'     = 'Vergrootglas gesloten'
+
+        # ---- B: step-by-step guides
+        'steps.audioServiceStopped' = 'Kies hierboven de oplossing om hem te herstarten (beheerder nodig), of doe het met de hand. | Typ Services in Start en open het. | Zoek Windows Audio, klik er met rechts op en kies Opnieuw starten (of Starten). | Kies opnieuw B1 om te controleren.'
+        'steps.noOutput'            = 'Controleer of de speakers of koptelefoon zijn aangesloten (bij een desktop de groene aansluiting) en aan staan. | Gebruikt u het geluid van een scherm of tv? Zet die aan en controleer het volume daarvan. | Bluetooth-koptelefoon: kies C3 om de verbinding te controleren. | Herstart de pc en kies opnieuw B1.'
+        'steps.muted'               = 'Kies hierboven de oplossing om het dempen op te heffen, of doe het met de hand. | Klik rechtsonder op het luidspreker-icoon, naast de klok. | Klik op het luidsprekersymbool naast de volumeschuif, zodat er geen kruisje meer staat. | Speel iets af om te controleren.'
+        'steps.volumeLow'           = 'Kies hierboven de oplossing om het harder te zetten, of doe het met de hand. | Klik rechtsonder op het luidspreker-icoon, naast de klok. | Sleep de volumeschuif naar ongeveer de helft. | Controleer ook de volumeknop op de speakers zelf.'
+        'steps.defaultScreen'       = 'Kies hierboven de juiste uitgang (kan worden teruggedraaid), of doe het met de hand. | Klik rechtsonder op het luidspreker-icoon, en dan op het pijltje naast de volumeschuif. | Kies de speakers of koptelefoon uit de lijst. | Speel iets af om te controleren.'
+        'steps.soundOk'             = 'Kies hierboven "Een testgeluid afspelen" en luister. | Hoort u niets? Controleer de stroom, de kabel en de volumeknop van de speakers. | Probeer hierboven een andere uitgang, bijvoorbeeld de koptelefoon. | Ontbreekt het geluid maar in een programma (een browsertabblad, een video)? Controleer het volume in dat programma, en klik met rechts op het luidspreker-icoon > Volumemixer.'
+        'steps.privacyBlocked'      = 'Kies hierboven de oplossing om het toe te staan (kan worden teruggedraaid), of doe het met de hand. | Open Instellingen (Windows-toets + I) > Privacy en beveiliging > Microfoon (of Camera). | Zet "Toegang tot microfoon", "Apps toegang geven tot uw microfoon" en "Bureaublad-apps toegang geven tot uw microfoon" aan (bij de camera: dezelfde drie). | Zet in de lijst daaronder de belapp aan (WhatsApp, Teams, ...). | Sluit de belapp, open hem opnieuw, en probeer te bellen.'
+        'steps.micMuted'            = 'Kies hierboven de oplossing om het dempen op te heffen, of doe het met de hand. | Open Instellingen (Windows-toets + I) > Systeem > Geluid. | Klik onder Invoer op de microfoon en controleer dat hij niet gedempt is. Zet het volume op ongeveer 80. | Kijk ook of er een dempknop op de headset of de kabel zit.'
+        'steps.noMic'               = 'Sluit de headset of webcam met de microfoon aan. Headset met twee stekkers: de roze is de microfoon. | Open Instellingen > Systeem > Geluid en kijk onder Invoer. | Nog steeds niets? Kies C2 om naar apparaten met problemen te zoeken.'
+        'steps.micLow'              = 'Kies hierboven de oplossing om hem harder te zetten, of doe het met de hand. | Open Instellingen (Windows-toets + I) > Systeem > Geluid. | Klik onder Invoer op de microfoon en zet het volume op ongeveer 80. | Test het: de balk bij "Uw microfoon testen" beweegt als de klant praat.'
+        'steps.noCamera'            = 'Sluit de webcam aan, als de pc er een gebruikt. | Laptop: kijk of er een klein schuifje voor de lens zit, of een toets met een camera-plaatje. | Kies C2 om naar apparaten met problemen te zoeken. | Herstart de pc en kies opnieuw B2.'
+        'steps.callsOk'             = 'Open de belapp (WhatsApp, Teams, Zoom). | Kies in de instellingen, vaak onder Audio en video, de juiste microfoon, speaker en camera. | Doe een testgesprek, bijvoorbeeld met een familielid. | Alleen tijdens bellen stil? Sluit andere programma''s die de camera of microfoon misschien gebruiken.'
+        'steps.tooDark'             = 'Kies hierboven de oplossing om het lichter te maken (kan worden teruggedraaid), of doe het met de hand. | Klik rechtsonder op het netwerk- of luidspreker-icoon: onderaan dat paneel staat de helderheidsschuif. | Sleep hem naar rechts. | Laptop: de toetsen met een zonnetje (vaak met Fn) veranderen ook de helderheid.'
+        'steps.colorFilter'         = 'Druk tegelijk op de Windows-toets + Ctrl + C. | Nog steeds grijs? Open Instellingen (Windows-toets + I) > Toegankelijkheid > Kleurfilters. | Zet Kleurfilters uit. | Zet ook de "Sneltoets voor kleurfilters" uit, zodat het niet meer per ongeluk kan gebeuren.'
+        'steps.highContrast'        = 'Druk tegelijk op linker Alt + linker Shift + Print Screen, en bevestig met Ja als dat gevraagd wordt. | Of open Instellingen (Windows-toets + I) > Toegankelijkheid > Contrastthema''s. | Kies Geen en klik op Toepassen.'
+        'steps.magnifier'           = 'Kies hierboven de oplossing om het te sluiten, of druk op de Windows-toets + Esc. | Zodat het niet terugkomt: Instellingen > Toegankelijkheid > Vergrootglas, en zet de sneltoets en "starten voor aanmelden" uit.'
+        'steps.rotated'             = 'Druk op Ctrl + Alt + pijltje omhoog (werkt op sommige pc''s). | Of open Instellingen (Windows-toets + I) > Systeem > Beeldscherm. | Klik bovenaan op het juiste scherm en kies bij Beeldschermstand: Liggend. | Klik op Wijzigingen behouden.'
+        'steps.screenOk'            = 'Tekst groter maken: Instellingen (Windows-toets + I) > Toegankelijkheid > Tekstgrootte. Sleep de schuif en klik op Toepassen. | Alles groter maken: Instellingen > Systeem > Beeldscherm > Schaal, kies 125% of 150%. | Controleer de resolutie bij Beeldschermresolutie: die met (Aanbevolen) is het scherpst. | Is de muisaanwijzer slecht te zien? Instellingen > Toegankelijkheid > Muisaanwijzer en aanraken: maak hem groter of feller van kleur.'
     }
 }
 
@@ -2727,6 +2945,485 @@ $script:ProblemHandlers['C1'] = 'Invoke-HcC1'
 $script:ProblemHandlers['C2'] = 'Invoke-HcC2'
 $script:ProblemHandlers['C3'] = 'Invoke-HcC3'
 
+# ==================================================== src\checks\audio-interop.ps1 ==
+<#
+    Windows' audio system (Core Audio), reached from PowerShell through a
+    little C#: the sound outputs and microphones that are in use, which one
+    is the default, mute and volume, and switching the default.
+
+    Compiled on first use only (about a second), so areas other than B never
+    pay for it. SetDefault uses IPolicyConfig: undocumented, but it is what
+    the sound settings themselves use, and it has been stable since Windows 7.
+
+    Plain ASCII like everything else; the names come from Windows at run time.
+    The C# sits in a double-quoted here-string on purpose: a line starting
+    with '@ would end the $HcSource here-string that carries all of
+    Housecall. So the C# must never contain a dollar sign or a backtick.
+#>
+
+$script:HcAudioSource = @"
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+
+namespace Housecall
+{
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PropertyKey { public Guid Fmtid; public int Pid; }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct PropVariant
+    {
+        [FieldOffset(0)] public short Vt;
+        [FieldOffset(8)] public IntPtr Pointer;
+    }
+
+    [ComImport, Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IMMDeviceEnumerator
+    {
+        int EnumAudioEndpoints(int dataFlow, int stateMask, out IMMDeviceCollection devices);
+        int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice endpoint);
+    }
+
+    [ComImport, Guid("0BD7A1BE-7A1A-44DB-8397-CC5392387B5E"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IMMDeviceCollection
+    {
+        int GetCount(out int count);
+        int Item(int index, out IMMDevice device);
+    }
+
+    [ComImport, Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IMMDevice
+    {
+        int Activate(ref Guid iid, int clsCtx, IntPtr activationParams, [MarshalAs(UnmanagedType.IUnknown)] out object iface);
+        int OpenPropertyStore(int access, out IPropertyStore store);
+        int GetId([MarshalAs(UnmanagedType.LPWStr)] out string id);
+        int GetState(out int state);
+    }
+
+    [ComImport, Guid("886d8eeb-8cf2-4446-8d02-cdba1dbdcf99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IPropertyStore
+    {
+        int GetCount(out int count);
+        int GetAt(int index, out PropertyKey key);
+        int GetValue(ref PropertyKey key, out PropVariant value);
+    }
+
+    [ComImport, Guid("5CDF2C82-841E-4546-9722-0CF74078229A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IAudioEndpointVolume
+    {
+        int RegisterControlChangeNotify(IntPtr notify);
+        int UnregisterControlChangeNotify(IntPtr notify);
+        int GetChannelCount(out int count);
+        int SetMasterVolumeLevel(float level, ref Guid context);
+        int SetMasterVolumeLevelScalar(float level, ref Guid context);
+        int GetMasterVolumeLevel(out float level);
+        int GetMasterVolumeLevelScalar(out float level);
+        int SetChannelVolumeLevel(int channel, float level, ref Guid context);
+        int SetChannelVolumeLevelScalar(int channel, float level, ref Guid context);
+        int GetChannelVolumeLevel(int channel, out float level);
+        int GetChannelVolumeLevelScalar(int channel, out float level);
+        int SetMute([MarshalAs(UnmanagedType.Bool)] bool mute, ref Guid context);
+        int GetMute([MarshalAs(UnmanagedType.Bool)] out bool mute);
+    }
+
+    [ComImport, Guid("f8679f50-850a-41cf-9c72-430f290290c8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IPolicyConfig
+    {
+        int GetMixFormat(string id, IntPtr format);
+        int GetDeviceFormat(string id, int def, IntPtr format);
+        int ResetDeviceFormat(string id);
+        int SetDeviceFormat(string id, IntPtr endpointFormat, IntPtr mixFormat);
+        int GetProcessingPeriod(string id, int def, IntPtr defaultPeriod, IntPtr minimumPeriod);
+        int SetProcessingPeriod(string id, IntPtr period);
+        int GetShareMode(string id, IntPtr mode);
+        int SetShareMode(string id, IntPtr mode);
+        int GetPropertyValue(string id, int store, IntPtr key, IntPtr value);
+        int SetPropertyValue(string id, int store, IntPtr key, IntPtr value);
+        int SetDefaultEndpoint([MarshalAs(UnmanagedType.LPWStr)] string id, int role);
+        int SetEndpointVisibility(string id, int visible);
+    }
+
+    [ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")] class MMDeviceEnumeratorClass { }
+    [ComImport, Guid("870af99c-171d-4f9e-af0d-e63df40c2bc9")] class PolicyConfigClass { }
+
+    public class AudioDevice
+    {
+        public string Id;
+        public string Name;
+        public bool IsDefault;
+        public bool Muted;
+        public int Volume;
+    }
+
+    public static class Audio
+    {
+        static readonly Guid VolumeIid = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
+        static readonly PropertyKey FriendlyName = new PropertyKey { Fmtid = new Guid("a45c254e-df1c-4efd-8020-67d146a850e0"), Pid = 14 };
+
+        static IMMDeviceEnumerator Enumerator() { return (IMMDeviceEnumerator)new MMDeviceEnumeratorClass(); }
+
+        static IAudioEndpointVolume VolumeOf(IMMDevice device)
+        {
+            Guid iid = VolumeIid;
+            object o;
+            Marshal.ThrowExceptionForHR(device.Activate(ref iid, 23, IntPtr.Zero, out o));
+            return (IAudioEndpointVolume)o;
+        }
+
+        static IMMDevice Find(string id)
+        {
+            foreach (int flow in new[] { 0, 1 })
+            {
+                IMMDeviceCollection all;
+                Marshal.ThrowExceptionForHR(Enumerator().EnumAudioEndpoints(flow, 1, out all));
+                int count; all.GetCount(out count);
+                for (int i = 0; i < count; i++)
+                {
+                    IMMDevice d; all.Item(i, out d);
+                    string did; d.GetId(out did);
+                    if (did == id) return d;
+                }
+            }
+            throw new ArgumentException("No active audio device with id " + id);
+        }
+
+        // flow 0 = outputs (speakers), 1 = inputs (microphones). Active devices only.
+        public static AudioDevice[] List(int flow)
+        {
+            var result = new List<AudioDevice>();
+            IMMDeviceEnumerator e = Enumerator();
+            string defaultId = null;
+            IMMDevice def;
+            if (e.GetDefaultAudioEndpoint(flow, 0, out def) == 0 && def != null) def.GetId(out defaultId);
+
+            IMMDeviceCollection all;
+            Marshal.ThrowExceptionForHR(e.EnumAudioEndpoints(flow, 1, out all));
+            int count; all.GetCount(out count);
+            for (int i = 0; i < count; i++)
+            {
+                IMMDevice d; all.Item(i, out d);
+                var a = new AudioDevice();
+                d.GetId(out a.Id);
+                a.IsDefault = (a.Id == defaultId);
+                IPropertyStore store;
+                if (d.OpenPropertyStore(0, out store) == 0)
+                {
+                    PropertyKey key = FriendlyName;
+                    PropVariant v;
+                    if (store.GetValue(ref key, out v) == 0 && v.Vt == 31) a.Name = Marshal.PtrToStringUni(v.Pointer);
+                }
+                try
+                {
+                    IAudioEndpointVolume vol = VolumeOf(d);
+                    float level; vol.GetMasterVolumeLevelScalar(out level);
+                    bool mute; vol.GetMute(out mute);
+                    a.Volume = (int)Math.Round(level * 100);
+                    a.Muted = mute;
+                }
+                catch (Exception) { a.Volume = -1; }
+                result.Add(a);
+            }
+            return result.ToArray();
+        }
+
+        // All three roles (console, multimedia, communications), like the sound settings do.
+        public static void SetDefault(string id)
+        {
+            var policy = (IPolicyConfig)new PolicyConfigClass();
+            for (int role = 0; role < 3; role++) Marshal.ThrowExceptionForHR(policy.SetDefaultEndpoint(id, role));
+        }
+
+        public static void SetMute(string id, bool mute)
+        {
+            Guid context = Guid.Empty;
+            Marshal.ThrowExceptionForHR(VolumeOf(Find(id)).SetMute(mute, ref context));
+        }
+
+        public static void SetVolume(string id, int percent)
+        {
+            Guid context = Guid.Empty;
+            Marshal.ThrowExceptionForHR(VolumeOf(Find(id)).SetMasterVolumeLevelScalar(Math.Max(0, Math.Min(100, percent)) / 100f, ref context));
+        }
+    }
+}
+"@
+
+function Initialize-HcAudio {
+    if (-not ('Housecall.Audio' -as [type])) {
+        Add-Type -TypeDefinition $script:HcAudioSource -Language CSharp -ErrorAction Stop
+    }
+}
+
+# Active outputs (flow 0) or microphones (flow 1), or $null when Windows'
+# audio system cannot be reached at all (for example the service is down).
+function Get-HcAudioDevices {
+    param([int]$Flow)
+    try {
+        Initialize-HcAudio
+        return @([Housecall.Audio]::List($Flow) | ForEach-Object {
+            [pscustomobject]@{ Id = $_.Id; Name = $_.Name; IsDefault = $_.IsDefault; Muted = $_.Muted; Volume = $_.Volume }
+        })
+    } catch {
+        return $null
+    }
+}
+
+# ==================================================== src\checks\sound.ps1 ==
+<#
+    Area B: Sound, screen & video calls.
+
+      B1  no sound                      sound service, sound hardware, outputs, mute, volume
+      B2  microphone or camera          microphones, cameras, Windows privacy switches
+      B3  screen too small, dark, wrong colour filter, high contrast, magnifier,
+                                        brightness, orientation, scale
+
+    Sound is read through Core Audio (src\checks\audio-interop.ps1); the
+    privacy switches straight from the registry, where Settings keeps them.
+#>
+
+# Outputs that are a screen or a digital socket: fine when the screen has
+# speakers and is on, silent otherwise -- the classic "sound went to the TV".
+$script:ScreenOutput = '(AMD|NVIDIA|Intel).*(High Definition Audio|Display Audio)|HDMI|DisplayPort|Digital Output|S/PDIF|SPDIF'
+
+# Where Settings keeps "may apps use the microphone / camera".
+$script:ConsentStore = 'Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore'
+
+# Video-call apps from the Store, by the start of their key under ConsentStore.
+# Desktop programs (Zoom, Teams classic, Skype desktop) share one switch: NonPackaged.
+$script:CallApps = [ordered]@{
+    '5319275A.WhatsAppDesktop' = 'WhatsApp'
+    'MSTeams'                  = 'Microsoft Teams'
+    'MicrosoftTeams'           = 'Microsoft Teams'
+    'Microsoft.SkypeApp'       = 'Skype'
+    'Microsoft.WindowsCamera'  = 'Camera'
+    'FACEBOOK.317180B0BB486'   = 'Messenger'
+    'Zoom'                     = 'Zoom'
+}
+
+# ------------------------------------------------------------------- facts --
+
+function Get-HcSoundFacts {
+    $running = { param($n) $s = Get-Service -Name $n -ErrorAction SilentlyContinue; $s -and $s.Status -eq 'Running' }
+    [pscustomobject]@{
+        ServiceRunning = (& $running 'Audiosrv') -and (& $running 'AudioEndpointBuilder')
+        Problems       = @(Get-HcProblemDevices 'MEDIA')
+        Outputs        = Get-HcAudioDevices 0
+    }
+}
+
+# One privacy switch: the whole PC (HKLM), apps (HKCU), desktop programs
+# (NonPackaged), or one app. Only switches set to Deny matter.
+function Get-HcPrivacyBlocks {
+    param([string]$Capability)
+    $blocks = @()
+    $value = { param($path) (Get-ItemProperty $path -ErrorAction SilentlyContinue).Value }
+    $user = "HKCU:\$script:ConsentStore\$Capability"
+    if ((& $value "HKLM:\$script:ConsentStore\$Capability") -eq 'Deny') {
+        $blocks += [pscustomobject]@{ Capability = $Capability; Who = 'all'; Name = $null; Key = "HKLM:\$script:ConsentStore\$Capability"; Machine = $true }
+    }
+    if ((& $value $user) -eq 'Deny') {
+        $blocks += [pscustomobject]@{ Capability = $Capability; Who = 'apps'; Name = $null; Key = $user; Machine = $false }
+    }
+    if ((& $value "$user\NonPackaged") -eq 'Deny') {
+        $blocks += [pscustomobject]@{ Capability = $Capability; Who = 'desktop'; Name = $null; Key = "$user\NonPackaged"; Machine = $false }
+    }
+    foreach ($key in @(Get-ChildItem $user -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -ne 'NonPackaged' })) {
+        foreach ($prefix in $script:CallApps.Keys) {
+            if ($key.PSChildName.StartsWith($prefix) -and (& $value $key.PSPath) -eq 'Deny') {
+                $blocks += [pscustomobject]@{ Capability = $Capability; Who = 'app'; Name = $script:CallApps[$prefix]; Key = "$user\$($key.PSChildName)"; Machine = $false }
+            }
+        }
+    }
+    $blocks
+}
+
+function Get-HcCallFacts {
+    $cameras = @(Get-PnpDevice -Class Camera, Image -PresentOnly -ErrorAction SilentlyContinue)
+    [pscustomobject]@{
+        Microphones = Get-HcAudioDevices 1
+        Cameras     = @($cameras | Where-Object { $_.ConfigManagerErrorCode -eq 0 } | ForEach-Object { $_.FriendlyName })
+        Problems    = @($cameras | Where-Object { $_.ConfigManagerErrorCode -ne 0 } | ForEach-Object {
+            [pscustomobject]@{ Name = $_.FriendlyName; Class = $_.Class; Code = [int]$_.ConfigManagerErrorCode; InstanceId = $_.InstanceId } })
+        Blocks      = @(Get-HcPrivacyBlocks 'microphone') + @(Get-HcPrivacyBlocks 'webcam')
+    }
+}
+
+function Get-HcScreenFacts {
+    $brightness = $null
+    try { $brightness = [int](Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorBrightness -ErrorAction Stop | Select-Object -First 1).CurrentBrightness } catch { }
+    $portrait = $false
+    try {
+        Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+        $b = [Windows.Forms.Screen]::PrimaryScreen.Bounds
+        $portrait = $b.Height -gt $b.Width
+    } catch { }
+    $dpi = (Get-ItemProperty 'HKCU:\Control Panel\Desktop\WindowMetrics' -ErrorAction SilentlyContinue).AppliedDPI
+    $text = (Get-ItemProperty 'HKCU:\Software\Microsoft\Accessibility' -ErrorAction SilentlyContinue).TextScaleFactor
+    $contrast = (Get-ItemProperty 'HKCU:\Control Panel\Accessibility\HighContrast' -ErrorAction SilentlyContinue).Flags
+    [pscustomobject]@{
+        Brightness   = $brightness
+        ColorFilter  = ((Get-ItemProperty 'HKCU:\Software\Microsoft\ColorFiltering' -ErrorAction SilentlyContinue).Active -eq 1)
+        HighContrast = ($contrast -and ([int]$contrast -band 1))
+        Magnifier    = [bool](Get-Process -Name Magnify -ErrorAction SilentlyContinue)
+        Portrait     = $portrait
+        Scale        = $(if ($dpi) { [int]([int]$dpi * 100 / 96) } else { 100 })
+        TextSize     = $(if ($text) { [int]$text } else { 100 })
+    }
+}
+
+# ------------------------------------------------------------------ verdict --
+
+# B1.
+function Test-HcSound {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if (-not $Facts.ServiceRunning -or $null -eq $Facts.Outputs) {
+        Add-HcLine $r problem (T 'snd.serviceStopped')
+        Add-HcAction $r 'restartAudio'
+        Set-HcFinding $r 'audioServiceStopped'
+        return $r
+    }
+    Add-HcLine $r ok (T 'snd.serviceOk')
+    foreach ($d in @($Facts.Problems)) { Add-HcDeviceProblem $r $found $d }
+
+    $outputs = @($Facts.Outputs)
+    if ($outputs.Count -eq 0) {
+        Add-HcLine $r problem (T 'snd.noOutput')
+        Select-HcFinding $r $found @('deviceDisabled', 'deviceError', 'deviceNoDriver') 'noOutput'
+        return $r
+    }
+
+    $default = @($outputs | Where-Object { $_.IsDefault }) | Select-Object -First 1
+    if (-not $default) { $default = $outputs[0] }
+    Add-HcLine $r ok (T 'snd.default' $default.Name $default.Volume)
+    if ($default.Muted) {
+        Add-HcLine $r problem (T 'snd.muted' $default.Name)
+        Add-HcAction $r 'unmute' @{ Label = $default.Name; Id = $default.Id }
+        $found['muted'] = @($default.Name)
+    }
+    if ($default.Volume -ge 0 -and $default.Volume -le 5) {
+        Add-HcLine $r problem (T 'snd.volumeLow' $default.Name $default.Volume)
+        Add-HcAction $r 'setVolume' @{ Label = $default.Name; Id = $default.Id; Percent = 50; Previous = $default.Volume }
+        $found['volumeLow'] = @($default.Name, $default.Volume)
+    }
+    $others = @($outputs | Where-Object { $_.Id -ne $default.Id })
+    $speakers = @($others | Where-Object { $_.Name -notmatch $script:ScreenOutput })
+    if ($default.Name -match $script:ScreenOutput -and $speakers.Count) {
+        Add-HcLine $r warn (T 'snd.defaultScreen' $default.Name)
+        $found['defaultScreen'] = @($default.Name)
+    }
+    if ($others.Count) { Add-HcLine $r ok (T 'snd.others' (@($others | ForEach-Object { $_.Name }) -join ', ')) }
+
+    # Speakers and headphones first, then screens; the test sound last.
+    foreach ($o in @($speakers) + @($others | Where-Object { $_.Name -match $script:ScreenOutput }) | Select-Object -First 5) {
+        Add-HcAction $r 'setDefaultAudio' @{ Label = $o.Name; Id = $o.Id; PreviousId = $default.Id }
+    }
+    Add-HcAction $r 'testSound'
+
+    Select-HcFinding $r $found @('deviceDisabled', 'deviceError', 'deviceNoDriver', 'muted', 'volumeLow', 'defaultScreen') 'soundOk'
+    if ($r.FindingId -eq 'soundOk') { $r.FindingArgs = @($default.Name) }
+    $r
+}
+
+# "WhatsApp", "Apps", ... for a privacy block, in the current language.
+function Get-HcBlockWho {
+    param([pscustomobject]$Block)
+    if ($Block.Who -eq 'app') { return $Block.Name }
+    T ('priv.' + $Block.Who)
+}
+
+# B2.
+function Test-HcCalls {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    $mics = $Facts.Microphones
+    if ($null -eq $mics -or @($mics).Count -eq 0) {
+        Add-HcLine $r problem (T 'call.noMic')
+        $found['noMic'] = @()
+    } else {
+        $mic = @(@($mics) | Where-Object { $_.IsDefault }) | Select-Object -First 1
+        if (-not $mic) { $mic = @($mics)[0] }
+        Add-HcLine $r ok (T 'call.mic' $mic.Name $mic.Volume)
+        if ($mic.Muted) {
+            Add-HcLine $r problem (T 'call.micMuted' $mic.Name)
+            Add-HcAction $r 'unmute' @{ Label = $mic.Name; Id = $mic.Id }
+            $found['micMuted'] = @($mic.Name)
+        } elseif ($mic.Volume -ge 0 -and $mic.Volume -lt 10) {
+            Add-HcLine $r problem (T 'call.micLow' $mic.Name $mic.Volume)
+            Add-HcAction $r 'setVolume' @{ Label = $mic.Name; Id = $mic.Id; Percent = 80; Previous = $mic.Volume }
+            $found['micLow'] = @($mic.Name)
+        }
+    }
+
+    foreach ($c in @($Facts.Cameras)) { Add-HcLine $r ok (T 'call.camera' $c) }
+    foreach ($d in @($Facts.Problems)) { Add-HcDeviceProblem $r $found $d }
+    if (@($Facts.Cameras).Count -eq 0 -and @($Facts.Problems).Count -eq 0) {
+        Add-HcLine $r warn (T 'call.noCamera')
+        $found['noCamera'] = @()
+    }
+
+    foreach ($capability in @('microphone', 'webcam')) {
+        $blocks = @($Facts.Blocks | Where-Object { $_.Capability -eq $capability })
+        $what = T "priv.$capability"
+        if ($blocks.Count -eq 0) { Add-HcLine $r ok (T 'call.privacyOk' $what); continue }
+        foreach ($b in $blocks) {
+            $who = Get-HcBlockWho $b
+            Add-HcLine $r problem (T 'call.blocked' $who $what)
+            $fix = if ($b.Machine) { 'allowAccessMachine' } else { 'allowAccess' }
+            Add-HcAction $r $fix @{ Label = "$who, $what"; Key = $b.Key }
+            if (-not $found['privacyBlocked']) { $found['privacyBlocked'] = @($who, $what) }
+        }
+    }
+
+    Select-HcFinding $r $found @('privacyBlocked', 'micMuted', 'noMic', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'micLow', 'noCamera') 'callsOk'
+    $r
+}
+
+# B3.
+function Test-HcScreen {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if ($null -ne $Facts.Brightness) {
+        if ($Facts.Brightness -lt 30) {
+            Add-HcLine $r problem (T 'scr.tooDark' $Facts.Brightness)
+            Add-HcAction $r 'setBrightness' @{ Label = ''; Percent = 80; Previous = $Facts.Brightness }
+            $found['tooDark'] = @($Facts.Brightness)
+        } else {
+            Add-HcLine $r ok (T 'scr.brightness' $Facts.Brightness)
+        }
+    }
+    if ($Facts.ColorFilter) { Add-HcLine $r problem (T 'scr.colorFilter'); $found['colorFilter'] = @() }
+    if ($Facts.HighContrast) { Add-HcLine $r problem (T 'scr.highContrast'); $found['highContrast'] = @() }
+    if ($Facts.Magnifier) {
+        Add-HcLine $r problem (T 'scr.magnifier')
+        Add-HcAction $r 'closeMagnifier'
+        $found['magnifier'] = @()
+    }
+    if (-not ($Facts.ColorFilter -or $Facts.HighContrast -or $Facts.Magnifier)) { Add-HcLine $r ok (T 'scr.normal') }
+    if ($Facts.Portrait) { Add-HcLine $r warn (T 'scr.rotated'); $found['rotated'] = @() }
+    Add-HcLine $r ok (T 'scr.scale' $Facts.Scale $Facts.TextSize)
+
+    Select-HcFinding $r $found @('tooDark', 'colorFilter', 'highContrast', 'magnifier', 'rotated') 'screenOk'
+    $r
+}
+
+# ---------------------------------------------------------------- handlers --
+
+function Invoke-HcB1 { { Test-HcSound (Get-HcSoundFacts) } }
+function Invoke-HcB2 { { Test-HcCalls (Get-HcCallFacts) } }
+function Invoke-HcB3 { { Test-HcScreen (Get-HcScreenFacts) } }
+
+$script:ProblemHandlers['B1'] = 'Invoke-HcB1'
+$script:ProblemHandlers['B2'] = 'Invoke-HcB2'
+$script:ProblemHandlers['B3'] = 'Invoke-HcB3'
+
 # ==================================================== src\fixes.ps1 ==
 <#
     Fixes: the only code in Housecall that changes the PC.
@@ -2872,6 +3569,75 @@ $script:Fixes = @{
         }
         Undo = $null
     }
+    # ---- B: sound, video calls, screen
+    # Restarting the endpoint builder restarts Windows Audio with it.
+    restartAudio = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            foreach ($name in 'AudioEndpointBuilder', 'Audiosrv') {
+                if ([string](Get-Service $name).StartType -eq 'Disabled') { Set-Service $name -StartupType Automatic -ErrorAction Stop }
+            }
+            Restart-Service AudioEndpointBuilder -Force -ErrorAction Stop
+            Start-Service Audiosrv -ErrorAction Stop
+        }
+        Undo = $null
+    }
+    setDefaultAudio = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetDefault($t.Id) }
+        Undo  = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetDefault($t.PreviousId) }
+    }
+    unmute = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetMute($t.Id, $false) }
+        Undo  = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetMute($t.Id, $true) }
+    }
+    setVolume = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetVolume($t.Id, $t.Percent) }
+        Undo  = { param($t) Initialize-HcAudio; [Housecall.Audio]::SetVolume($t.Id, $t.Previous) }
+    }
+    # A check more than a change: it is not listed on the note.
+    testSound = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = {
+            param($t)
+            $wav = Join-Path $env:WINDIR 'Media\Windows Notify System Generic.wav'
+            if (-not (Test-Path $wav)) { $wav = Join-Path $env:WINDIR 'Media\chimes.wav' }
+            (New-Object Media.SoundPlayer $wav).PlaySync()
+        }
+        Undo = $null
+    }
+    allowAccess = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) $t.Saved = (Get-ItemProperty $t.Key).Value; Set-ItemProperty $t.Key -Name Value -Value 'Allow' -ErrorAction Stop }
+        Undo  = { param($t) Set-ItemProperty $t.Key -Name Value -Value $t.Saved -ErrorAction Stop }
+    }
+    allowAccessMachine = @{
+        Note = 'undo'; Admin = $true
+        Apply = { param($t) $t.Saved = (Get-ItemProperty $t.Key).Value; Set-ItemProperty $t.Key -Name Value -Value 'Allow' -ErrorAction Stop }
+        Undo  = { param($t) Set-ItemProperty $t.Key -Name Value -Value $t.Saved -ErrorAction Stop }
+    }
+    setBrightness = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            $m = Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorBrightnessMethods -ErrorAction Stop | Select-Object -First 1
+            [void](Invoke-CimMethod -InputObject $m -MethodName WmiSetBrightness -Arguments @{ Timeout = [uint32]1; Brightness = [byte]$t.Percent } -ErrorAction Stop)
+        }
+        Undo = {
+            param($t)
+            $m = Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorBrightnessMethods -ErrorAction Stop | Select-Object -First 1
+            [void](Invoke-CimMethod -InputObject $m -MethodName WmiSetBrightness -Arguments @{ Timeout = [uint32]1; Brightness = [byte]$t.Previous } -ErrorAction Stop)
+        }
+    }
+    closeMagnifier = @{
+        Note = 'restart'; Admin = $false
+        Apply = { param($t) Get-Process -Name Magnify -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction Stop }
+        Undo  = $null
+    }
+
     startBtService = @{
         Note = 'safe'; Admin = $true
         Apply = {
@@ -2985,8 +3751,10 @@ function Invoke-HcActionMenu {
         Write-Warn2 (T 'fix.failed' $_.Exception.Message)
         return 'none'
     }
-    $done = T ('fix.' + $action.FixId + '.done') $action.Target.Label
-    [void]$script:HcChanges.Add([pscustomobject]@{ FixId = $action.FixId; Target = $action.Target; Label = $done })
+    if (-not $fix.NoLog) {
+        $done = T ('fix.' + $action.FixId + '.done') $action.Target.Label
+        [void]$script:HcChanges.Add([pscustomobject]@{ FixId = $action.FixId; Target = $action.Target; Label = $done })
+    }
     Write-Ok (T 'fix.done')
     'changed'
 }

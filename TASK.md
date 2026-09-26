@@ -1,14 +1,14 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 52%** `██████████░░░░░░░░░░` 22 of 42 done · 0 in progress · 18 open · 0 blocked · 2 waiting on a decision
+**Progress: 55%** `███████████░░░░░░░░░` 23 of 42 done · 0 in progress · 17 open · 0 blocked · 2 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/18) |
+| Next up | `░░░░░░░░░░` | 0% (0/17) |
 | Blocked on Shamil | `░░░░░░░░░░` | 0% (0/2) |
-| Recently done | `██████████` | 100% (17/17) |
+| Recently done | `██████████` | 100% (18/18) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
@@ -183,8 +183,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 **Phase 1: checks (offline, read-only)**
 - [ ] **A4** email: which mail program or webmail, then reach its servers (IMAP/SMTP ports). Needs a question first, like A3
-- [ ] **B** ← recommended, next: audio default device, mute, audio service; camera/mic privacy per app; display scale
-- [ ] **D** disk space, memory and CPU hogs, startup programs, recent crashes, uptime
+- [ ] **D** ← recommended, next: disk space, memory and CPU hogs, startup programs, recent crashes, uptime
 - [ ] **E** Windows Update service, last success, pending reboot
 
 **Phase 2: fixes, proof and the note**
@@ -220,6 +219,27 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Phase 1, area B: Sound, screen & video calls** *(26 Sep)*
+- [x] **B1, B2, B3** (`src/checks/sound.ps1`, `src/checks/audio-interop.ps1`).
+      Sound goes through Windows' own audio system (Core Audio) via a small
+      piece of C#, compiled on first use in about 0.35 s. *B1*: sound
+      service, sound hardware errors, the outputs in use, which one is the
+      default, mute and volume, and "sound goes to a screen or digital
+      output" when real speakers exist. Fixes: restart the sound service
+      (admin), play through another output (speakers before screens,
+      undoable), unmute, turn up (undoable), test sound (not listed on the
+      note). *B2*: default microphone (muted, too low), cameras, and the
+      three Windows privacy switches (whole PC, apps, desktop programs) plus
+      the per-app switch for WhatsApp, Teams, Skype, Messenger, Zoom and
+      Camera. Fixes: unmute, turn up, allow (undoable, the whole-PC switch
+      needs admin). *B3*: brightness on laptops, colour filter (the grey
+      screen from Windows + Ctrl + C), high contrast, Magnifier, the main
+      screen standing upright, scale and text size. Fixes: brighter
+      (undoable), close the Magnifier. Live on Shamil's PC: Realtek speakers
+      at 30% with 5 other outputs offered, the Elgato microphone at 95%, "no
+      camera" (correct), screen normal. The mute, volume and switch-output
+      calls were each tried and put back. 18 guides, 10 fixes, 25 tests
 
 **Contact line on the note** *(26 Sep)*
 - [x] **Decided: the email only** (`Shamil: shamilimanuel@outlook.com`),
@@ -418,6 +438,13 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - **Bluetooth switched off in Settings isn't detected.** The radio's on/off
   state needs a Windows API PowerShell 5.1 can't easily reach. The C3 guide
   starts with "check that Bluetooth is On" for that reason.
+- **The C# in `audio-interop.ps1` must never contain `$` or a backtick**: it
+  sits in a double-quoted here-string (a single-quoted one would end
+  `$HcSource` early).
+- **Switching the sound output uses IPolicyConfig**, which Microsoft never
+  documented. It's what Settings uses itself and has been stable since
+  Windows 7, but a future Windows could break it. Then the step-by-step
+  guide still works.
 - **Undo only covers the current session.** Once Housecall is closed, a
   disabled task has to be switched back on in Task Scheduler. The step-by-step
   guide says where.
@@ -449,6 +476,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Guides | `steps.<finding id>` in `src/strings.ps1`, steps separated by `\|` |
 | Note | `src/note.ps1`: `$script:Contact` (fill in!), the visit record, `Get-HcNoteBlocks` (content), the window and printing |
 | Admin restart | `Start-HcElevated` in `src/fixes.ps1`; `$HcSource` in `dev.ps1` and `setup.ps1` |
+| Area B | `src/checks/sound.ps1`: `Test-HcSound` (B1), `Test-HcCalls` (B2), `Test-HcScreen` (B3); `src/checks/audio-interop.ps1`: the C# for Core Audio |
 | Area C | `src/checks/devices.ps1`: `Test-HcPrinter` (C1), `Test-HcInputDevices` (C2), `Test-HcBluetooth` (C3), `Add-HcDeviceProblem` (shared by C2 and C3) |
 | Area F | `src/checks/security.ps1`: the remote-tool list, known notification sites, `Test-HcSecurity` (F1–F3 share it; `$script:SecurityChecks` says which parts each runs) |
 | Next areas | `src/checks/<area>.ps1`, one file per letter, registering its own handlers |
