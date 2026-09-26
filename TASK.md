@@ -1,20 +1,20 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 43%** `█████████░░░░░░░░░░░` 18 of 42 done · 0 in progress · 21 open · 0 blocked · 3 waiting on a decision
+**Progress: 48%** `██████████░░░░░░░░░░` 20 of 42 done · 0 in progress · 19 open · 0 blocked · 3 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/21) |
+| Next up | `░░░░░░░░░░` | 0% (0/19) |
 | Blocked on Shamil | `░░░░░░░░░░` | 0% (0/3) |
-| Recently done | `██████████` | 100% (13/13) |
+| Recently done | `██████████` | 100% (15/15) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
 
 Working notes, kept so a new chat can pick up without re-deriving anything.
-Last updated: **26 September 2026**, after areas A and F, and the start of Phase 2 (fixes, undo, step-by-step guides).
+Last updated: **26 September 2026**, after areas A and F, fixes with undo and guides, the client note, and restarting as admin.
 
 **How we work this list:** items are worked top to bottom. Pick one, say the
 name, and it gets built. When it is done it moves to *Recently done* and we go
@@ -52,9 +52,13 @@ fixes (pick one, confirm with J/N, and the same check runs again as proof)
 and **[S] Stap voor stap**, a guide shown one step at a time. **U** on the
 menu undoes the session's fixes. Five fixes exist so far; see *Recently done*.
 
-Next, recommended: **the note window** (the end of a visit), then
-**relaunch as admin** so admin fixes (renew IP) work without restarting by
-hand. B–E follow the same pattern afterwards.
+**Also done:** the **client note** opens by itself on Q (large text,
+Afdrukken / Sluiten, nothing saved), and an admin fix now offers to
+**restart Housecall as administrator** at the same problem, also offline.
+
+Next, recommended: **areas B–E** with the same pattern (checks → finding →
+fixes → steps), starting with **C** (printer: very common with older
+clients). Shamil still has to fill in `$script:Contact` in `src/note.ps1`.
 
 **Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
 name and **95%** signal correctly. The drop-out count in A2 has not been
@@ -184,16 +188,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 **Phase 2: fixes, proof and the note**
 - [ ] More fixes. Done: disable task, close remote tool, proxy off, flush DNS, renew IP. Still to do: reset Winsock, restart adapter; set default audio; restart spooler + clear queue; restart audio service; uninstall a remote-access tool (through its own uninstaller); block a notification site (the browser must be closed first, or it overwrites the change)
-- [ ] If admin is needed: relaunch elevated and continue where it was. It already *explains* how today
 - [ ] Restore point before any admin fix, where Windows allows one
-- [ ] **Client note** ← recommended, next:: opens by itself at the end, in the client's language:
-      problem, found, changed, Shamil's contact. **Decided 26 Sep: no file
-      left behind.** Build it as Housecall's own window (WinForms, which works
-      under `irm | iex`) with large text, and nothing on disk. Not Notepad on a
-      temp file: Windows 11's Notepad hands the file to an already open window
-      and its process exits at once, so "delete after closing" would delete it
-      before it's read. It also restores closed tabs. Buttons: **Print** (so the
-      client can still keep a paper copy) and **Close**
 
 **Phase 3: the AI chat (`?`)**
 - [ ] Relay: small serverless function holding the key, with its own token (see decisions)
@@ -226,6 +221,28 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Phase 2, part 2: the client note and restarting as admin** *(26 Sep)*
+- [x] **Client note** (`src/note.ps1`): opens by itself when Housecall is
+      closed with Q, if a problem was opened. Its own window (WinForms), with
+      large Segoe UI text in the client's language: *Waar u hulp bij vroeg*,
+      *Wat er gevonden is* (the latest finding per problem, so after a fix
+      it shows the fixed state), *Wat er is gedaan* (in past tense:
+      "AnyDesk afgesloten"), *Vragen?* (only when `$script:Contact` is set),
+      and "this note is not saved anywhere". **Afdrukken** prints through
+      the normal Windows dialog, page by page (Microsoft Print to PDF makes
+      a PDF), **Sluiten** closes it and nothing is left. With no one at the
+      console, it prints to the console instead of waiting for a click.
+      Checked on screen once with sample data
+- [x] **Restart as admin**: an admin fix (renew IP) asks "Housecall nu
+      opnieuw starten als beheerder?" and opens an admin window at the same
+      problem, in the same language (and dry run). Housecall now keeps its
+      own code in `$HcSource` (the build stores it as a here-string), writes
+      it to a temp file, and the new window reads it, **deletes it at once**
+      and runs it. So it works after `irm | iex` and without internet.
+      Saying No to Windows' question cleans up the file and carries on.
+      Tested end to end without the Windows prompt itself: the real start-up
+      command opened A1 and deleted the file. 7 new tests
 
 **Phase 2, part 1: fixes, proof, undo, step by step** *(26 Sep)*
 - [x] **The shape of a fix** (`src/fixes.ps1`): the only code that changes
@@ -315,7 +332,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - [ ] **Arrow-key navigation** in the console menu, next to typed codes
 - [ ] **Hardware health**: SMART disk status, battery wear, temperatures
 - [ ] **Remote mode**: a client pastes the line themselves while you're on the phone
-- [ ] **Save the note as PDF** from the note window, when a client asks for a copy by email
+- [x] ~~Save the note as PDF~~: covered by Afdrukken > Microsoft Print to PDF
 
 ### Considered and deliberately not doing
 
@@ -362,6 +379,13 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - **The known-sites list is a judgment call** (`$script:KnownNotificationSites`).
   Add a site there when clients keep allowing it on purpose. Never add one
   just because it's popular with scammers' victims.
+- **The Windows permission prompt itself hasn't been clicked through yet.**
+  Everything around it is tested (the command, the temp file, No). The first
+  time a client PC needs *renew IP*, watch it once.
+- **After the admin restart, the note only covers the admin window.** What was
+  found in the first window isn't carried over (only the problem code is).
+- **No source line may start with `'@`**: it would end the `$HcSource`
+  here-string. `build.ps1` refuses it.
 - **Undo only covers the current session.** Once Housecall is closed, a
   disabled task has to be switched back on in Task Scheduler. The step-by-step
   guide says where.
@@ -391,6 +415,8 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Area A | `src/checks/network.ps1`: facts, `Test-HcInternet` (A1), `Test-HcConnectionQuality` (A2), `Test-HcSite` (A3) |
 | Fixes | `src/fixes.ps1`: `$script:Fixes` (the only changes Housecall makes), the **Wat nu?** menu, the step-by-step viewer, undo |
 | Guides | `steps.<finding id>` in `src/strings.ps1`, steps separated by `\|` |
+| Note | `src/note.ps1`: `$script:Contact` (fill in!), the visit record, `Get-HcNoteBlocks` (content), the window and printing |
+| Admin restart | `Start-HcElevated` in `src/fixes.ps1`; `$HcSource` in `dev.ps1` and `setup.ps1` |
 | Area F | `src/checks/security.ps1`: the remote-tool list, known notification sites, `Test-HcSecurity` (F1–F3 share it; `$script:SecurityChecks` says which parts each runs) |
 | Next areas | `src/checks/<area>.ps1`, one file per letter, registering its own handlers |
 | Fixes | `fixes/` *(planned)*: the approved list, each with its undo |

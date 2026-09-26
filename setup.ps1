@@ -24,11 +24,21 @@ param(
     # Language for everything on screen: nl or en. Defaults to the Windows
     # language. No [ValidateSet] on purpose: under `irm | iex` this block runs
     # as plain variable declarations, and the empty default would fail it.
-    [string]$Lang
+    [string]$Lang,
+    # Open this problem straight away, e.g. A1. Used when Housecall restarts
+    # itself as administrator, so it carries on where it was.
+    [string]$Start
 )
 
 $ErrorActionPreference = 'Stop'
 
+<#
+    All of Housecall's code is kept as text in $HcSource and run from there.
+    That way it can hand itself to a new administrator window (see
+    Start-HcElevated in src\fixes.ps1) even when it came in through
+    `irm | iex` and there is no file on disk, and even with no internet.
+#>
+$HcSource = @'
 
 # ==================================================== src\strings.ps1 ==
 <#
@@ -291,6 +301,11 @@ $script:Strings = @{
         'fix.proxyOff'     = 'Turn off the proxy'
         'fix.flushDns'     = 'Clear the DNS cache'
         'fix.renewIp'      = 'Ask the router for a new address'
+        'fix.disableTask.done' = 'Disabled scheduled task "{0}"'
+        'fix.stopRemote.done'  = 'Closed {0}'
+        'fix.proxyOff.done'    = 'Turned off the proxy'
+        'fix.flushDns.done'    = 'Cleared the DNS cache'
+        'fix.renewIp.done'     = 'Got a new address from the router'
         'menu.undo'        = 'Undo fixes'
         'undo.nothing'     = 'There is nothing to undo.'
         'undo.confirm'     = 'Undo {0} change(s) made in this session? (Y/N)'
@@ -333,6 +348,23 @@ $script:Strings = @{
         'steps.hostsRedirect'    = 'Open Notepad as administrator: type Notepad in Start, right-click it, choose Run as administrator. | Choose File > Open, set the file type to All files, and paste: C:\Windows\System32\drivers\etc\hosts | Delete the lines the client does not recognise and save. | Choose F3 again to check.'
         'steps.cleanPopup'       = 'Is the pop-up still on screen? Press Ctrl + Shift + Esc to open Task Manager. | Select the browser and click End task. | Open the browser again. If it offers to restore the tabs, say no. | Tell the client: such pages look scary but do nothing once closed. Never call the number.'
         'steps.cleanCall'        = 'Ask what the caller did: did they see the screen, or ask for codes or bank details? | If they asked for bank details or codes: call the bank on the number on the bank card. | Change the email password from another device. | Tell the client: banks and Microsoft never call about a virus.'
+
+        # ---- the client note
+        'note.title'          = 'Housecall, {0}'
+        'note.asked'          = 'What you asked for help with'
+        'note.found'          = 'What was found'
+        'note.done'           = 'What was done'
+        'note.nothingChanged' = 'Nothing was changed on this PC.'
+        'note.contact'        = 'Questions?'
+        'note.footer'         = 'This note is not saved anywhere: it disappears when you close it. Print it if you want to keep it.'
+        'note.print'          = 'Print'
+        'note.close'          = 'Close'
+        'note.windowTitle'    = 'Housecall - note'
+
+        # ---- restarting as administrator
+        'fix.elevateAsk'      = 'This needs admin. Restart Housecall as administrator now? Windows will ask for permission. (Y/N)'
+        'fix.elevated'        = 'Housecall carries on in the new administrator window. This window can be closed.'
+        'fix.elevateFailed'   = 'Windows did not start the administrator window ({0}).'
     }
 
     nl = @{
@@ -580,6 +612,11 @@ $script:Strings = @{
         'fix.proxyOff'     = 'De proxy uitzetten'
         'fix.flushDns'     = 'De DNS-cache legen'
         'fix.renewIp'      = 'De router om een nieuw adres vragen'
+        'fix.disableTask.done' = 'Geplande taak "{0}" uitgeschakeld'
+        'fix.stopRemote.done'  = '{0} afgesloten'
+        'fix.proxyOff.done'    = 'Proxy uitgezet'
+        'fix.flushDns.done'    = 'DNS-cache geleegd'
+        'fix.renewIp.done'     = 'Nieuw adres van de router gekregen'
         'menu.undo'        = 'Wijzigingen terugdraaien'
         'undo.nothing'     = 'Er is niets om terug te draaien.'
         'undo.confirm'     = '{0} wijziging(en) van deze sessie terugdraaien? (J/N)'
@@ -622,6 +659,23 @@ $script:Strings = @{
         'steps.hostsRedirect'    = 'Open Kladblok als administrator: typ Kladblok in Start, klik er met rechts op, kies Als administrator uitvoeren. | Kies Bestand > Openen, zet het bestandstype op Alle bestanden, en plak: C:\Windows\System32\drivers\etc\hosts | Verwijder de regels die de klant niet kent en sla op. | Kies opnieuw F3 om te controleren.'
         'steps.cleanPopup'       = ('Staat de pop-up nog op het scherm? Druk op Ctrl + Shift + Esc om Taakbeheer te openen. | Selecteer de browser en klik op Taak be' + [char]0xEB + 'indigen. | Open de browser opnieuw. Vraagt hij om de tabbladen terug te zetten, zeg dan nee. | Zeg tegen de klant: zulke pagina''s zien er eng uit maar doen niets zodra ze dicht zijn. Bel nooit het nummer.')
         'steps.cleanCall'        = 'Vraag wat de beller deed: keek hij mee op het scherm, of vroeg hij om codes of bankgegevens? | Vroeg hij om bankgegevens of codes: bel de bank op het nummer op de bankpas. | Wijzig het wachtwoord van de e-mail vanaf een ander apparaat. | Zeg tegen de klant: banken en Microsoft bellen nooit over een virus.'
+
+        # ---- the client note
+        'note.title'          = 'Housecall, {0}'
+        'note.asked'          = 'Waar u hulp bij vroeg'
+        'note.found'          = 'Wat er gevonden is'
+        'note.done'           = 'Wat er is gedaan'
+        'note.nothingChanged' = 'Er is niets veranderd aan deze pc.'
+        'note.contact'        = 'Vragen?'
+        'note.footer'         = 'Dit briefje wordt nergens bewaard: het verdwijnt als u het sluit. Druk het af als u het wilt houden.'
+        'note.print'          = 'Afdrukken'
+        'note.close'          = 'Sluiten'
+        'note.windowTitle'    = 'Housecall - briefje'
+
+        # ---- restarting as administrator
+        'fix.elevateAsk'      = 'Hiervoor is beheerder nodig. Housecall nu opnieuw starten als beheerder? Windows vraagt om toestemming. (J/N)'
+        'fix.elevated'        = 'Housecall gaat verder in het nieuwe beheerdersvenster. Dit venster mag dicht.'
+        'fix.elevateFailed'   = 'Windows heeft het beheerdersvenster niet gestart ({0}).'
     }
 }
 
@@ -706,6 +760,9 @@ function Read-HcLine {
     try {
         $line = Read-Host "  $Prompt"
     } catch {
+        # Nobody at a console (a non-interactive run): remember it, so the
+        # note is printed instead of waiting for a click that never comes.
+        $script:NoConsole = $true
         return 'Q'
     }
     if ($null -eq $line) { return '' }
@@ -993,12 +1050,14 @@ function Invoke-HcProblem {
         return
     }
 
+    $script:HcCurrentCode = $Code
     $check = & $handler
     if (-not $check) { return }      # e.g. A3 when no site was typed
     Write-Dim (T 'run.checking')
     Write-Host ''
     $report = & $check
     Write-HcReport $report
+    Save-HcVisit $Code $report
 
     while (@($report.Actions).Count -gt 0 -or @(Get-HcSteps $report).Count -gt 0) {
         $result = Invoke-HcActionMenu $report
@@ -1009,6 +1068,7 @@ function Invoke-HcProblem {
             Write-Host ''
             $report = & $check
             Write-HcReport $report
+            Save-HcVisit $Code $report
         }
     }
     Write-Host ''
@@ -1039,12 +1099,16 @@ function Start-Housecall {
     param(
         [switch]$DryRun,
         [string]$Lang,
+        # A problem code to open straight away, e.g. after restarting as admin.
+        [string]$Start,
         # For tests: answers to feed in instead of reading the keyboard.
         [string[]]$Answers
     )
 
     $script:DryRun = [bool]$DryRun
     $script:HcChanges.Clear()
+    $script:HcVisit.Clear()
+    $script:HandedOff = $false
     $script:Lang = if ($script:Strings.ContainsKey("$Lang".ToLowerInvariant())) { "$Lang".ToLowerInvariant() } else { Get-HcDefaultLanguage }
     $script:HcInputQueue = $null
     if ($PSBoundParameters.ContainsKey('Answers')) {
@@ -1063,7 +1127,13 @@ function Start-Housecall {
     $area = ''          # '' = home menu, otherwise the letter on screen
     $message = $null    # one-off warning shown under the menu
 
-    while ($true) {
+    $first = Resolve-HcChoice $Start
+    if ($first.Kind -eq 'problem') {
+        $area = $first.Value.Substring(0, 1)
+        Invoke-HcProblem $environment $first.Value
+    }
+
+    while (-not $script:HandedOff) {
         if ($area) { Show-HcArea $environment $area $message } else { Show-HcHome $environment $message }
         $message = $null
 
@@ -1078,6 +1148,7 @@ function Start-Housecall {
             'undo'     { $message = Invoke-HcUndo }
             'unknown'  { $message = T 'menu.unknown' $choice.Value }
             'quit'     {
+                Show-HcNote
                 Write-Host ''
                 if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
                 Write-Host ''
@@ -2139,7 +2210,8 @@ $script:ProblemHandlers['F3'] = 'Invoke-HcF3'
     anything. A report offers fixes (Add-HcAction), the person picks one and
     confirms it, and only then does Apply run. Each fix says:
 
-      Label    fix.<id> in strings.ps1, filled from the target
+      Label    fix.<id> in strings.ps1, filled from the target, and
+               fix.<id>.done for the note and undo ("Disabled task X")
       Note     undo = can be undone, safe = harmless and needs no undo,
                restart = closes a program, which can simply be started again
       Admin    needs an administrator PowerShell
@@ -2270,8 +2342,20 @@ function Invoke-HcActionMenu {
     $fix = $script:Fixes[$action.FixId]
     $label = T ('fix.' + $action.FixId) $action.Target.Label
 
-    if ($fix.Admin -and -not $script:IsAdmin) {
-        Write-Warn2 (T 'fix.adminHow')
+    if ($fix.Admin -and -not $script:IsAdmin -and -not $script:DryRun) {
+        if (-not $script:HcSource) {
+            Write-Warn2 (T 'fix.adminHow')
+            return 'none'
+        }
+        if (-not (Test-HcYes (Read-HcLine (T 'fix.elevateAsk')))) {
+            Write-Dim (T 'fix.cancelled')
+            return 'none'
+        }
+        if (Start-HcElevated $script:HcCurrentCode) {
+            $script:HandedOff = $true
+            Write-Ok (T 'fix.elevated')
+            return 'back'
+        }
         return 'none'
     }
     if (-not (Test-HcYes (Read-HcLine (T 'fix.confirm' $label)))) {
@@ -2289,9 +2373,43 @@ function Invoke-HcActionMenu {
         Write-Warn2 (T 'fix.failed' $_.Exception.Message)
         return 'none'
     }
-    [void]$script:HcChanges.Add([pscustomobject]@{ FixId = $action.FixId; Target = $action.Target; Label = $label })
+    $done = T ('fix.' + $action.FixId + '.done') $action.Target.Label
+    [void]$script:HcChanges.Add([pscustomobject]@{ FixId = $action.FixId; Target = $action.Target; Label = $done })
     Write-Ok (T 'fix.done')
     'changed'
+}
+
+<#
+    Restarts Housecall as administrator, at the same problem, when a fix
+    needs it. Housecall's own code ($script:HcSource) goes into a temporary
+    file; the new window reads it, deletes it straight away and runs it. So
+    it works after `irm | iex` (no file on disk) and without internet --
+    which matters, since renewing the IP is a fix for having no internet.
+    The small start-up command travels -EncodedCommand, so no path or quote
+    in it can break.
+#>
+function Start-HcElevated {
+    param([string]$Code)
+    if (-not $script:HcSource) { return $false }
+    $file = Join-Path $env:TEMP ('housecall-' + [guid]::NewGuid().ToString('N') + '.txt')
+    [IO.File]::WriteAllText($file, $script:HcSource, (New-Object Text.ASCIIEncoding))
+
+    $options = "-Start '$Code' -Lang '$script:Lang'"
+    if ($script:DryRun) { $options += ' -DryRun' }
+    $quoted = $file.Replace("'", "''")
+    $boot = "`$f = '$quoted'; `$s = [IO.File]::ReadAllText(`$f); Remove-Item -LiteralPath `$f -Force; " +
+            "`$ErrorActionPreference = 'Stop'; . ([scriptblock]::Create(`$s)); `$script:HcSource = `$s; Start-Housecall $options"
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($boot))
+    try {
+        Start-Process powershell.exe -Verb RunAs -ErrorAction Stop `
+            -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encoded)
+    } catch {
+        # Most often: the person said No to Windows' permission question.
+        Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
+        Write-Warn2 (T 'fix.elevateFailed' $_.Exception.Message)
+        return $false
+    }
+    $true
 }
 
 # U on the menu: undo this session's changes, newest first.
@@ -2314,5 +2432,198 @@ function Invoke-HcUndo {
     $messages -join ' / '
 }
 
+# ==================================================== src\note.ps1 ==
+<#
+    The client note: what they asked for help with, what was found, what was
+    done, and how to reach you. It opens by itself when Housecall is closed
+    (Q), in the client's language, in its own window with large text.
 
-Start-Housecall -DryRun:$DryRun -Lang $Lang
+    Nothing is written to disk. Closing the window is the end of it; the
+    Print button is how a client keeps a copy (Microsoft Print to PDF makes
+    a PDF, for email).
+#>
+
+# Your contact line for the bottom of the note, e.g. 'Shamil, 06-12345678'.
+# Left empty, the "Questions?" part is simply not shown.
+$script:Contact = ''
+
+# The problems opened in this session, each with its latest finding (the
+# one after any fixes). Filled by Invoke-HcProblem.
+$script:HcVisit = New-Object System.Collections.ArrayList
+
+function Save-HcVisit {
+    param([string]$Code, [pscustomobject]$Report)
+    $entry = $script:HcVisit | Where-Object { $_.Code -eq $Code } | Select-Object -First 1
+    if (-not $entry) {
+        $entry = [pscustomobject]@{ Code = $Code; FindingId = $null; FindingArgs = @() }
+        [void]$script:HcVisit.Add($entry)
+    }
+    $entry.FindingId = $Report.FindingId
+    $entry.FindingArgs = @($Report.FindingArgs)
+}
+
+<#
+    The note as a list of blocks, each with a Style (title, heading, text,
+    small) and its Text. Pure, so it can be tested; the window and the
+    printout both draw from it. Empty when no problem was opened.
+#>
+function Get-HcNoteBlocks {
+    param([datetime]$Date = (Get-Date))
+    $visits = @($script:HcVisit)
+    if ($visits.Count -eq 0) { return @() }
+    $block = { param($style, $text) [pscustomobject]@{ Style = $style; Text = $text } }
+    $culture = if ($script:Lang -eq 'nl') { 'nl-NL' } else { 'en-GB' }
+
+    & $block 'title' (T 'note.title' $Date.ToString('d MMMM yyyy', [Globalization.CultureInfo]::GetCultureInfo($culture)))
+
+    & $block 'heading' (T 'note.asked')
+    foreach ($v in $visits) { & $block 'text' (T "problem.$($v.Code)") }
+
+    & $block 'heading' (T 'note.found')
+    foreach ($v in $visits | Where-Object { $_.FindingId }) {
+        $all = @('finding.' + $v.FindingId) + @($v.FindingArgs)
+        & $block 'text' (T @all)
+    }
+
+    & $block 'heading' (T 'note.done')
+    $changes = @($script:HcChanges)
+    if ($changes.Count -eq 0) {
+        & $block 'text' (T 'note.nothingChanged')
+    } else {
+        foreach ($c in $changes) { & $block 'text' $c.Label }
+    }
+
+    if ($script:Contact) {
+        & $block 'heading' (T 'note.contact')
+        & $block 'text' $script:Contact
+    }
+    & $block 'small' (T 'note.footer')
+}
+
+function Show-HcNote {
+    $blocks = @(Get-HcNoteBlocks)
+    if ($blocks.Count -eq 0) { return }
+
+    # A scripted run (the tests) prints the note instead of opening a window.
+    if ($null -ne $script:HcInputQueue) {
+        Write-Host ''
+        foreach ($b in $blocks) { Write-Host ('  [note] ' + $b.Text) }
+        return
+    }
+    try {
+        if ($script:NoConsole) { throw 'nobody to close a window' }
+        Add-Type -AssemblyName System.Windows.Forms, System.Drawing -ErrorAction Stop
+        Show-HcNoteWindow $blocks
+    } catch {
+        # No desktop to show a window on: show the note in the console.
+        Write-Host ''
+        foreach ($b in $blocks) { Write-Host ('  ' + $b.Text) }
+    }
+}
+
+function Show-HcNoteWindow {
+    param([object[]]$Blocks)
+    [Windows.Forms.Application]::EnableVisualStyles()
+    $family = 'Segoe UI'
+    $script:HcNoteFonts = @{
+        title   = New-Object Drawing.Font($family, 20, [Drawing.FontStyle]::Bold)
+        heading = New-Object Drawing.Font($family, 14, [Drawing.FontStyle]::Bold)
+        text    = New-Object Drawing.Font($family, 13)
+        small   = New-Object Drawing.Font($family, 10, [Drawing.FontStyle]::Italic)
+    }
+    $script:HcNoteBlocks = $Blocks
+
+    $form = New-Object Windows.Forms.Form
+    $form.Text = T 'note.windowTitle'
+    $form.StartPosition = 'CenterScreen'
+    $form.Size = New-Object Drawing.Size(680, 760)
+    $form.MinimumSize = New-Object Drawing.Size(480, 400)
+    $form.BackColor = [Drawing.Color]::White
+    $form.TopMost = $true          # in front of the console, once
+    $form.Add_Shown({ $this.Activate(); $this.TopMost = $false })
+
+    $box = New-Object Windows.Forms.RichTextBox
+    $box.Dock = 'Fill'
+    $box.ReadOnly = $true
+    $box.BorderStyle = 'None'
+    $box.BackColor = [Drawing.Color]::White
+    $box.DetectUrls = $false
+    $box.Cursor = [Windows.Forms.Cursors]::Default
+    foreach ($b in $Blocks) {
+        $box.SelectionStart = $box.TextLength
+        $box.SelectionFont = $script:HcNoteFonts[$b.Style]
+        $box.SelectionColor = if ($b.Style -eq 'small') { [Drawing.Color]::DimGray } else { [Drawing.Color]::Black }
+        $gap = if ($b.Style -in @('heading', 'small')) { "`n" } else { '' }
+        $box.AppendText($gap + $b.Text + "`n")
+    }
+
+    $inner = New-Object Windows.Forms.Panel
+    $inner.Dock = 'Fill'
+    $inner.Padding = New-Object Windows.Forms.Padding(32, 24, 32, 8)
+    $inner.Controls.Add($box)
+
+    $buttons = New-Object Windows.Forms.FlowLayoutPanel
+    $buttons.Dock = 'Bottom'
+    $buttons.FlowDirection = 'RightToLeft'
+    $buttons.Height = 72
+    $buttons.Padding = New-Object Windows.Forms.Padding(24, 12, 24, 12)
+    $buttons.BackColor = [Drawing.Color]::FromArgb(243, 244, 246)
+
+    $close = New-Object Windows.Forms.Button
+    $close.Text = T 'note.close'
+    $close.Size = New-Object Drawing.Size(150, 44)
+    $close.Font = New-Object Drawing.Font($family, 12)
+    $close.Add_Click({ $this.FindForm().Close() })
+    $form.CancelButton = $close
+
+    $print = New-Object Windows.Forms.Button
+    $print.Text = T 'note.print'
+    $print.Size = New-Object Drawing.Size(150, 44)
+    $print.Font = New-Object Drawing.Font($family, 12)
+    $print.Add_Click({ Invoke-HcNotePrint })
+
+    $buttons.Controls.Add($close)
+    $buttons.Controls.Add($print)
+    $form.Controls.Add($inner)
+    $form.Controls.Add($buttons)
+    $form.ActiveControl = $close     # no blinking text cursor in the note
+    [void]$form.ShowDialog()
+    $form.Dispose()
+}
+
+# Prints the note's blocks, continuing on a new page when one is full.
+function Invoke-HcNotePrint {
+    $doc = New-Object Drawing.Printing.PrintDocument
+    $doc.DocumentName = 'Housecall'
+    $script:HcNotePrintAt = 0
+    $doc.Add_PrintPage({
+        param($sender, $e)
+        $area = $e.MarginBounds
+        $y = [single]$area.Top
+        while ($script:HcNotePrintAt -lt $script:HcNoteBlocks.Count) {
+            $b = $script:HcNoteBlocks[$script:HcNotePrintAt]
+            $font = $script:HcNoteFonts[$b.Style]
+            if ($b.Style -in @('heading', 'small')) { $y += $font.GetHeight($e.Graphics) * 0.6 }
+            $size = $e.Graphics.MeasureString($b.Text, $font, $area.Width)
+            if ($y + $size.Height -gt $area.Bottom -and $y -gt $area.Top) { $e.HasMorePages = $true; return }
+            $rect = New-Object Drawing.RectangleF([single]$area.Left, $y, [single]$area.Width, $size.Height)
+            $e.Graphics.DrawString($b.Text, $font, [Drawing.Brushes]::Black, $rect)
+            $y += $size.Height + 4
+            $script:HcNotePrintAt++
+        }
+        $e.HasMorePages = $false
+    })
+    $dialog = New-Object Windows.Forms.PrintDialog
+    $dialog.Document = $doc
+    $dialog.UseEXDialog = $true
+    if ($dialog.ShowDialog() -eq [Windows.Forms.DialogResult]::OK) {
+        try { $doc.Print() } catch { [void][Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Housecall') }
+    }
+    $doc.Dispose()
+}
+'@
+
+
+. ([scriptblock]::Create($HcSource))
+$script:HcSource = $HcSource
+Start-Housecall -DryRun:$DryRun -Lang $Lang -Start $Start

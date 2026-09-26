@@ -258,6 +258,11 @@ $script:Strings = @{
         'fix.proxyOff'     = 'Turn off the proxy'
         'fix.flushDns'     = 'Clear the DNS cache'
         'fix.renewIp'      = 'Ask the router for a new address'
+        'fix.disableTask.done' = 'Disabled scheduled task "{0}"'
+        'fix.stopRemote.done'  = 'Closed {0}'
+        'fix.proxyOff.done'    = 'Turned off the proxy'
+        'fix.flushDns.done'    = 'Cleared the DNS cache'
+        'fix.renewIp.done'     = 'Got a new address from the router'
         'menu.undo'        = 'Undo fixes'
         'undo.nothing'     = 'There is nothing to undo.'
         'undo.confirm'     = 'Undo {0} change(s) made in this session? (Y/N)'
@@ -300,6 +305,23 @@ $script:Strings = @{
         'steps.hostsRedirect'    = 'Open Notepad as administrator: type Notepad in Start, right-click it, choose Run as administrator. | Choose File > Open, set the file type to All files, and paste: C:\Windows\System32\drivers\etc\hosts | Delete the lines the client does not recognise and save. | Choose F3 again to check.'
         'steps.cleanPopup'       = 'Is the pop-up still on screen? Press Ctrl + Shift + Esc to open Task Manager. | Select the browser and click End task. | Open the browser again. If it offers to restore the tabs, say no. | Tell the client: such pages look scary but do nothing once closed. Never call the number.'
         'steps.cleanCall'        = 'Ask what the caller did: did they see the screen, or ask for codes or bank details? | If they asked for bank details or codes: call the bank on the number on the bank card. | Change the email password from another device. | Tell the client: banks and Microsoft never call about a virus.'
+
+        # ---- the client note
+        'note.title'          = 'Housecall, {0}'
+        'note.asked'          = 'What you asked for help with'
+        'note.found'          = 'What was found'
+        'note.done'           = 'What was done'
+        'note.nothingChanged' = 'Nothing was changed on this PC.'
+        'note.contact'        = 'Questions?'
+        'note.footer'         = 'This note is not saved anywhere: it disappears when you close it. Print it if you want to keep it.'
+        'note.print'          = 'Print'
+        'note.close'          = 'Close'
+        'note.windowTitle'    = 'Housecall - note'
+
+        # ---- restarting as administrator
+        'fix.elevateAsk'      = 'This needs admin. Restart Housecall as administrator now? Windows will ask for permission. (Y/N)'
+        'fix.elevated'        = 'Housecall carries on in the new administrator window. This window can be closed.'
+        'fix.elevateFailed'   = 'Windows did not start the administrator window ({0}).'
     }
 
     nl = @{
@@ -547,6 +569,11 @@ $script:Strings = @{
         'fix.proxyOff'     = 'De proxy uitzetten'
         'fix.flushDns'     = 'De DNS-cache legen'
         'fix.renewIp'      = 'De router om een nieuw adres vragen'
+        'fix.disableTask.done' = 'Geplande taak "{0}" uitgeschakeld'
+        'fix.stopRemote.done'  = '{0} afgesloten'
+        'fix.proxyOff.done'    = 'Proxy uitgezet'
+        'fix.flushDns.done'    = 'DNS-cache geleegd'
+        'fix.renewIp.done'     = 'Nieuw adres van de router gekregen'
         'menu.undo'        = 'Wijzigingen terugdraaien'
         'undo.nothing'     = 'Er is niets om terug te draaien.'
         'undo.confirm'     = '{0} wijziging(en) van deze sessie terugdraaien? (J/N)'
@@ -589,6 +616,23 @@ $script:Strings = @{
         'steps.hostsRedirect'    = 'Open Kladblok als administrator: typ Kladblok in Start, klik er met rechts op, kies Als administrator uitvoeren. | Kies Bestand > Openen, zet het bestandstype op Alle bestanden, en plak: C:\Windows\System32\drivers\etc\hosts | Verwijder de regels die de klant niet kent en sla op. | Kies opnieuw F3 om te controleren.'
         'steps.cleanPopup'       = ('Staat de pop-up nog op het scherm? Druk op Ctrl + Shift + Esc om Taakbeheer te openen. | Selecteer de browser en klik op Taak be' + [char]0xEB + 'indigen. | Open de browser opnieuw. Vraagt hij om de tabbladen terug te zetten, zeg dan nee. | Zeg tegen de klant: zulke pagina''s zien er eng uit maar doen niets zodra ze dicht zijn. Bel nooit het nummer.')
         'steps.cleanCall'        = 'Vraag wat de beller deed: keek hij mee op het scherm, of vroeg hij om codes of bankgegevens? | Vroeg hij om bankgegevens of codes: bel de bank op het nummer op de bankpas. | Wijzig het wachtwoord van de e-mail vanaf een ander apparaat. | Zeg tegen de klant: banken en Microsoft bellen nooit over een virus.'
+
+        # ---- the client note
+        'note.title'          = 'Housecall, {0}'
+        'note.asked'          = 'Waar u hulp bij vroeg'
+        'note.found'          = 'Wat er gevonden is'
+        'note.done'           = 'Wat er is gedaan'
+        'note.nothingChanged' = 'Er is niets veranderd aan deze pc.'
+        'note.contact'        = 'Vragen?'
+        'note.footer'         = 'Dit briefje wordt nergens bewaard: het verdwijnt als u het sluit. Druk het af als u het wilt houden.'
+        'note.print'          = 'Afdrukken'
+        'note.close'          = 'Sluiten'
+        'note.windowTitle'    = 'Housecall - briefje'
+
+        # ---- restarting as administrator
+        'fix.elevateAsk'      = 'Hiervoor is beheerder nodig. Housecall nu opnieuw starten als beheerder? Windows vraagt om toestemming. (J/N)'
+        'fix.elevated'        = 'Housecall gaat verder in het nieuwe beheerdersvenster. Dit venster mag dicht.'
+        'fix.elevateFailed'   = 'Windows heeft het beheerdersvenster niet gestart ({0}).'
     }
 }
 

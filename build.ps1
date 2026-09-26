@@ -11,9 +11,10 @@
         powershell -ExecutionPolicy Bypass -File build.ps1
 
     The block between the ">>> sources" and "<<< sources" markers in
-    dev.ps1 is replaced by the contents of each dot-sourced file, in the
-    same order. The result is checked before it is written: it must be plain
-    ASCII and parse without errors.
+    dev.ps1 is replaced by one single-quoted here-string holding the text of
+    every file it lists, in the same order: $HcSource = @' ... '@. dev.ps1
+    then runs that text. The result is checked before it is written: plain
+    ASCII, no line that would end the here-string early, and it must parse.
 #>
 
 $ErrorActionPreference = 'Stop'
@@ -32,14 +33,19 @@ if ($start -lt 0 -or $end -lt $start) {
 $bundle = New-Object System.Collections.Generic.List[string]
 $lines[0..($start - 1)] | ForEach-Object { $bundle.Add($_) }
 
+$bundle.Add("`$HcSource = @'")
 foreach ($line in $lines[($start + 1)..($end - 1)]) {
-    if ($line -match "^\. \(Join-Path \`$src '([^']+)'\)") {
+    if ($line -match "^\s+'([^']+\.ps1)'\s*$") {
         $name = $Matches[1]
         $bundle.Add('')
         $bundle.Add("# ==================================================== src\$name ==")
-        Get-Content -LiteralPath (Join-Path $root "src\$name") | ForEach-Object { $bundle.Add($_) }
+        foreach ($code in (Get-Content -LiteralPath (Join-Path $root "src\$name"))) {
+            if ($code -match "^'@") { throw "src\$name has a line starting with '@, which would end the here-string." }
+            $bundle.Add($code)
+        }
     }
 }
+$bundle.Add("'@")
 
 $bundle.Add('')
 $lines[($end + 1)..($lines.Count - 1)] | ForEach-Object { $bundle.Add($_) }

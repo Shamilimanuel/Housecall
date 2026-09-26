@@ -13,6 +13,13 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\checks\network.ps1')
 . (Join-Path $root 'src\checks\security.ps1')
 . (Join-Path $root 'src\fixes.ps1')
+. (Join-Path $root 'src\note.ps1')
+
+# Housecall's own source, put together the way dev.ps1 does it.
+function Get-HcTestSource {
+    $names = (Get-Content (Join-Path $root 'dev.ps1') | Where-Object { $_ -match "^\s+'([^']+\.ps1)'\s*$" }) -replace "^\s+'|'\s*$", ''
+    ($names | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $root 'src') $_)) }) -join "`r`n"
+}
 
 # A clean PC on 26 Sep 2026; each scenario changes only what it is about.
 function New-FakeSecurity {
@@ -395,6 +402,7 @@ Describe 'Fixes offered by the checks' {
         foreach ($lang in @('en', 'nl')) {
             foreach ($id in $script:Fixes.Keys) {
                 $script:Strings[$lang]["fix.$id"] | Should Not BeNullOrEmpty
+                $script:Strings[$lang]["fix.$id.done"] | Should Not BeNullOrEmpty
                 $script:Strings[$lang]['fix.note.' + $script:Fixes[$id].Note] | Should Not BeNullOrEmpty
             }
         }
@@ -471,6 +479,104 @@ Describe 'Fix, check again, undo (scripted run)' {
         Mock ipconfig.exe { }
         Start-Housecall -Lang en -Answers @('A1', '1', '', 'Q')
         Assert-MockCalled ipconfig.exe -Times 0 -Exactly -Scope It
+    }
+}
+
+Describe 'The client note' {
+    $script:Lang = 'nl'
+
+    It 'is empty when no problem was opened' {
+        $script:HcVisit.Clear(); $script:HcChanges.Clear()
+        @(Get-HcNoteBlocks).Count | Should Be 0
+    }
+
+    It 'says what was asked, found and done, in the client''s language' {
+        $script:HcVisit.Clear(); $script:HcChanges.Clear()
+        $r = New-HcReport; Set-HcFinding $r 'cleanCall'
+        Save-HcVisit 'F2' $r
+        [void]$script:HcChanges.Add([pscustomobject]@{ FixId = 'disableTask'; Target = @{}; Label = 'Geplande taak "Updater" uitschakelen' })
+        $text = @(Get-HcNoteBlocks ([datetime]'2026-09-26')) | ForEach-Object { "$($_.Style): $($_.Text)" }
+        $text[0] | Should Be 'title: Housecall, 26 september 2026'
+        $text -contains 'heading: Waar u hulp bij vroeg' | Should Be $true
+        $text -contains 'text: Iemand belde mij en kwam in mijn computer' | Should Be $true
+        $text -contains 'text: Geplande taak "Updater" uitschakelen' | Should Be $true
+        $text[-1] | Should Match '^small: Dit briefje wordt nergens bewaard'
+    }
+
+    It 'keeps only the latest finding per problem' {
+        $script:HcVisit.Clear()
+        $before = New-HcReport; Set-HcFinding $before 'unknownTask' @('Updater')
+        $after = New-HcReport; Set-HcFinding $after 'cleanCall'
+        Save-HcVisit 'F2' $before
+        Save-HcVisit 'F2' $after
+        $script:HcVisit.Count | Should Be 1
+        $script:HcVisit[0].FindingId | Should Be 'cleanCall'
+    }
+
+    It 'says nothing changed, and shows the contact line only when one is set' {
+        $script:HcVisit.Clear(); $script:HcChanges.Clear()
+        $r = New-HcReport; Set-HcFinding $r 'allGood'
+        Save-HcVisit 'A1' $r
+        $texts = @(Get-HcNoteBlocks | ForEach-Object { $_.Text })
+        $texts -contains 'Er is niets veranderd aan deze pc.' | Should Be $true
+        $texts -contains 'Vragen?' | Should Be $false
+        $script:Contact = 'Shamil, 06-12345678'
+        @(Get-HcNoteBlocks | ForEach-Object { $_.Text }) -contains 'Shamil, 06-12345678' | Should Be $true
+        $script:Contact = ''
+    }
+}
+
+Describe 'Restarting as administrator' {
+    Mock Get-HcEnvironment {
+        [pscustomobject]@{ IsWindows = $true; PSVersion = [version]'5.1'; Os = 'Windows 11 Home'; IsAdmin = $false; Online = $false }
+    }
+    Mock Get-HcNetworkFacts { New-FakeFacts @{ IPv4 = '169.254.1.1'; InternetMs = $null } }
+    $newTemp = { @(Get-ChildItem $env:TEMP -Filter 'housecall-*.txt' -ErrorAction SilentlyContinue) }
+
+    It 'offers a restart, starts an admin window at the same problem, and stops this one' {
+        $script:HcSource = 'function Start-Housecall { }'
+        $script:Launched = $null
+        Mock Start-Process { $script:Launched = $ArgumentList }
+        $before = @(& $newTemp).Count
+        Start-Housecall -Lang en -Answers @('A1', '1', 'y', 'Q')
+        Assert-MockCalled Start-Process -Times 1 -Exactly -Scope It -ParameterFilter { $Verb -eq 'RunAs' -and $FilePath -eq 'powershell.exe' }
+        $script:HandedOff | Should Be $true
+        $boot = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($script:Launched[-1]))
+        $boot | Should Match "Start-Housecall -Start 'A1' -Lang 'en'"
+        $boot | Should Match 'Remove-Item -LiteralPath'
+        # The mock never ran the new window, so the hand-over file is still here: tidy it.
+        $left = @(& $newTemp | Sort-Object LastWriteTime | Select-Object -Last 1)
+        (@(& $newTemp).Count - $before) | Should Be 1
+        [IO.File]::ReadAllText($left[0].FullName) | Should Be $script:HcSource
+        Remove-Item $left[0].FullName
+        $script:HcSource = $null
+    }
+
+    It 'cleans up and carries on when the person says No to Windows' {
+        $script:HcSource = 'function Start-Housecall { }'
+        Mock Start-Process { throw 'The operation was canceled by the user' }
+        $before = @(& $newTemp).Count
+        Start-Housecall -Lang en -Answers @('A1', '1', 'y', '', 'Q')
+        $script:HandedOff | Should Be $false
+        @(& $newTemp).Count | Should Be $before
+        $script:HcSource = $null
+    }
+
+    It 'the start-up command really runs Housecall at the problem, and deletes the hand-over file' {
+        $script:HcSource = Get-HcTestSource
+        $script:Launched = $null
+        Mock Start-Process { $script:Launched = $ArgumentList }
+        Start-Housecall -Lang en -Answers @('A1', '1', 'y', 'Q')
+        $script:HcSource = $null
+        $encoded = $script:Launched[-1]
+        $file = ([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($encoded)) | Select-String "\`$f = '([^']+)'").Matches[0].Groups[1].Value
+        Test-Path $file | Should Be $true
+        # Run the same command without RunAs, in a fresh PowerShell with no console input.
+        $out = & powershell.exe -NoProfile -NonInteractive -EncodedCommand $encoded 2>&1 | Out-String
+        Test-Path $file | Should Be $false
+        $out | Should Match 'A1  No internet at all'
+        $out | Should Match 'What you asked for help with'
+        $out | Should Not Match 'Exception|FullyQualifiedErrorId'
     }
 }
 

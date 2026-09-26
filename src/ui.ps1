@@ -54,6 +54,9 @@ function Read-HcLine {
     try {
         $line = Read-Host "  $Prompt"
     } catch {
+        # Nobody at a console (a non-interactive run): remember it, so the
+        # note is printed instead of waiting for a click that never comes.
+        $script:NoConsole = $true
         return 'Q'
     }
     if ($null -eq $line) { return '' }

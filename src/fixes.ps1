@@ -5,7 +5,8 @@
     anything. A report offers fixes (Add-HcAction), the person picks one and
     confirms it, and only then does Apply run. Each fix says:
 
-      Label    fix.<id> in strings.ps1, filled from the target
+      Label    fix.<id> in strings.ps1, filled from the target, and
+               fix.<id>.done for the note and undo ("Disabled task X")
       Note     undo = can be undone, safe = harmless and needs no undo,
                restart = closes a program, which can simply be started again
       Admin    needs an administrator PowerShell
@@ -136,8 +137,20 @@ function Invoke-HcActionMenu {
     $fix = $script:Fixes[$action.FixId]
     $label = T ('fix.' + $action.FixId) $action.Target.Label
 
-    if ($fix.Admin -and -not $script:IsAdmin) {
-        Write-Warn2 (T 'fix.adminHow')
+    if ($fix.Admin -and -not $script:IsAdmin -and -not $script:DryRun) {
+        if (-not $script:HcSource) {
+            Write-Warn2 (T 'fix.adminHow')
+            return 'none'
+        }
+        if (-not (Test-HcYes (Read-HcLine (T 'fix.elevateAsk')))) {
+            Write-Dim (T 'fix.cancelled')
+            return 'none'
+        }
+        if (Start-HcElevated $script:HcCurrentCode) {
+            $script:HandedOff = $true
+            Write-Ok (T 'fix.elevated')
+            return 'back'
+        }
         return 'none'
     }
     if (-not (Test-HcYes (Read-HcLine (T 'fix.confirm' $label)))) {
@@ -155,9 +168,43 @@ function Invoke-HcActionMenu {
         Write-Warn2 (T 'fix.failed' $_.Exception.Message)
         return 'none'
     }
-    [void]$script:HcChanges.Add([pscustomobject]@{ FixId = $action.FixId; Target = $action.Target; Label = $label })
+    $done = T ('fix.' + $action.FixId + '.done') $action.Target.Label
+    [void]$script:HcChanges.Add([pscustomobject]@{ FixId = $action.FixId; Target = $action.Target; Label = $done })
     Write-Ok (T 'fix.done')
     'changed'
+}
+
+<#
+    Restarts Housecall as administrator, at the same problem, when a fix
+    needs it. Housecall's own code ($script:HcSource) goes into a temporary
+    file; the new window reads it, deletes it straight away and runs it. So
+    it works after `irm | iex` (no file on disk) and without internet --
+    which matters, since renewing the IP is a fix for having no internet.
+    The small start-up command travels -EncodedCommand, so no path or quote
+    in it can break.
+#>
+function Start-HcElevated {
+    param([string]$Code)
+    if (-not $script:HcSource) { return $false }
+    $file = Join-Path $env:TEMP ('housecall-' + [guid]::NewGuid().ToString('N') + '.txt')
+    [IO.File]::WriteAllText($file, $script:HcSource, (New-Object Text.ASCIIEncoding))
+
+    $options = "-Start '$Code' -Lang '$script:Lang'"
+    if ($script:DryRun) { $options += ' -DryRun' }
+    $quoted = $file.Replace("'", "''")
+    $boot = "`$f = '$quoted'; `$s = [IO.File]::ReadAllText(`$f); Remove-Item -LiteralPath `$f -Force; " +
+            "`$ErrorActionPreference = 'Stop'; . ([scriptblock]::Create(`$s)); `$script:HcSource = `$s; Start-Housecall $options"
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($boot))
+    try {
+        Start-Process powershell.exe -Verb RunAs -ErrorAction Stop `
+            -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encoded)
+    } catch {
+        # Most often: the person said No to Windows' permission question.
+        Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
+        Write-Warn2 (T 'fix.elevateFailed' $_.Exception.Message)
+        return $false
+    }
+    $true
 }
 
 # U on the menu: undo this session's changes, newest first.

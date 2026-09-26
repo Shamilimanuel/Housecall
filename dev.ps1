@@ -24,21 +24,35 @@ param(
     # Language for everything on screen: nl or en. Defaults to the Windows
     # language. No [ValidateSet] on purpose: under `irm | iex` this block runs
     # as plain variable declarations, and the empty default would fail it.
-    [string]$Lang
+    [string]$Lang,
+    # Open this problem straight away, e.g. A1. Used when Housecall restarts
+    # itself as administrator, so it carries on where it was.
+    [string]$Start
 )
 
 $ErrorActionPreference = 'Stop'
 
-# >>> sources (build.ps1 replaces this block with the files themselves)
-$src = Join-Path $PSScriptRoot 'src'
-. (Join-Path $src 'strings.ps1')
-. (Join-Path $src 'ui.ps1')
-. (Join-Path $src 'environment.ps1')
-. (Join-Path $src 'menu.ps1')
-. (Join-Path $src 'checks\common.ps1')
-. (Join-Path $src 'checks\network.ps1')
-. (Join-Path $src 'checks\security.ps1')
-. (Join-Path $src 'fixes.ps1')
+<#
+    All of Housecall's code is kept as text in $HcSource and run from there.
+    That way it can hand itself to a new administrator window (see
+    Start-HcElevated in src\fixes.ps1) even when it came in through
+    `irm | iex` and there is no file on disk, and even with no internet.
+#>
+# >>> sources (build.ps1 replaces this block with the files' text)
+$HcSource = @(
+    'strings.ps1'
+    'ui.ps1'
+    'environment.ps1'
+    'menu.ps1'
+    'checks\common.ps1'
+    'checks\network.ps1'
+    'checks\security.ps1'
+    'fixes.ps1'
+    'note.ps1'
+) | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $PSScriptRoot 'src') $_)) }
+$HcSource = $HcSource -join "`r`n"
 # <<< sources
 
-Start-Housecall -DryRun:$DryRun -Lang $Lang
+. ([scriptblock]::Create($HcSource))
+$script:HcSource = $HcSource
+Start-Housecall -DryRun:$DryRun -Lang $Lang -Start $Start

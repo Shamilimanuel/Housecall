@@ -127,12 +127,14 @@ function Invoke-HcProblem {
         return
     }
 
+    $script:HcCurrentCode = $Code
     $check = & $handler
     if (-not $check) { return }      # e.g. A3 when no site was typed
     Write-Dim (T 'run.checking')
     Write-Host ''
     $report = & $check
     Write-HcReport $report
+    Save-HcVisit $Code $report
 
     while (@($report.Actions).Count -gt 0 -or @(Get-HcSteps $report).Count -gt 0) {
         $result = Invoke-HcActionMenu $report
@@ -143,6 +145,7 @@ function Invoke-HcProblem {
             Write-Host ''
             $report = & $check
             Write-HcReport $report
+            Save-HcVisit $Code $report
         }
     }
     Write-Host ''
@@ -173,12 +176,16 @@ function Start-Housecall {
     param(
         [switch]$DryRun,
         [string]$Lang,
+        # A problem code to open straight away, e.g. after restarting as admin.
+        [string]$Start,
         # For tests: answers to feed in instead of reading the keyboard.
         [string[]]$Answers
     )
 
     $script:DryRun = [bool]$DryRun
     $script:HcChanges.Clear()
+    $script:HcVisit.Clear()
+    $script:HandedOff = $false
     $script:Lang = if ($script:Strings.ContainsKey("$Lang".ToLowerInvariant())) { "$Lang".ToLowerInvariant() } else { Get-HcDefaultLanguage }
     $script:HcInputQueue = $null
     if ($PSBoundParameters.ContainsKey('Answers')) {
@@ -197,7 +204,13 @@ function Start-Housecall {
     $area = ''          # '' = home menu, otherwise the letter on screen
     $message = $null    # one-off warning shown under the menu
 
-    while ($true) {
+    $first = Resolve-HcChoice $Start
+    if ($first.Kind -eq 'problem') {
+        $area = $first.Value.Substring(0, 1)
+        Invoke-HcProblem $environment $first.Value
+    }
+
+    while (-not $script:HandedOff) {
         if ($area) { Show-HcArea $environment $area $message } else { Show-HcHome $environment $message }
         $message = $null
 
@@ -212,6 +225,7 @@ function Start-Housecall {
             'undo'     { $message = Invoke-HcUndo }
             'unknown'  { $message = T 'menu.unknown' $choice.Value }
             'quit'     {
+                Show-HcNote
                 Write-Host ''
                 if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
                 Write-Host ''
