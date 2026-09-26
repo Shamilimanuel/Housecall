@@ -1,7 +1,7 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 92%** `██████████████████░░` 46 of 50 done · 0 in progress · 4 open · 0 blocked · 0 waiting on a decision
+**Progress: 92%** `██████████████████░░` 48 of 52 done · 0 in progress · 4 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
@@ -9,7 +9,7 @@
 | Next up | `░░░░░░░░░░` | 0% (0/3) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (34/34) |
-| Found in testing | `█████████░` | 88% (7/8) |
+| Found in testing | `█████████░` | 90% (9/10) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
@@ -474,6 +474,22 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Found in testing
 
+- [x] **The invoice form as a window** *(Shamil, 26 Sep: select with the mouse,
+      fix mistakes before making it)*. `Show-HcInvoiceWindow`: client fields, the
+      minutes (suggested, in steps of 15) with the rate next to them, the
+      call-out fee as a tick box (only when there is one), extra lines in an
+      editable list, payment as buttons, a live total, and "Factuur maken" /
+      "Geen factuur (briefje)". The fields go through `ConvertTo-HcInvoiceForm`,
+      which names the mistake (no name, no payment, a bad amount on line n,
+      nothing to invoice) instead of making the invoice. The console form stays
+      for tests and PCs without a desktop. Every colour is set explicitly:
+      Shamil's Windows theme has custom system colours, which first gave white
+      labels on white and dark fields (checked on screen, fixed, checked again;
+      the note window's buttons had the same problem)
+- [x] **Card payments by phone (Tap to Pay)**: answered, not built. SumUp
+      (1.49% Android / 1.90% iPhone, no subscription) is the easiest later on,
+      but providers usually want business details (KvK). Until then the ASN
+      betaalverzoek (option 4); card payments already have option 1 (pin)
 - [x] **Payment request, and a shorter setup** *(Shamil, 26 Sep)*. Payment
       option [4] is a payment request: Tikkie, or the bank's own (Shamil uses
       the ASN *betaalverzoek*); the invoice says "Betaald via betaalverzoek".

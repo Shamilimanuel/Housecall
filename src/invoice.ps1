@@ -141,6 +141,222 @@ function Read-HcInvoiceForm {
 }
 
 <#
+    The invoice form as a window (Shamil's request: click, fix, then make
+    it). Its fields go through ConvertTo-HcInvoiceForm, which checks them
+    and builds the same result as the console form, so it can be tested
+    without a window. Without a desktop, the console form is used.
+#>
+function ConvertTo-HcInvoiceForm {
+    param([hashtable]$Values, $Settings)
+    $name = "$($Values.Name)".Trim()
+    if (-not $name) { return [pscustomobject]@{ Form = $null; Error = (T 'inv.win.needName') } }
+
+    $lines = New-Object System.Collections.ArrayList
+    $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
+    $minutes = [int]$Values.Minutes
+    if ($minutes -gt 0 -and $rate -gt 0) {
+        [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.labour' $minutes (Format-HcMoney $rate)); Amount = [Math]::Round($rate * $minutes / 60, 2) })
+    }
+    $fee = [decimal]$(if ($Settings.callout_fee) { $Settings.callout_fee } else { 0 })
+    if ($Values.Callout -and $fee -gt 0) {
+        [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.calloutLine'); Amount = $fee })
+    }
+    $row = 0
+    foreach ($extra in @($Values.Extras)) {
+        $row++
+        $description = "$($extra.Description)".Trim()
+        $amountText = "$($extra.Amount)".Trim()
+        if (-not $description -and -not $amountText) { continue }
+        $amount = ConvertTo-HcAmount $amountText
+        if (-not $description -or $null -eq $amount) {
+            return [pscustomobject]@{ Form = $null; Error = (T 'inv.win.badLine' $row) }
+        }
+        [void]$lines.Add([pscustomobject]@{ Description = $description; Amount = $amount })
+    }
+    if ($lines.Count -eq 0) { return [pscustomobject]@{ Form = $null; Error = (T 'inv.win.nothing') } }
+    if ($Values.Payment -notin @('pin', 'cash', 'transfer', 'tikkie')) { return [pscustomobject]@{ Form = $null; Error = (T 'inv.win.needPayment') } }
+
+    $total = [decimal]0
+    foreach ($l in $lines) { $total += [decimal]$l.Amount }
+    [pscustomobject]@{
+        Error = $null
+        Total = $total
+        Form  = [pscustomobject]@{
+            Client  = @{ name = $name; address = "$($Values.Address)".Trim(); postcode_city = "$($Values.Postcode)".Trim(); email = "$($Values.Email)".Trim() }
+            Lines   = @($lines)
+            Payment = $Values.Payment
+        }
+    }
+}
+
+# The window. Returns the form result, or $null for "no invoice".
+function Show-HcInvoiceWindow {
+    param($Settings)
+    Add-Type -AssemblyName System.Windows.Forms, System.Drawing -ErrorAction Stop
+    [Windows.Forms.Application]::EnableVisualStyles()
+    $font = New-Object Drawing.Font('Segoe UI', 11)
+    $bold = New-Object Drawing.Font('Segoe UI', 12, [Drawing.FontStyle]::Bold)
+
+    $form = New-Object Windows.Forms.Form
+    $form.Text = 'Housecall - ' + (T 'inv.title')
+    $form.StartPosition = 'CenterScreen'
+    $form.Size = New-Object Drawing.Size(620, 780)
+    $form.MinimumSize = $form.Size
+    $form.Font = $font
+    # Every colour set explicitly: Windows themes with custom system colours
+    # (Shamil's PC has one) otherwise give white text on white, or dark fields.
+    $form.BackColor = [Drawing.Color]::White
+    $form.ForeColor = [Drawing.Color]::Black
+    $form.TopMost = $true
+    $form.Add_Shown({ $this.Activate(); $this.TopMost = $false })
+    $paint = { param($c) $c.BackColor = [Drawing.Color]::White; $c.ForeColor = [Drawing.Color]::Black }
+
+    $layout = New-Object Windows.Forms.TableLayoutPanel
+    $layout.Dock = 'Fill'
+    $layout.Padding = New-Object Windows.Forms.Padding(20, 16, 20, 8)
+    $layout.ColumnCount = 2
+    [void]$layout.ColumnStyles.Add((New-Object Windows.Forms.ColumnStyle([Windows.Forms.SizeType]::Absolute, 190)))
+    [void]$layout.ColumnStyles.Add((New-Object Windows.Forms.ColumnStyle([Windows.Forms.SizeType]::Percent, 100)))
+    $layout.AutoScroll = $true
+
+    $heading = { param($text)
+        $l = New-Object Windows.Forms.Label
+        $l.Text = $text; $l.Font = $bold; $l.AutoSize = $true; $l.Margin = New-Object Windows.Forms.Padding(0, 12, 0, 4)
+        $layout.Controls.Add($l); $layout.SetColumnSpan($l, 2) }
+    $field = { param($label, $value)
+        $l = New-Object Windows.Forms.Label
+        $l.Text = $label; $l.AutoSize = $true; $l.Anchor = 'Left'; $l.Margin = New-Object Windows.Forms.Padding(0, 6, 8, 0)
+        $t = New-Object Windows.Forms.TextBox
+        $t.Text = $value; $t.Dock = 'Fill'; $t.BorderStyle = 'FixedSingle'; & $paint $t
+        $layout.Controls.Add($l); $layout.Controls.Add($t); $t }
+
+    & $heading (T 'inv.win.client')
+    $name = & $field (T 'inv.win.name') "$script:HcKnownLabel"
+    $address = & $field (T 'inv.address') ''
+    $postcode = & $field (T 'inv.postcode') ''
+    $email = & $field (T 'inv.email') ''
+
+    & $heading (T 'inv.win.work')
+    $l = New-Object Windows.Forms.Label
+    $l.Text = T 'inv.win.minutes'; $l.AutoSize = $true; $l.Anchor = 'Left'
+    $minutesRow = New-Object Windows.Forms.FlowLayoutPanel
+    $minutesRow.AutoSize = $true; $minutesRow.Dock = 'Fill'; $minutesRow.WrapContents = $false
+    $minutes = New-Object Windows.Forms.NumericUpDown
+    $minutes.Minimum = 0; $minutes.Maximum = 1440; $minutes.Increment = 15; $minutes.Width = 90; $minutes.BorderStyle = 'FixedSingle'; & $paint $minutes
+    $minutes.Value = Get-HcSuggestedMinutes
+    $rateLabel = New-Object Windows.Forms.Label
+    $rateLabel.AutoSize = $true; $rateLabel.Margin = New-Object Windows.Forms.Padding(8, 6, 0, 0)
+    $rateLabel.Text = T 'inv.win.rate' (Format-HcMoney ([decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })))
+    $minutesRow.Controls.Add($minutes); $minutesRow.Controls.Add($rateLabel)
+    $layout.Controls.Add($l); $layout.Controls.Add($minutesRow)
+
+    $callout = New-Object Windows.Forms.CheckBox
+    $fee = [decimal]$(if ($Settings.callout_fee) { $Settings.callout_fee } else { 0 })
+    if ($fee -gt 0) {
+        $callout.Text = T 'inv.win.callout' (Format-HcMoney $fee); $callout.AutoSize = $true; $callout.Checked = $true
+        $layout.Controls.Add((New-Object Windows.Forms.Label)); $layout.Controls.Add($callout)
+    }
+
+    & $heading (T 'inv.win.extras')
+    $grid = New-Object Windows.Forms.DataGridView
+    $grid.Height = 130; $grid.Dock = 'Fill'
+    $grid.AllowUserToAddRows = $true; $grid.RowHeadersVisible = $false
+    $grid.AutoSizeColumnsMode = 'Fill'; $grid.BackgroundColor = [Drawing.Color]::White
+    $grid.GridColor = [Drawing.Color]::Gainsboro
+    $grid.EnableHeadersVisualStyles = $false
+    $grid.DefaultCellStyle.BackColor = [Drawing.Color]::White
+    $grid.DefaultCellStyle.ForeColor = [Drawing.Color]::Black
+    $grid.DefaultCellStyle.SelectionBackColor = [Drawing.Color]::FromArgb(204, 228, 247)
+    $grid.DefaultCellStyle.SelectionForeColor = [Drawing.Color]::Black
+    $grid.ColumnHeadersDefaultCellStyle.BackColor = [Drawing.Color]::FromArgb(243, 244, 246)
+    $grid.ColumnHeadersDefaultCellStyle.ForeColor = [Drawing.Color]::Black
+    [void]$grid.Columns.Add('description', (T 'inv.win.description'))
+    [void]$grid.Columns.Add('amount', (T 'inv.win.amount'))
+    $grid.Columns[0].FillWeight = 75; $grid.Columns[1].FillWeight = 25
+    $layout.Controls.Add($grid); $layout.SetColumnSpan($grid, 2)
+
+    & $heading (T 'inv.win.payment')
+    $pay = New-Object Windows.Forms.FlowLayoutPanel
+    $pay.AutoSize = $true; $pay.Dock = 'Fill'
+    $radios = [ordered]@{}
+    $methods = @('pin', 'cash')
+    if ($Settings.iban) { $methods += 'transfer' }
+    $methods += 'tikkie'
+    foreach ($m in $methods) {
+        $r = New-Object Windows.Forms.RadioButton
+        $r.Text = T ('inv.pay.' + $m); $r.AutoSize = $true; $r.Tag = $m
+        $pay.Controls.Add($r); $radios[$m] = $r
+    }
+    $layout.Controls.Add($pay); $layout.SetColumnSpan($pay, 2)
+
+    $total = New-Object Windows.Forms.Label
+    $total.Font = $bold; $total.AutoSize = $true; $total.Margin = New-Object Windows.Forms.Padding(0, 14, 0, 0)
+    $layout.Controls.Add($total); $layout.SetColumnSpan($total, 2)
+    $problem = New-Object Windows.Forms.Label
+    $problem.ForeColor = [Drawing.Color]::Firebrick; $problem.AutoSize = $true; $problem.MaximumSize = New-Object Drawing.Size(540, 0)
+    $layout.Controls.Add($problem); $layout.SetColumnSpan($problem, 2)
+
+    # Reads every field into the values ConvertTo-HcInvoiceForm checks.
+    $read = {
+        $extras = @(foreach ($row in $grid.Rows) {
+            if ($row.IsNewRow) { continue }
+            [pscustomobject]@{ Description = $row.Cells[0].Value; Amount = $row.Cells[1].Value }
+        })
+        $chosen = @($radios.Values | Where-Object { $_.Checked } | ForEach-Object { $_.Tag }) | Select-Object -First 1
+        ConvertTo-HcInvoiceForm @{
+            Name = $name.Text; Address = $address.Text; Postcode = $postcode.Text; Email = $email.Text
+            Minutes = [int]$minutes.Value; Callout = $callout.Checked; Extras = $extras; Payment = $chosen
+        } $Settings
+    }
+    $script:HcInvoiceResult = $null
+
+    $buttons = New-Object Windows.Forms.FlowLayoutPanel
+    $buttons.Dock = 'Bottom'; $buttons.FlowDirection = 'RightToLeft'; $buttons.Height = 64
+    $buttons.Padding = New-Object Windows.Forms.Padding(16, 10, 16, 10)
+    $buttons.BackColor = [Drawing.Color]::FromArgb(243, 244, 246)
+    $make = New-Object Windows.Forms.Button
+    $make.Text = T 'inv.win.make'; $make.AutoSize = $true; $make.Height = 40; $make.Font = $bold; & $paint $make
+    $none = New-Object Windows.Forms.Button
+    $none.Text = T 'inv.win.none'; $none.AutoSize = $true; $none.Height = 40; & $paint $none
+    $make.Add_Click({
+        $grid.EndEdit() | Out-Null
+        $check = & $read
+        if ($check.Error) { $problem.Text = $check.Error; return }
+        $script:HcInvoiceResult = $check.Form
+        $this.FindForm().Close()
+    })
+    $none.Add_Click({ $script:HcInvoiceResult = $null; $this.FindForm().Close() })
+    $buttons.Controls.Add($make); $buttons.Controls.Add($none)
+
+    # Live total: labour + call-out + valid extra lines, whatever the payment.
+    $update = {
+        $sum = [decimal]0
+        $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
+        $sum += [Math]::Round($rate * [int]$minutes.Value / 60, 2)
+        if ($callout.Checked) { $sum += $fee }
+        foreach ($row in $grid.Rows) {
+            if ($row.IsNewRow) { continue }
+            $a = ConvertTo-HcAmount "$($row.Cells[1].Value)"
+            if ($null -ne $a) { $sum += $a }
+        }
+        $total.Text = T 'inv.win.total' (Format-HcMoney $sum)
+        $problem.Text = ''
+    }
+    $minutes.Add_ValueChanged($update)
+    $callout.Add_CheckedChanged($update)
+    $grid.Add_CellValueChanged($update)
+    $grid.Add_RowsRemoved($update)
+    & $update
+
+    $form.Controls.Add($layout)
+    $form.Controls.Add($buttons)
+    $form.ActiveControl = $name
+    [void]$form.ShowDialog()
+    $form.Dispose()
+    $script:HcInvoiceResult
+}
+
+<#
     The whole invoice step at Q. Returns the invoice from the relay (with its
     number, totals and the seller's details), or $null for the plain note.
 #>
@@ -157,7 +373,13 @@ function Invoke-HcInvoice {
     if (-not $s.Ok) { Write-Warn2 (T 'inv.failed' (Get-HcRelayMessage $s.Error)); return $null }
     if (-not $s.Settings -or -not $s.Settings.business_name) { Write-Warn2 (T 'inv.noSettings'); return $null }
 
-    $form = Read-HcInvoiceForm $s.Settings
+    # The window when there is a desktop; the console form in tests and without one.
+    $form = $null
+    $useWindow = ($null -eq $script:HcInputQueue) -and -not $script:NoConsole
+    if ($useWindow) {
+        try { $form = Show-HcInvoiceWindow $s.Settings } catch { $useWindow = $false }
+    }
+    if (-not $useWindow) { $form = Read-HcInvoiceForm $s.Settings }
     if (-not $form) { Write-Dim (T 'inv.skipped'); return $null }
 
     $r = Invoke-HcRelay @{

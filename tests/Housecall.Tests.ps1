@@ -1074,6 +1074,30 @@ Describe 'The invoice' {
         $out | Should Not Match 'Btw'
     }
 
+    It 'the window''s fields become the same invoice, and mistakes are named' {
+        $settings = [pscustomobject]@{ hourly_rate = 20; callout_fee = 0; iban = $null }
+        $values = @{ Name = ' Mevr. de Vries '; Address = 'Dorpsstraat 1'; Postcode = '1234 AB Utrecht'; Email = ''
+            Minutes = 45; Callout = $false; Payment = 'tikkie'
+            Extras = @([pscustomobject]@{ Description = 'Draadloze muis'; Amount = '19,95' }, [pscustomobject]@{ Description = $null; Amount = $null }) }
+        $r = ConvertTo-HcInvoiceForm $values $settings
+        $r.Error | Should Be $null
+        $r.Form.Client.name | Should Be 'Mevr. de Vries'
+        @($r.Form.Lines).Count | Should Be 2
+        $r.Form.Lines[0].Amount | Should Be 15
+        $r.Form.Lines[1].Amount | Should Be 19.95
+        $r.Total | Should Be 34.95
+        $r.Form.Payment | Should Be 'tikkie'
+
+        $noName = $values.Clone(); $noName.Name = ''
+        (ConvertTo-HcInvoiceForm $noName $settings).Error | Should Be 'Vul de naam van de klant in.'
+        $noPay = $values.Clone(); $noPay.Payment = $null
+        (ConvertTo-HcInvoiceForm $noPay $settings).Error | Should Be 'Kies hoe de klant betaalt.'
+        $bad = $values.Clone(); $bad.Extras = @([pscustomobject]@{ Description = 'Muis'; Amount = 'twintig' })
+        (ConvertTo-HcInvoiceForm $bad $settings).Error | Should Match '^Extra regel 1:'
+        $empty = $values.Clone(); $empty.Minutes = 0; $empty.Extras = @()
+        (ConvertTo-HcInvoiceForm $empty $settings).Error | Should Match 'niets te factureren'
+    }
+
     It 'Enter at the code: no invoice, no second question, the plain note' {
         $script:Sent = @{}
         Mock Invoke-HcRelay { $script:Sent[$Body.action] = $Body; & $ok ([pscustomobject]@{}) }

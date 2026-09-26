@@ -159,6 +159,7 @@ function Show-HcNoteWindow {
     $close.Text = T 'note.close'
     $close.Size = New-Object Drawing.Size(150, 44)
     $close.Font = New-Object Drawing.Font($family, 12)
+    $close.BackColor = [Drawing.Color]::White; $close.ForeColor = [Drawing.Color]::Black
     $close.Add_Click({ $this.FindForm().Close() })
     $form.CancelButton = $close
 
@@ -166,6 +167,7 @@ function Show-HcNoteWindow {
     $print.Text = T 'note.print'
     $print.Size = New-Object Drawing.Size(150, 44)
     $print.Font = New-Object Drawing.Font($family, 12)
+    $print.BackColor = [Drawing.Color]::White; $print.ForeColor = [Drawing.Color]::Black
     $print.Add_Click({ Invoke-HcNotePrint })
 
     $buttons.Controls.Add($close)
