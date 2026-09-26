@@ -1,12 +1,12 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 95%** `███████████████████░` 59 of 62 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
+**Progress: 92%** `██████████████████░░` 59 of 64 done · 0 in progress · 5 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/3) |
+| Next up | `░░░░░░░░░░` | 0% (0/5) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (44/44) |
 | Found in testing | `██████████` | 100% (10/10) |
@@ -15,7 +15,7 @@
 <!-- progress:end -->
 
 Working notes, kept so a new chat can pick up without re-deriving anything.
-Last updated: **26 September 2026**: setup done (three times OK), H works, and after Shamil's first test the **invoice** and **delete in H** are built.
+Last updated: **26 September 2026, late**: all planned code done and pushed; testing on other PCs is next.
 
 **How we work this list:** items are worked top to bottom. Pick one, say the
 name, and it gets built. When it is done it moves to *Recently done* and we go
@@ -42,89 +42,34 @@ irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex
 
 ### Picking this up again
 
-**Where we stopped (26 Sep, end of session):**
-- `HOUSECALL_TOTP_SECRET` is in Supabase (project `housecall`) and in
-  Shamil's Google Authenticator.
-- An Anthropic API key is made. Shamil was adding it to Supabase as
-  `ANTHROPIC_API_KEY`; not confirmed yet.
-- The Anthropic account has **no credit yet**. Until it has, `?` shows
-  "De relay gaf een fout (ai_request)"; H and saving visits work without it.
+**Where we stopped (26 Sep, late):** everything on the code side that was
+planned is built, tested (248 tests) and pushed. The relay is on version 8.
+The database is clean (test invoices deleted, counter reset), so the first
+real invoice is **2026-0001**. Settings: EUR 20 per hour, starting price EUR 15
+for the first 30 min, then EUR 5 per quarter begun. GitHub 2FA is on. The
+keep-awake job pings the relay every 3 days.
 
-**Next:**
-1. Shamil fills in his business details once (full path, because
-   PowerShell often opens in `C:\WINDOWS\system32`):
-   `powershell -ExecutionPolicy Bypass -File "C:\Users\shami\OneDrive\Documents\My Claude\Visual Studio Code\Housecall\tools\setup-invoice.ps1"`
-2. A test visit: a check, then Q, fill in the form, see the invoice, print
-   it to PDF. Then H: the visit shows its invoice number; delete it (the
-   invoice stays). The first real invoice will be 2026-0001.
-3. ~~No credit: a clear message~~ done (relay v7 returns `ai_credit`).
-4. Once there is credit: the first real AI chat, and watch it once.
-5. Then Shamil's testing round (below).
+**Waiting on Shamil:**
+- **USB stick**: buy one, then run `tools\make-usb.ps1` once.
+- **Anthropic credit**: not yet. Until then `?` says there is no credit;
+  everything else works without it.
 
-**Right now (26 Sep, end of day):** Phase 0 and **area A** are built and
-tested (see *Recently done*). A1, A2 and A3 run real read-only checks, give a
-finding and say what to do, in English and Dutch. **Area F** (the scam
-check) is built too: F1, F2 and F3 are live on GitHub. A4 (email) and areas
-B–E still show "not built yet".
+**Next session:** set up **VirtualBox with Windows 10 + a McAfee trial**,
+step by step (see *Next up*). ← recommended
 
-**Phase 2 has started:** after every report comes **Wat nu?**: numbered
-fixes (pick one, confirm with J/N, and the same check runs again as proof)
-and **[S] Stap voor stap**, a guide shown one step at a time. **U** on the
-menu undoes the session's fixes. Five fixes exist so far; see *Recently done*.
-
-**Also done:** the **client note** opens by itself on Q (large text,
-Afdrukken / Sluiten, nothing saved), and an admin fix now offers to
-**restart Housecall as administrator** at the same problem, also offline.
-
-**Area C** (printer, devices, Bluetooth) is built too. **Decided 26 Sep:
-the AI chat comes last**, after everything else including 0.1.0.
-
-Areas **B**, **D** and **E** followed the same day: every menu option
-except **A4** (email) now runs real checks. Shamil tests everything at the
-end (he said so on 26 Sep), so work carries on without waiting for him.
-
-Then **A4** (email), the **remaining fixes**, the **restore point** and
-**`-NoAI`**. So every option in the menu now runs real checks, and
-everything left is either Shamil's (testing on a clean PC and a broken
-one, a real visit), waits on the relay decision (visit memory), or is the
-AI chat, which comes last.
-
-**Then the relay, visit memory and the AI chat** (see *Recently done*).
-Before they work, Shamil runs `tools\setup-ai.ps1` once on his own PC.
-
-**Next: Shamil tests everything** (the one-liner, then each letter, then
-H and ?). What he finds goes into *Found in testing* below, and gets fixed
-first.
-
-**Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
-name and **95%** signal correctly. The drop-out count in A2 has not been
-judged on a real laptop yet.
-
-Try it: the one-liner above in any PowerShell, or from source:
-`powershell -ExecutionPolicy Bypass -File .\dev.ps1` (add `-DryRun` or `-Lang nl`).
-
-**Releasing:** `setup.ps1` is what clients download, and it only changes when
-`build.ps1` rebuilds it. Run the tests (they rebuild it), commit `setup.ps1`
-with the source change, and push. The one-liner serves the new version
-within a few minutes (GitHub's raw cache). Repo:
-<https://github.com/Shamilimanuel/Housecall> (public).
-
-### Running the checks
-
-```powershell
-powershell -ExecutionPolicy Bypass -Command "Invoke-Pester .\tests"   # 75 tests, Pester 3.4 ships with Windows
-powershell -ExecutionPolicy Bypass -File .\build.ps1                  # writes setup.ps1
-```
-
-The tests also build the bundle and run it under a real `Get-Content | iex`,
-because that path behaves differently from running the file (see *Known
-caveats*).
-
-Reveille (`../Reveile/setup.ps1`) is the reference for the one-line
-`irm | iex` entry point, the coloured `Write-Step` / `Write-Ok` output, and the
-`[scriptblock]::Create((irm $s))` form for passing options.
-
----
+**Decided 26 Sep:**
+- **Not on the school PC** (McAfee + BitLocker, managed by school IT):
+  running scripts with Bypass there breaks school rules and can alert IT.
+  Use a virtual PC instead.
+- **Father's laptop (Windows 8 or so)** is still worth one try, but expect
+  "PowerShell te oud" (Windows 8 has PowerShell 4) or a TLS error from the
+  one-liner. Check the version first with `winver`. The USB stick route
+  avoids the TLS error.
+- **Portable printer: not decided.** Cheap portable printers are receipt
+  printers (58/80 mm), not A4, and any printer needs a driver on the
+  client's PC. Alternatives: Microsoft Print to PDF and email/WhatsApp the
+  invoice, or an "Opslaan als PDF" button that saves straight to the USB
+  stick (parked below).
 
 ## Where things stand
 
@@ -135,7 +80,7 @@ Reveille (`../Reveile/setup.ps1`) is the reference for the one-line
 | Interface | **console menu** inside PowerShell. A window with buttons is parked |
 | Runs on | Windows 10 / 11, Windows PowerShell 5.1. Do **not** assume PowerShell 7 |
 | Language | **Dutch and English**, picked from the Windows display language, with a switch |
-| Brain | the menu + rule-based checks (offline). AI chat (`?`) on top, provider not chosen |
+| Brain | the menu + rule-based checks (offline). AI chat (`?`) on top: Claude Opus 5 through the Supabase relay, unlocked with a Google Authenticator code |
 | Leaves behind | nothing. The client note opens in its own window and is gone when closed. No install, no task, no service, no files |
 
 ### The menu
@@ -215,9 +160,17 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Next up
 
-**Phase 5: the one-liner and 0.1.0**
-- [ ] Test the one-liner on a clean Windows 11 with Defender on (hosting itself is done, see *Recently done*)
-- [ ] Break a test PC or VM on purpose (adapter off, bad DNS, stopped spooler, AnyDesk installed) and check each one is found, fixed and proven
+**Phase 5: testing before real clients**
+- [ ] **VirtualBox + Windows 10 + McAfee trial** ← recommended. Windows 10 is
+      what most older clients have. Free: VirtualBox, the Windows 10 download
+      (runs unactivated for testing), a McAfee/Norton trial. About 4 GB RAM and
+      50 GB disk. Use snapshots. Tests start-up, the antivirus, D/E/F, fixes,
+      undo and the invoice to PDF. It cannot test Wi-Fi, sound, printer or
+      Bluetooth (virtual hardware)
+- [ ] Break the VM on purpose (bad DNS, stopped spooler, AnyDesk installed)
+      and check each one is found, fixed and proven
+- [ ] **Father's laptop**: one try, mostly to see how an old PC fails
+- [ ] **USB stick**: `make-usb.ps1`, then one round with the internet off
 - [ ] Use it at one real client visit
 
 ## Blocked on Shamil
@@ -595,8 +548,12 @@ Codes in Google Authenticator, recovery codes kept outside the PC.
 - [ ] **Hardware health**: SMART disk status, battery wear, temperatures
 - [ ] **Remote mode**: a client pastes the line themselves while you're on the phone
 - [x] ~~Save the note as PDF~~: covered by Afdrukken > Microsoft Print to PDF
+- [ ] **"Opslaan als PDF" button** on the invoice: straight to the USB stick, so no printer is needed at the client's
 
 ### Considered and deliberately not doing
+
+- **Testing on the school PC.** Managed by school IT (McAfee, BitLocker);
+  scripts with Bypass break the rules there. A virtual PC instead.
 
 - **Letting the model run any command it writes.** Too risky on someone else's
   PC. Fixes come from a reviewed approved list only.
