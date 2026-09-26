@@ -117,11 +117,14 @@ function Get-HcPcId {
     }
 }
 
+# The visits of this PC as Ok, Visits and Error. Not a bare list: an empty
+# list returned from a PowerShell function arrives as $null, which looked
+# exactly like a failed request (found by Shamil on his first try, 26 Sep).
 function Get-HcVisits {
-    if (-not (Test-HcUnlocked)) { return $null }
+    if (-not (Test-HcUnlocked)) { return [pscustomobject]@{ Ok = $false; Visits = @(); Error = 'locked_out' } }
     $r = Invoke-HcRelay @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcPcId) }
-    if (-not $r.Ok) { return $null }
-    @($r.Data.visits)
+    if (-not $r.Ok) { return [pscustomobject]@{ Ok = $false; Visits = @(); Error = $r.Error } }
+    [pscustomobject]@{ Ok = $true; Visits = @($r.Data.visits | Where-Object { $_ }); Error = $null }
 }
 
 # "3 sep. 2026: C1, D2" -- what a stored visit was about.
@@ -135,8 +138,9 @@ function Format-HcVisitLine {
 
 # One line after unlocking: "Known PC (mevr. de Vries): last visit 3 sep. 2026 (C1)".
 function Show-HcKnownPc {
-    $visits = Get-HcVisits
-    if ($null -eq $visits -or $visits.Count -eq 0) { return }
+    $result = Get-HcVisits
+    $visits = @($result.Visits)
+    if (-not $result.Ok -or $visits.Count -eq 0) { return }
     $last = $visits[0]
     $label = @($visits | Where-Object { $_.label } | Select-Object -First 1).label
     $script:HcKnownLabel = $label
@@ -154,9 +158,10 @@ function Show-HcHistory {
     if (-not $Environment.Online) {
         Write-Warn2 (T 'ai.offline')
     } elseif (Unlock-HcRelay) {
-        $visits = Get-HcVisits
-        if ($null -eq $visits) {
-            Write-Warn2 (T 'relay.unreachable')
+        $result = Get-HcVisits
+        $visits = @($result.Visits)
+        if (-not $result.Ok) {
+            Write-Warn2 (Get-HcRelayMessage $result.Error)
         } elseif ($visits.Count -eq 0) {
             Write-Dim (T 'mem.none')
         } else {

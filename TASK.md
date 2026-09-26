@@ -55,7 +55,7 @@ irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex
    `C:\WINDOWS\system32`):
    `powershell -ExecutionPolicy Bypass -File "C:\Users\shami\OneDrive\Documents\My Claude\Visual Studio Code\Housecall\tools\setup-ai.ps1" -Check`
    → three times OK.
-2. Try H and saving a visit (Q) with the Authenticator code.
+2. Try H again (should say "Geen eerdere bezoeken") and save a visit (Q). Setup check: done, three times OK (26 Sep).
 3. Build *No credit: a clear message* (under Found in testing).
 4. Once there is credit: the first real AI chat, and watch it once.
 5. Then Shamil's testing round (below).
@@ -480,6 +480,11 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
       the text in both languages ("Het Anthropic-account heeft geen tegoed:
       voeg tegoed toe via console.anthropic.com > Billing"), redeploy the
       function
+- [x] **H said "the relay cannot be reached" right after a good unlock** (Shamil,
+      26 Sep). The relay was fine: the PC had no visits yet, and in PowerShell an
+      empty list returned from a function arrives as $null, which Housecall
+      read as a failed request. Get-HcVisits now returns Ok / Visits /
+      Error, and a real relay error shows its own message. Test added
 - [x] **The QR page opened in Visual Studio Code**, not a browser (the
       `.html` handler on Shamil's PC is VS Code). Fixed: `setup-ai.ps1` opens
       it in the default https browser (Edge on his PC)

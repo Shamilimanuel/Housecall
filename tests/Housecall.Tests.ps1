@@ -926,6 +926,24 @@ Describe 'Relay: unlock and visit memory' {
         $script:HcInputQueue = $null
     }
 
+    It 'shows "no earlier visits" for a PC without history, and the real error when the relay fails' {
+        $script:HcToken = 't.s'; $script:HcTokenExpires = (Get-Date).AddHours(1)
+        Mock Invoke-HcRelay { [pscustomobject]@{ Ok = $true; Status = 200; Data = [pscustomobject]@{ visits = @() }; Error = $null } }
+        $empty = Get-HcVisits
+        $empty.Ok | Should Be $true
+        @($empty.Visits).Count | Should Be 0
+        $out = Show-HcHistory ([pscustomobject]@{ Online = $true; Os = 'x'; IsAdmin = $false; PSVersion = [version]'5.1' }) 6>&1 | Out-String
+        $out | Should Match 'No earlier visits'
+        $out | Should Not Match 'cannot be reached'
+
+        Mock Invoke-HcRelay { [pscustomobject]@{ Ok = $false; Status = 500; Data = $null; Error = 'database' } }
+        $failed = Get-HcVisits
+        $failed.Ok | Should Be $false
+        $failed.Error | Should Be 'database'
+        $out = Show-HcHistory ([pscustomobject]@{ Online = $true; Os = 'x'; IsAdmin = $false; PSVersion = [version]'5.1' }) 6>&1 | Out-String
+        $out | Should Match 'error \(database\)'
+    }
+
     It 'saves the visit at the end, with the codes found and the fixes made, but not in a dry run' {
         $script:Saved = $null
         Mock Invoke-HcRelay {
