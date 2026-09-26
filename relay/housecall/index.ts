@@ -29,7 +29,11 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const MODEL = "claude-opus-5";
 const TOKEN_HOURS = 4;
-const MAX_FAILED_UNLOCKS = 10; // in 15 minutes, for everyone together
+// Wrong codes allowed in 15 minutes. Per address, so a stranger who knows
+// the (public) relay URL cannot lock Shamil out; and a high cap for everyone
+// together, against a spread-out guessing attack.
+const MAX_FAILED_PER_IP = 5;
+const MAX_FAILED_TOTAL = 50;
 const CODES = [
   "A1", "A2", "A3", "A4", "B1", "B2", "B3", "C1", "C2", "C3",
   "D1", "D2", "D3", "D4", "E1", "E2", "E3", "F1", "F2", "F3",
@@ -241,12 +245,25 @@ async function chat(messages: Anthropic.Beta.BetaMessageParam[]): Promise<Respon
 
 // ------------------------------------------------------------ actions --
 
-async function unlock(secret: string, code: unknown): Promise<Response> {
-  if (typeof code !== "string" || !/^\d{6}$/.test(code)) return json({ error: "wrong_code" }, 401);
+// The caller's address, only ever kept as a keyed hash (for at most a day).
+async function ipHash(secret: string, req: Request): Promise<string> {
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode("housecall-ip:" + secret + ":" + ip));
+  return b64url(new Uint8Array(digest)).slice(0, 22);
+}
+
+async function unlock(secret: string, code: unknown, ip: string): Promise<Response> {
   const db = database();
   const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-  const { count } = await db.from("failed_unlocks").select("id", { count: "exact", head: true }).gte("failed_at", since);
-  if ((count ?? 0) >= MAX_FAILED_UNLOCKS) return json({ error: "locked" }, 429);
+  const [mine, all] = await Promise.all([
+    db.from("failed_unlocks").select("id", { count: "exact", head: true }).eq("ip_hash", ip).gte("failed_at", since),
+    db.from("failed_unlocks").select("id", { count: "exact", head: true }).gte("failed_at", since),
+  ]);
+  if ((mine.count ?? 0) >= MAX_FAILED_PER_IP || (all.count ?? 0) >= MAX_FAILED_TOTAL) return json({ error: "locked" }, 429);
+  if (typeof code !== "string" || !/^\d{6}$/.test(code)) {
+    await db.from("failed_unlocks").insert({ failed_at: new Date().toISOString(), ip_hash: ip });
+    return json({ error: "wrong_code" }, 401);
+  }
 
   const now = Math.floor(Date.now() / 1000 / 30);
   let matched: number | null = null;
@@ -254,7 +271,7 @@ async function unlock(secret: string, code: unknown): Promise<Response> {
     if (sameString(await totpAt(secret, step), code)) matched = step;
   }
   if (matched === null) {
-    await db.from("failed_unlocks").insert({ failed_at: new Date().toISOString() });
+    await db.from("failed_unlocks").insert({ failed_at: new Date().toISOString(), ip_hash: ip });
     return json({ error: "wrong_code" }, 401);
   }
   const { error } = await db.from("used_codes").insert({ step: matched });
@@ -443,7 +460,7 @@ Deno.serve(async (req: Request) => {
     return json({ anthropic_key: !!Deno.env.get("ANTHROPIC_API_KEY"), totp_secret: secret.length >= 16, database: db });
   }
   if (secret.length < 16) return json({ error: "not_set_up" }, 503);
-  if (body?.action === "unlock") return unlock(secret, body.code);
+  if (body?.action === "unlock") return unlock(secret, body.code, await ipHash(secret, req));
   if (!(await tokenValid(secret, body?.token))) return json({ error: "locked_out" }, 401);
 
   switch (body?.action) {

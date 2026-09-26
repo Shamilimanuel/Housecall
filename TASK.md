@@ -1,14 +1,14 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 95%** `███████████████████░` 58 of 61 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
+**Progress: 95%** `███████████████████░` 59 of 62 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
 | Next up | `░░░░░░░░░░` | 0% (0/3) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
-| Recently done | `██████████` | 100% (43/43) |
+| Recently done | `██████████` | 100% (44/44) |
 | Found in testing | `██████████` | 100% (10/10) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
@@ -225,6 +225,12 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Lockout per address** *(26 Sep, relay v8)*. 5 wrong codes in 15 minutes
+lock only that internet address (kept as a keyed hash, deleted after a
+day); 50 in total lock everyone, against spread-out guessing. Before, 10
+wrong codes from anyone locked Shamil out too, and the relay URL is public.
+Checked live: two wrong codes were stored under one hash.
 
 **Offline visits and the USB stick** *(26 Sep)*
 - [x] **Online is measured again** before Q, H and the AI, and after a fix,
