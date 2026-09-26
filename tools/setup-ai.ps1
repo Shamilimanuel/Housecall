@@ -76,6 +76,32 @@ function Get-Totp {
 
 function Get-TotpStep { [long][Math]::Floor(([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) / 30) }
 
+# The program that opens web links (Opera GX, Chrome, Edge, ...). A local
+# .html file opens in whatever handles .html files -- on a developer PC that
+# is often an editor, not a browser -- so the QR page goes to the browser
+# that handles https links instead. Edge, which every Windows 11 PC has, is
+# the fallback.
+function Get-DefaultBrowser {
+    try {
+        $progId = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice' -ErrorAction Stop).ProgId
+        $command = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\$progId\shell\open\command" -ErrorAction Stop).'(default)'
+        if ($command -match '^\s*"([^"]+\.exe)"' -or $command -match '^\s*(\S+\.exe)') {
+            if (Test-Path -LiteralPath $Matches[1]) { return $Matches[1] }
+        }
+    } catch { }
+    foreach ($edge in @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe")) {
+        if (Test-Path -LiteralPath $edge) { return $edge }
+    }
+    $null
+}
+
+function Open-InBrowser {
+    param([string]$Path)
+    $url = ([uri]$Path).AbsoluteUri
+    $browser = Get-DefaultBrowser
+    if ($browser) { Start-Process -FilePath $browser -ArgumentList "`"$url`"" } else { Start-Process $url }
+}
+
 function Invoke-Relay {
     param([string]$Json)
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
@@ -128,7 +154,7 @@ $html = @"
 </body>
 "@
 [IO.File]::WriteAllText($qr, $html)
-Start-Process $qr
+Open-InBrowser $qr
 Write-Host '  1. In Google Authenticator: tap +, then "Scan a QR code" (the page in your browser),'
 Write-Host '     or "Enter a setup key":'
 Write-Host "        account  Housecall"
