@@ -372,7 +372,7 @@ async function invoiceCreate(body: any): Promise<Response> {
   for (const k of ["address", "postcode_city", "email"]) {
     if (client[k] != null && (typeof client[k] !== "string" || client[k].length > 120)) return json({ error: "bad_client" }, 400);
   }
-  if (!["pin", "cash", "transfer"].includes(payment)) return json({ error: "bad_payment" }, 400);
+  if (!["pin", "cash", "transfer", "tikkie"].includes(payment)) return json({ error: "bad_payment" }, 400);
   if (!Array.isArray(lines) || lines.length === 0 || lines.length > 30) return json({ error: "bad_lines" }, 400);
   const clean: { description: string; amount: number }[] = [];
   for (const l of lines) {

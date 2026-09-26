@@ -116,16 +116,17 @@ function Read-HcInvoiceForm {
         return $null
     }
 
+    # Bank transfer only once an IBAN is set: the invoice has to say where to.
+    $methods = [ordered]@{ '1' = 'pin'; '2' = 'cash' }
+    if ($Settings.iban) { $methods['3'] = 'transfer' }
+    # 'tikkie' stands for any payment request: Tikkie, or the bank's own (ASN betaalverzoek).
+    $methods['4'] = 'tikkie'
+    $choices = @($methods.Keys | ForEach-Object { "[$_] " + (T ('inv.pay.' + $methods[$_])) }) -join '  '
     $payment = $null
     while (-not $payment) {
-        $typed = "$(Read-HcLine (T 'inv.payment'))".Trim()
-        switch ($typed) {
-            '1' { $payment = 'pin' }
-            '2' { $payment = 'cash' }
-            '3' { $payment = 'transfer' }
-            '0' { return $null }
-            'Q' { return $null }
-        }
+        $typed = "$(Read-HcLine (T 'inv.payment' $choices))".Trim()
+        if ($typed -in @('0', 'Q')) { return $null }
+        if ($methods.Contains($typed)) { $payment = $methods[$typed] }
     }
 
     $total = [decimal]0
@@ -235,15 +236,14 @@ function Get-HcInvoiceBlocks {
     switch ($Invoice.payment) {
         'pin'      { & $block 'payment' (T 'doc.paidPin' $paidOn) }
         'cash'     { & $block 'payment' (T 'doc.paidCash' $paidOn) }
+        'tikkie'   { & $block 'payment' (T 'doc.paidTikkie' $paidOn) }
         'transfer' {
             $due = Format-HcLongDate ([datetime]::Parse([string]$Invoice.due_date, [Globalization.CultureInfo]::InvariantCulture))
             & $block 'payment' (T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number)
         }
     }
-    switch ($Invoice.btw_mode) {
-        'kor'   { & $block 'small' (T 'doc.kor') }
-        'unset' { & $block 'small' (T 'doc.btwUnset') }
-    }
+    # No BTW line until BTW is set: Shamil is not a registered business yet.
+    if ($Invoice.btw_mode -eq 'kor') { & $block 'small' (T 'doc.kor') }
     & $block 'small' (T 'doc.thanks')
 }
 

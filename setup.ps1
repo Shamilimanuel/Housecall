@@ -874,7 +874,11 @@ $script:Strings = @{
         'inv.extra'       = 'Extra line, e.g. "Wireless mouse 19,95" (Enter = done)'
         'inv.extraBad'    = 'Type a description and then an amount, e.g. "USB stick 12,50".'
         'inv.noLines'     = 'There is nothing to invoice: the client note is shown instead.'
-        'inv.payment'     = 'Payment: [1] card  [2] cash  [3] bank transfer'
+        'inv.payment'     = 'Payment: {0}'
+        'inv.pay.pin'      = 'card'
+        'inv.pay.cash'     = 'cash'
+        'inv.pay.transfer' = 'bank transfer'
+        'inv.pay.tikkie'   = 'payment request'
         'inv.confirm'     = 'Total {0}. Make the invoice? (Y/N)'
         'inv.noSettings'  = 'Your invoice details are not set up yet: run tools\setup-invoice.ps1. The client note is shown instead.'
         'inv.failed'      = 'The invoice could not be made: {0} The client note is shown instead.'
@@ -892,6 +896,7 @@ $script:Strings = @{
         'doc.total'       = 'Total'
         'doc.paidPin'     = 'Paid by card on {0}.'
         'doc.paidCash'    = 'Paid in cash on {0}.'
+        'doc.paidTikkie'  = 'Paid by payment request on {0}.'
         'doc.transfer'    = 'Please transfer {0} before {1} to {2}, stating invoice number {3}.'
         'doc.kor'         = 'Exempt from VAT under the small business scheme (KOR).'
         'doc.btwUnset'    = 'VAT not set up yet.'
@@ -1719,7 +1724,11 @@ $script:Strings = @{
         'inv.extra'       = 'Extra regel, bijv. "Draadloze muis 19,95" (Enter = klaar)'
         'inv.extraBad'    = 'Typ een omschrijving en dan een bedrag, bijv. "USB-stick 12,50".'
         'inv.noLines'     = 'Er is niets te factureren: het briefje wordt getoond.'
-        'inv.payment'     = 'Betaling: [1] pin  [2] contant  [3] overmaken'
+        'inv.payment'     = 'Betaling: {0}'
+        'inv.pay.pin'      = 'pin'
+        'inv.pay.cash'     = 'contant'
+        'inv.pay.transfer' = 'overmaken'
+        'inv.pay.tikkie'   = 'betaalverzoek'
         'inv.confirm'     = 'Totaal {0}. Factuur maken? (J/N)'
         'inv.noSettings'  = 'Uw factuurgegevens zijn nog niet ingesteld: start tools\setup-invoice.ps1. Het briefje wordt getoond.'
         'inv.failed'      = 'De factuur kon niet worden gemaakt: {0} Het briefje wordt getoond.'
@@ -1737,6 +1746,7 @@ $script:Strings = @{
         'doc.total'       = 'Totaal'
         'doc.paidPin'     = 'Betaald met pin op {0}.'
         'doc.paidCash'    = 'Contant betaald op {0}.'
+        'doc.paidTikkie'  = 'Betaald via betaalverzoek op {0}.'
         'doc.transfer'    = 'Graag {0} overmaken voor {1} naar {2}, onder vermelding van factuurnummer {3}.'
         'doc.kor'         = 'Vrijgesteld van btw op grond van de kleineondernemersregeling (KOR).'
         'doc.btwUnset'    = 'Btw nog niet ingesteld.'
@@ -5963,16 +5973,17 @@ function Read-HcInvoiceForm {
         return $null
     }
 
+    # Bank transfer only once an IBAN is set: the invoice has to say where to.
+    $methods = [ordered]@{ '1' = 'pin'; '2' = 'cash' }
+    if ($Settings.iban) { $methods['3'] = 'transfer' }
+    # 'tikkie' stands for any payment request: Tikkie, or the bank's own (ASN betaalverzoek).
+    $methods['4'] = 'tikkie'
+    $choices = @($methods.Keys | ForEach-Object { "[$_] " + (T ('inv.pay.' + $methods[$_])) }) -join '  '
     $payment = $null
     while (-not $payment) {
-        $typed = "$(Read-HcLine (T 'inv.payment'))".Trim()
-        switch ($typed) {
-            '1' { $payment = 'pin' }
-            '2' { $payment = 'cash' }
-            '3' { $payment = 'transfer' }
-            '0' { return $null }
-            'Q' { return $null }
-        }
+        $typed = "$(Read-HcLine (T 'inv.payment' $choices))".Trim()
+        if ($typed -in @('0', 'Q')) { return $null }
+        if ($methods.Contains($typed)) { $payment = $methods[$typed] }
     }
 
     $total = [decimal]0
@@ -6082,15 +6093,14 @@ function Get-HcInvoiceBlocks {
     switch ($Invoice.payment) {
         'pin'      { & $block 'payment' (T 'doc.paidPin' $paidOn) }
         'cash'     { & $block 'payment' (T 'doc.paidCash' $paidOn) }
+        'tikkie'   { & $block 'payment' (T 'doc.paidTikkie' $paidOn) }
         'transfer' {
             $due = Format-HcLongDate ([datetime]::Parse([string]$Invoice.due_date, [Globalization.CultureInfo]::InvariantCulture))
             & $block 'payment' (T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number)
         }
     }
-    switch ($Invoice.btw_mode) {
-        'kor'   { & $block 'small' (T 'doc.kor') }
-        'unset' { & $block 'small' (T 'doc.btwUnset') }
-    }
+    # No BTW line until BTW is set: Shamil is not a registered business yet.
+    if ($Invoice.btw_mode -eq 'kor') { & $block 'small' (T 'doc.kor') }
     & $block 'small' (T 'doc.thanks')
 }
 

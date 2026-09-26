@@ -1,7 +1,7 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 92%** `██████████████████░░` 45 of 49 done · 0 in progress · 4 open · 0 blocked · 0 waiting on a decision
+**Progress: 92%** `██████████████████░░` 46 of 50 done · 0 in progress · 4 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
@@ -9,7 +9,7 @@
 | Next up | `░░░░░░░░░░` | 0% (0/3) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (34/34) |
-| Found in testing | `████████░░` | 86% (6/7) |
+| Found in testing | `█████████░` | 88% (7/8) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
@@ -474,6 +474,14 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Found in testing
 
+- [x] **Payment request, and a shorter setup** *(Shamil, 26 Sep)*. Payment
+      option [4] is a payment request: Tikkie, or the bank's own (Shamil uses
+      the ASN *betaalverzoek*); the invoice says "Betaald via betaalverzoek".
+      Internally the value is 'tikkie' (database constraint and relay updated).
+      Bank transfer [3] only shows once an IBAN is set. No BTW line while BTW is
+      not set. `setup-invoice.ps1` now asks only name, email, phone, rate and
+      call-out fee; address, KvK, IBAN and BTW come after one question that is
+      No by default. A dash (-) empties a field filled in by mistake
 - [x] **A delete option in H** *(Shamil, 26 Sep)*: the history numbers the
       visits; a number, then J, deletes that visit (relay `visit_delete`,
       only for this same PC). Its invoice is kept, and Housecall says so

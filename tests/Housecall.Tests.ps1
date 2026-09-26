@@ -1055,6 +1055,25 @@ Describe 'The invoice' {
         $out | Should Match 'FACTUUR 2026-0001'
     }
 
+    It 'without an IBAN: no bank transfer; 4 is a payment request, and no BTW line' {
+        $script:Sent = @{}
+        Mock Invoke-HcRelay {
+            $script:Sent[$Body.action] = $Body
+            switch ($Body.action) {
+                'unlock'         { & $ok ([pscustomobject]@{ token = 't.s'; expires = (Get-Date).AddHours(4).ToUniversalTime().ToString('o') }) }
+                'settings_get'   { & $ok ([pscustomobject]@{ settings = [pscustomobject]@{ business_name = 'Shamil'; hourly_rate = 40; callout_fee = 0; btw_mode = 'unset'; iban = $null } }) }
+                'invoice_create' { & $ok ([pscustomobject]@{ invoice = (& $invoice @{ payment = $Body.payment; btw_mode = 'unset' }) }) }
+                default          { & $ok ([pscustomobject]@{ visits = @(); saved = $true; id = 1 }) }
+            }
+        }
+        # '3' (bank transfer) is not on offer without an IBAN, so it is asked again; then 4.
+        $out = Start-Housecall -Lang nl -Answers @('A1', '', 'Q', '123456', 'Mevr. de Vries', '', '', '', '30', '', '3', '4', 'j') 6>&1 | Out-String
+        $script:Sent['invoice_create'].payment | Should Be 'tikkie'
+        $out | Should Match 'Betaling: \[1\] pin  \[2\] contant  \[4\] betaalverzoek'
+        $out | Should Match 'Betaald via betaalverzoek op 26 september 2026'
+        $out | Should Not Match 'Btw'
+    }
+
     It 'Enter at the code: no invoice, no second question, the plain note' {
         $script:Sent = @{}
         Mock Invoke-HcRelay { $script:Sent[$Body.action] = $Body; & $ok ([pscustomobject]@{}) }
