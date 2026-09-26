@@ -1,7 +1,7 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 93%** `███████████████████░` 39 of 42 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
+**Progress: 91%** `██████████████████░░` 41 of 45 done · 0 in progress · 4 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
@@ -9,12 +9,13 @@
 | Next up | `░░░░░░░░░░` | 0% (0/3) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (34/34) |
+| Found in testing | `█████░░░░░` | 67% (2/3) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
 
 Working notes, kept so a new chat can pick up without re-deriving anything.
-Last updated: **26 September 2026**, after **everything built**: A1–F3, all fixes, visit memory and the AI chat. Left: Shamil's testing.
+Last updated: **26 September 2026, end of session**: everything built; the AI setup is halfway (see *Where we stopped*).
 
 **How we work this list:** items are worked top to bottom. Pick one, say the
 name, and it gets built. When it is done it moves to *Recently done* and we go
@@ -40,6 +41,24 @@ irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex
 <https://claude.ai/artifact/28ctzpjkWt3r6K14d46TzT>
 
 ### Picking this up again
+
+**Where we stopped (26 Sep, end of session):**
+- `HOUSECALL_TOTP_SECRET` is in Supabase (project `housecall`) and in
+  Shamil's Google Authenticator.
+- An Anthropic API key is made. Shamil was adding it to Supabase as
+  `ANTHROPIC_API_KEY`; not confirmed yet.
+- The Anthropic account has **no credit yet**. Until it has, `?` shows
+  "De relay gaf een fout (ai_request)"; H and saving visits work without it.
+
+**First thing next session:**
+1. Shamil runs the check (full path, because PowerShell often opens in
+   `C:\WINDOWS\system32`):
+   `powershell -ExecutionPolicy Bypass -File "C:\Users\shami\OneDrive\Documents\My Claude\Visual Studio Code\Housecall\tools\setup-ai.ps1" -Check`
+   → three times OK.
+2. Try H and saving a visit (Q) with the Authenticator code.
+3. Build *No credit: a clear message* (under Found in testing).
+4. Once there is credit: the first real AI chat, and watch it once.
+5. Then Shamil's testing round (below).
 
 **Right now (26 Sep, end of day):** Phase 0 and **area A** are built and
 tested (see *Recently done*). A1, A2 and A3 run real read-only checks, give a
@@ -454,7 +473,19 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Found in testing
 
-*(empty: Shamil tests everything after 26 Sep; what he finds goes here, and gets fixed first)*
+- [ ] **No credit: a clear message.** With an API key but no credit,
+      Anthropic answers "credit balance too low" and the relay turns that
+      into the vague `ai_request`. Make the relay return `ai_credit` for it
+      (match the error type or message), map it in `Get-HcRelayMessage`, add
+      the text in both languages ("Het Anthropic-account heeft geen tegoed:
+      voeg tegoed toe via console.anthropic.com > Billing"), redeploy the
+      function
+- [x] **The QR page opened in Visual Studio Code**, not a browser (the
+      `.html` handler on Shamil's PC is VS Code). Fixed: `setup-ai.ps1` opens
+      it in the default https browser (Edge on his PC)
+- [x] **"The argument to -File does not exist"**: not a bug, PowerShell
+      opens in `C:\WINDOWS\system32`. The commands in this file now use the
+      full path
 
 ## Ideas, parked
 
