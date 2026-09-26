@@ -30,7 +30,7 @@ won't connect to the internet." Shamil opens PowerShell on their machine,
 pastes **one line**, and picks the problem from a lettered menu (or describes
 it to the AI chat). Housecall checks that part of the system read-only, says
 what it found, fixes it after a **yes** (or gives the steps), proves the fix
-worked, and leaves a short note for the client.
+worked, and shows the client a short note that disappears when it's closed.
 
 ```powershell
 irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex
@@ -48,9 +48,9 @@ still show "not built yet". Next: the rest of Phase 1. **F** is the
 recommended next area, because it's the standout feature. The open decisions
 (AI provider, hosting) still don't block anything in Phase 1.
 
-**Not yet seen on real Wi-Fi.** Shamil's PC uses a cable and has no Wi-Fi
-adapter, so the Wi-Fi paths (SSID, signal, drop-outs) are covered only by
-tests with fake facts. Run A1 and A2 once on a laptop on Wi-Fi.
+**Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
+name and **95%** signal correctly. The drop-out count in A2 has not been
+judged on a real laptop yet.
 
 Try it: the one-liner above in any PowerShell, or from source:
 `powershell -ExecutionPolicy Bypass -File .\dev.ps1` (add `-DryRun` or `-Lang nl`).
@@ -88,7 +88,7 @@ Reveille (`../Reveile/setup.ps1`) is the reference for the one-line
 | Runs on | Windows 10 / 11, Windows PowerShell 5.1. Do **not** assume PowerShell 7 |
 | Language | **Dutch and English**, picked from the Windows display language, with a switch |
 | Brain | the menu + rule-based checks (offline). AI chat (`?`) on top, provider not chosen |
-| Leaves behind | only the client note on the desktop. No install, no task, no service |
+| Leaves behind | nothing. The client note opens in its own window and is gone when closed. No install, no task, no service, no files |
 
 ### The menu
 
@@ -125,8 +125,10 @@ Researched 26 Sep. Full table in the preview. In short:
 1. **Scam check (F).** People over 60 lost more than $1 billion to
    tech-support scams in 2025 (FBI IC3). No repair tool checks for AnyDesk or
    TeamViewer installed by a scammer, or for fake-virus notification sites.
-2. **Client note on the desktop.** It says what was wrong, what was changed and
-   how to reach Shamil. It doubles as the job note for the invoice.
+2. **Client note.** It says what was wrong, what was changed and how to
+   reach Shamil. It opens by itself at the end and is gone when closed
+   (decided 26 Sep: no file on the desktop). The job record for the invoice
+   lives on Shamil's side (visit memory), not in the note.
 3. **Before/after proof.** The check that found the problem runs again after the fix.
 4. **Visit memory.** Shamil's side only: each client's PC and past fixes.
 
@@ -180,7 +182,14 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - [ ] Restore point before any admin fix, where Windows allows one
 - [ ] **Before/after proof**: rerun the check that found the problem
 - [ ] **Change log + undo** for the session
-- [ ] **Client note**: `Housecall <date>.txt` on the desktop in the client's language: problem, found, changed, Shamil's contact
+- [ ] **Client note**: opens by itself at the end, in the client's language:
+      problem, found, changed, Shamil's contact. **Decided 26 Sep: no file
+      left behind.** Build it as Housecall's own window (WinForms, which works
+      under `irm | iex`) with large text, and nothing on disk. Not Notepad on a
+      temp file: Windows 11's Notepad hands the file to an already open window
+      and its process exits at once, so "delete after closing" would delete it
+      before it's read. It also restores closed tabs. Buttons: **Print** (so the
+      client can still keep a paper copy) and **Close**
 
 **Phase 3: the AI chat (`?`)**
 - [ ] Relay: small serverless function holding the key, with its own token (see decisions)
@@ -263,13 +272,13 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - [ ] **Arrow-key navigation** in the console menu, next to typed codes
 - [ ] **Hardware health**: SMART disk status, battery wear, temperatures
 - [ ] **Remote mode**: a client pastes the line themselves while you're on the phone
-- [ ] **Printable report** (HTML) next to the `.txt` note
+- [ ] **Save the note as PDF** from the note window, when a client asks for a copy by email
 
 ### Considered and deliberately not doing
 
 - **Letting the model run any command it writes.** Too risky on someone else's
   PC. Fixes come from a reviewed approved list only.
-- **Installing anything permanently.** It runs, helps, and leaves only the note.
+- **Installing anything permanently.** It runs, helps, and leaves nothing behind.
 - **Grouped codes (A1 = "Wi-Fi and audio", then choose).** Decided 26 Sep for
   letter = area, number = problem, so `A1` always means one exact problem.
 
