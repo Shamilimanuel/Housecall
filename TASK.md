@@ -226,6 +226,10 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Recently done
 
+**GitHub two-factor authentication is on** *(26 Sep)*. Every push is live
+on clients' PCs at once, so the GitHub account is the key to all of them.
+Codes in Google Authenticator, recovery codes kept outside the PC.
+
 **Cleaner invoice and the clock** *(26 Sep)*
 - [x] **The invoice is a drawn A4 page** (layout B, chosen from three in a
       preview): "Factuur", number and date, the seller on the right; the
