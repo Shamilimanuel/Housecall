@@ -3,7 +3,7 @@
     straight to a problem, and inside an area a bare 1 means the same as A1.
 
     Reserved keys, never to be used as an area letter:
-        ?  AI chat       0  back       L  language       Q  quit
+        ?  AI chat    0  back    L  language    U  undo this session's fixes    Q  quit
 #>
 
 $script:Areas = [ordered]@{
@@ -19,7 +19,7 @@ $script:Areas = [ordered]@{
     Turn what was typed into one decision. Pure: no output, no state, so the
     tests can cover every kind of input.
 
-    Kind is one of: empty, area, problem, ai, back, language, quit,
+    Kind is one of: empty, area, problem, ai, back, language, undo, quit,
     freetext (a sentence, which the AI chat will take), unknown.
 #>
 function Resolve-HcChoice {
@@ -38,6 +38,7 @@ function Resolve-HcChoice {
     if ($key -eq '0') { return & $result 'back' $null }
     if ($key -eq 'L') { return & $result 'language' $null }
     if ($key -eq 'Q') { return & $result 'quit' $null }
+    if ($key -eq 'U') { return & $result 'undo' $null }
 
     if ($script:Areas.Contains($key)) { return & $result 'area' $key }
 
@@ -72,7 +73,7 @@ function Show-HcHome {
     Write-Host ''
     Write-Option '?' (T 'menu.ai')
     Write-Host ''
-    Write-OptionRow @(@('L', (T 'menu.language')), @('Q', (T 'menu.quit')))
+    Write-OptionRow (Get-HcFooter)
     Write-Host ''
     if ($Message) { Write-Warn2 $Message } else { Write-Dim (T 'menu.hintHome') }
 }
@@ -89,13 +90,27 @@ function Show-HcArea {
     Write-Host ''
     Write-Option '?' (T 'area.ai')
     Write-Host ''
-    Write-OptionRow @(@('0', (T 'menu.back')), @('L', (T 'menu.language')), @('Q', (T 'menu.quit')))
+    Write-OptionRow (@(, @('0', (T 'menu.back'))) + (Get-HcFooter))
     Write-Host ''
     if ($Message) { Write-Warn2 $Message } else { Write-Dim (T 'area.hint') }
 }
 
-# Runs the handler registered for $Code (see src\checks\), or says which
-# checks will run once it is built.
+# The footer keys shared by every menu screen. U only shows once something
+# was changed in this session.
+function Get-HcFooter {
+    $row = @(, @('L', (T 'menu.language')))
+    if ($script:HcChanges.Count -gt 0) { $row += , @('U', (T 'menu.undo')) }
+    $row + (, @('Q', (T 'menu.quit')))
+}
+
+<#
+    Runs the handler registered for $Code (see src\checks\), or says which
+    checks will run once it is built.
+
+    The handler returns a scriptblock that checks the PC and returns a
+    report. After the report come the fixes it offers; once one is applied,
+    the same check runs again, so the screen shows whether it worked.
+#>
 function Invoke-HcProblem {
     param([pscustomobject]$Environment, [string]$Code)
     Clear-HcScreen
@@ -103,12 +118,32 @@ function Invoke-HcProblem {
     Write-Host ('  ' + $Code + '  ' + (T "problem.$Code")) -ForegroundColor Yellow
     Write-Host ''
     $handler = $script:ProblemHandlers[$Code]
-    if ($handler) {
-        & $handler
-    } else {
+    if (-not $handler) {
         Write-Warn2 (T 'problem.notBuilt')
         Write-Dim (T 'problem.willLook')
         Write-Dim ('  ' + (T ('looks.' + $Code.Substring(0, 1))))
+        Write-Host ''
+        [void](Read-HcLine (T 'pressEnter'))
+        return
+    }
+
+    $check = & $handler
+    if (-not $check) { return }      # e.g. A3 when no site was typed
+    Write-Dim (T 'run.checking')
+    Write-Host ''
+    $report = & $check
+    Write-HcReport $report
+
+    while (@($report.Actions).Count -gt 0 -or @(Get-HcSteps $report).Count -gt 0) {
+        $result = Invoke-HcActionMenu $report
+        if ($result -eq 'back') { return }
+        if ($result -eq 'changed') {
+            Write-Host ''
+            Write-Dim (T 'fix.checkingAgain')
+            Write-Host ''
+            $report = & $check
+            Write-HcReport $report
+        }
     }
     Write-Host ''
     [void](Read-HcLine (T 'pressEnter'))
@@ -143,6 +178,7 @@ function Start-Housecall {
     )
 
     $script:DryRun = [bool]$DryRun
+    $script:HcChanges.Clear()
     $script:Lang = if ($script:Strings.ContainsKey("$Lang".ToLowerInvariant())) { "$Lang".ToLowerInvariant() } else { Get-HcDefaultLanguage }
     $script:HcInputQueue = $null
     if ($PSBoundParameters.ContainsKey('Answers')) {
@@ -156,6 +192,7 @@ function Start-Housecall {
         Write-Warn2 (T 'env.oldPowerShell' $environment.PSVersion.ToString())
         return
     }
+    $script:IsAdmin = [bool]$environment.IsAdmin
 
     $area = ''          # '' = home menu, otherwise the letter on screen
     $message = $null    # one-off warning shown under the menu
@@ -172,10 +209,11 @@ function Start-Housecall {
             'freetext' { Invoke-HcAi $environment $choice.Value }
             'back'     { $area = '' }
             'language' { $script:Lang = if ($script:Lang -eq 'nl') { 'en' } else { 'nl' } }
+            'undo'     { $message = Invoke-HcUndo }
             'unknown'  { $message = T 'menu.unknown' $choice.Value }
             'quit'     {
                 Write-Host ''
-                Write-Ok (T 'goodbye')
+                if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
                 Write-Host ''
                 return
             }

@@ -11,7 +11,12 @@
 
     A report is a list of result lines plus one finding: the id of the most
     important thing found (finding.<id> and advice.<id> in strings.ps1).
-    Phase 2 maps finding ids to fixes.
+    It can also offer actions: fixes from srcixes.ps1 that the verdict
+    thinks will help, which the person can pick after reading the report.
+
+    A handler returns a scriptblock that reads the PC and returns the
+    report. Invoke-HcProblem runs it once, and again after every fix, as
+    proof that the fix worked.
 #>
 
 # Problem code -> the function that handles it. Each area's file registers
@@ -30,7 +35,15 @@ function New-HcReport {
         Results     = New-Object System.Collections.ArrayList
         FindingId   = $null
         FindingArgs = @()
+        Actions     = New-Object System.Collections.ArrayList
     }
+}
+
+# Offers a fix. $FixId names an entry in $script:Fixes (srcixes.ps1);
+# $Target is what it acts on, for example a task's name and folder.
+function Add-HcAction {
+    param([pscustomobject]$Report, [string]$FixId, [hashtable]$Target = @{})
+    [void]$Report.Actions.Add([pscustomobject]@{ FixId = $FixId; Target = $Target })
 }
 
 # Adds a line to the report. Written as a function so the Test- functions

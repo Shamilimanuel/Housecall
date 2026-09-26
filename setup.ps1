@@ -79,6 +79,7 @@ $script:Strings = @{
         'ai.offline'       = 'This PC is offline, so the AI chat cannot be reached. The menu works without internet.'
 
         'goodbye'          = 'Housecall is closed. Nothing was left behind on this PC.'
+        'goodbyeChanged'   = 'Housecall is closed. The {0} change(s) you approved stay in place; nothing else was left behind.'
         'env.notWindows'   = 'Housecall only runs on Windows.'
         'env.oldPowerShell' = 'Housecall needs PowerShell 5.1 or newer. This PC has {0}.'
 
@@ -253,9 +254,9 @@ $script:Strings = @{
         'finding.threatsFound'   = 'Virus protection stopped {0} threat(s) in the past 30 days.'
         'advice.threatsFound'    = 'Open Windows Security > Protection history to see what it was, and run a full scan.'
         'finding.suspiciousTask' = 'The scheduled task "{0}" starts a hidden or downloaded command. That is typical of malware.'
-        'advice.suspiciousTask'  = 'Look at it in Task Scheduler. After the client''s yes, disable it (do not delete it yet) and run a full scan in Windows Security.'
+        'advice.suspiciousTask'  = 'After the client''s yes, Housecall can disable it below (it can be switched back on). Then run a full scan in Windows Security.'
         'finding.unknownTask'    = 'The scheduled task "{0}" starts a script in the background. Legitimate programs do this too, but so does malware.'
-        'advice.unknownTask'     = 'Check in Task Scheduler which program it belongs to. If the client does not know it, look it up before disabling it.'
+        'advice.unknownTask'     = 'Ask the client whether they know it. If not, Housecall can disable it below (it can be switched back on).'
         'finding.notifySites'    = '{0} website(s) may show pop-up notifications. That is how fake virus warnings get onto the screen.'
         'advice.notifySites'     = 'Block them in the browser: Settings > Privacy and security > Site settings > Notifications. Never call a phone number from such a pop-up.'
         'finding.hostsRedirect'  = 'The hosts file sends website names to other addresses.'
@@ -266,6 +267,72 @@ $script:Strings = @{
         'advice.cleanCall'       = 'If the caller asked for bank details or codes, call the bank anyway. Quick Assist is built into Windows and leaves nothing behind once closed.'
         'finding.cleanAll'       = 'No security problems found.'
         'advice.cleanAll'        = 'Keep Windows and the browser up to date. Real companies never call about a virus.'
+
+        # ---- fixes and undo
+        'fix.heading'      = 'What next?'
+        'fix.steps'        = 'Step by step: how to do it by hand'
+        'fix.stepOf'       = 'Step {0} of {1}:'
+        'fix.stepNext'     = 'Enter = next step, 0 = stop'
+        'fix.stepLast'     = 'Enter = done'
+        'fix.enterBack'    = 'Enter = back to the menu'
+        'fix.note.undo'    = '(can be undone)'
+        'fix.note.safe'    = '(safe, changes nothing else)'
+        'fix.note.restart' = '(the program can simply be started again)'
+        'fix.needsAdmin'   = '(needs admin)'
+        'fix.confirm'      = '{0}? (Y/N)'
+        'fix.dryRun'       = 'DRY RUN: nothing was changed.'
+        'fix.done'         = 'Done.'
+        'fix.failed'       = 'That did not work: {0}'
+        'fix.adminHow'     = 'This needs admin. Close this window, right-click the Start button, choose Terminal (Admin), and start Housecall again.'
+        'fix.checkingAgain' = 'Checking again, to see whether it worked...'
+        'fix.cancelled'    = 'Nothing was changed.'
+        'fix.disableTask'  = 'Disable scheduled task "{0}"'
+        'fix.stopRemote'   = 'Close {0} now'
+        'fix.proxyOff'     = 'Turn off the proxy'
+        'fix.flushDns'     = 'Clear the DNS cache'
+        'fix.renewIp'      = 'Ask the router for a new address'
+        'menu.undo'        = 'Undo fixes'
+        'undo.nothing'     = 'There is nothing to undo.'
+        'undo.confirm'     = 'Undo {0} change(s) made in this session? (Y/N)'
+        'undo.done'        = 'Undone: {0}'
+        'undo.failed'      = 'Could not undo: {0}'
+        'sec.taskKnown'    = 'Scheduled task "{0}" belongs to {1}, a known tool'
+        'sec.taskDisabled' = 'Scheduled task "{0}" is disabled'
+
+        # ---- step-by-step guides: steps.<finding id>, steps separated by |
+        'steps.noAdapter'        = 'Right-click the Start button and choose Device Manager. | Open "Network adapters". Look for an entry with a yellow warning sign. If you see nothing, choose View > Show hidden devices. | Note the brand and model of the PC (often on a sticker underneath). | On a phone or another PC, download the network driver from the maker''s support website and copy it over on a USB stick. | Run the driver installer, restart the PC, and choose A1 again.'
+        'steps.wifiDisabled'     = 'Click the network icon at the bottom right, next to the clock. | If the Wi-Fi tile is grey, click it so it turns blue. | If the Airplane mode tile is blue, click it to turn it off. | On a laptop, also try the Wi-Fi key on the keyboard (often Fn plus a key with an antenna). | Choose A1 again to check.'
+        'steps.adapterOff'       = 'Open Settings (Windows key + I) and go to Network & internet. | Click Advanced network settings. | Find the adapter marked Disabled and click Enable next to it. | Choose A1 again to check.'
+        'steps.wifiNotConnected' = 'Click the network icon at the bottom right, next to the clock. | Make sure Airplane mode is off. | Click the arrow next to the Wi-Fi tile to see the networks. | Choose the home network and click Connect. | Type the Wi-Fi password: it is often on a sticker on the router. | Choose A1 again to check.'
+        'steps.cableUnplugged'   = 'Follow the cable from the PC to the router. | Push the plug in firmly at both ends until it clicks. The small light next to the port should start blinking. | No light? Try another port on the router. | Still nothing? Try another cable. | Choose A1 again to check.'
+        'steps.noAddress'        = 'Choose the fix above to ask the router for a new address (needs admin), or carry on by hand. | Pull the power plug out of the router, and out of the modem if that is a separate box. | Wait 30 seconds, then plug it back in. | Wait about 3 minutes until the lights are steady. | Choose A1 again to check.'
+        'steps.noGateway'        = 'Open Settings (Windows key + I) and go to Network & internet. | Click Wi-Fi or Ethernet, then the connection in use (for Wi-Fi: its properties). | Next to IP assignment, click Edit. | Choose Automatic (DHCP) and click Save. | Choose A1 again to check.'
+        'steps.gatewayDown'      = 'Look at the router: are its lights on? | Pull the power plug out of the router, and out of the modem if that is a separate box. | Wait 30 seconds, then plug it back in. | Wait about 3 minutes until the lights are steady. | Choose A1 again. If the router stays dark, it may be broken: call the provider.'
+        'steps.internetDown'     = 'Look at the router: the internet or WAN light is probably red or off. | Restart the modem and router: power off for 30 seconds, then wait 3 minutes. | On a phone with Wi-Fi off, check for an outage at the provider, for example on allestoringen.nl. | Still no internet? Call the provider: the problem is outside the house. | Choose A1 again to check.'
+        'steps.dnsDown'          = 'Choose the fix above to clear the DNS cache, or carry on by hand. | Open Settings (Windows key + I) > Network & internet and click the connection in use. | Next to DNS server assignment, click Edit. | Choose Automatic (DHCP) and click Save. | Choose A1 again to check.'
+        'steps.webIntercepted'   = 'Open a web browser and go to any website, for example nu.nl. | If a login or "accept the terms" page appears (hotel, library, guest Wi-Fi), fill it in. | If nothing appears, choose F3 to look for a proxy or unknown programs. | Choose A1 again to check.'
+        'steps.proxy'            = 'Choose the fix above to turn the proxy off (it can be undone), or carry on by hand. | Open Settings (Windows key + I) > Network & internet > Proxy. | Under Manual proxy setup, click Edit and switch "Use a proxy server" off. | Under Automatic proxy setup, switch "Use setup script" off. | Choose F3 to look for the program that set it.'
+        'steps.weakSignal'       = 'Take the laptop to the router and choose A1 again. Strong there? Then distance is the problem. | Take the router out of cupboards, off the floor, and away from metal. | If the router has two networks (2.4 and 5 GHz), use 2.4 GHz in rooms far away. | In a large house, a Wi-Fi extender or mesh point halfway helps.'
+        'steps.unstable'         = 'Restart the router: power off for 30 seconds, then wait 3 minutes. | Sit closer to the router and choose A2 again. | Pause big downloads, streaming and video calls on other devices, and test again. | Still unstable? Use a network cable, or ask the provider for a new router.'
+        'steps.dropsMany'        = 'Right-click the Start button and choose Device Manager. | Open Network adapters and double-click the Wi-Fi adapter. | On the Power Management tab, untick "Allow the computer to turn off this device to save power". | On the Driver tab, click Update driver > Search automatically for drivers. | Restart the router and the PC.'
+        'steps.connHealthy'      = 'Close other programs and browser tabs. | Open speedtest.net on this PC and click Go. | Compare the download speed with the subscription (on the provider''s bill or website). | Much lower? Test again with a network cable. Still low: call the provider. | Only slow in the evening? Those are busy hours at the provider.'
+        'steps.siteHosts'        = 'Open Notepad as administrator: type Notepad in Start, right-click it, choose Run as administrator. | Choose File > Open, set the file type to All files, and paste: C:\Windows\System32\drivers\etc\hosts | Delete the line with the site name and save. | Choose F3 to look for what put it there.'
+        'steps.siteNotFound'     = 'Check the spelling of the address with the client. | Search for the name of the site in a search engine instead of typing the address. | Try it on a phone: if it fails there too, the site is down or gone.'
+        'steps.siteBlocked'      = 'Try the site on a phone with Wi-Fi off. | Works there? Pause the antivirus or firewall on this PC for a moment and try again. | If that helps, add the site as an exception in that security program, and switch the protection back on.'
+        'steps.siteError'        = 'Wait 15 minutes and try again. | Check on a phone whether the site gives an error there too. | Look for an outage of the site, for example on allestoringen.nl.'
+        'steps.siteOk'           = 'Open the site in the browser and press Ctrl + F5 to reload it completely. | Still wrong? Try it in another browser, for example Edge. | Works there? In the first browser: Settings > Privacy > Clear browsing data (cookies and cache). | Still wrong? Switch off browser extensions one by one. | For an app: update it, or remove it and install it again.'
+        'steps.remoteActive'     = 'Cut the internet: switch Wi-Fi off (network icon at the bottom right) or pull the network cable. | Choose the fix above to close the program. | Ask the client whether they know the program, and who asked them to install it. | If it was a stranger: call the bank straight away, on the number on the bank card. | Change the email and bank passwords from another device, not from this PC. | Choose F3 for a full check.'
+        'steps.remoteRecent'     = 'Ask the client who installed the program, and when they last spoke to that person. | If it was a stranger: call the bank straight away, on the number on the bank card. | Remove the program: Settings > Apps, find it in the list, click the three dots next to it and choose Uninstall. | Change the email and bank passwords from another device. | Choose F2 again to check.'
+        'steps.remoteOld'        = 'Ask the client whether they or their family use the program. | If nobody does: Settings > Apps, find it in the list, click the three dots next to it and choose Uninstall. | Choose F2 again to check.'
+        'steps.defenderOff'      = 'Type Windows Security in Start and open it. | Click Virus & threat protection. | Is another antivirus listed that has expired? Remove it: Settings > Apps, find it in the list, three dots, Uninstall. | Under Virus & threat protection settings, click Manage settings and switch Real-time protection on. | Choose F3 again to check.'
+        'steps.avOld'            = 'Type Windows Security in Start and open it. | Click Virus & threat protection. | Under Protection updates, click Check for updates. | Does that fail? Choose E1 to check Windows Update.'
+        'steps.threatsFound'     = 'Type Windows Security in Start and open it. | Click Virus & threat protection > Protection history. | See what was found, and whether it says Removed or Quarantined. | Go back, click Scan options, choose Full scan and click Scan now. Let it finish.'
+        'steps.suspiciousTask'   = 'Choose the fix above to disable the task (it can be switched back on). | Type Windows Security in Start and open it. | Click Virus & threat protection > Scan options, choose Microsoft Defender Offline scan and click Scan now. The PC restarts for this. | Afterwards, choose F3 again.'
+        'steps.unknownTask'      = 'Ask the client whether they know the program the task "{0}" belongs to. | Search for the name "{0}" online to see which program it comes from. | Unknown and not needed? Choose the fix above to disable it (it can be switched back on).'
+        'steps.notifySites'      = 'Open the browser named next to the site. | Chrome, Edge or Brave: Settings > Privacy and security > Site settings > Notifications. | Under "Allowed to send notifications", click the three dots next to each unknown site and choose Block or Remove. | Tell the client: a pop-up with a phone number is never real. Close it, and never call.'
+        'steps.hostsRedirect'    = 'Open Notepad as administrator: type Notepad in Start, right-click it, choose Run as administrator. | Choose File > Open, set the file type to All files, and paste: C:\Windows\System32\drivers\etc\hosts | Delete the lines the client does not recognise and save. | Choose F3 again to check.'
+        'steps.cleanPopup'       = 'Is the pop-up still on screen? Press Ctrl + Shift + Esc to open Task Manager. | Select the browser and click End task. | Open the browser again. If it offers to restore the tabs, say no. | Tell the client: such pages look scary but do nothing once closed. Never call the number.'
+        'steps.cleanCall'        = 'Ask what the caller did: did they see the screen, or ask for codes or bank details? | If they asked for bank details or codes: call the bank on the number on the bank card. | Change the email password from another device. | Tell the client: banks and Microsoft never call about a virus.'
     }
 
     nl = @{
@@ -301,6 +368,7 @@ $script:Strings = @{
         'ai.offline'       = 'Deze pc is offline, dus de AI-chat is niet bereikbaar. Het menu werkt zonder internet.'
 
         'goodbye'          = 'Housecall is gesloten. Er is niets achtergebleven op deze pc.'
+        'goodbyeChanged'   = 'Housecall is gesloten. De {0} wijziging(en) die u goedkeurde blijven staan; verder is er niets achtergebleven.'
         'env.notWindows'   = 'Housecall werkt alleen op Windows.'
         'env.oldPowerShell' = 'Housecall heeft PowerShell 5.1 of nieuwer nodig. Deze pc heeft {0}.'
 
@@ -475,9 +543,9 @@ $script:Strings = @{
         'finding.threatsFound'   = 'De virusbescherming heeft de afgelopen 30 dagen {0} bedreiging(en) tegengehouden.'
         'advice.threatsFound'    = 'Open Windows-beveiliging > Beveiligingsgeschiedenis om te zien wat het was, en doe een volledige scan.'
         'finding.suspiciousTask' = 'De geplande taak "{0}" start een verborgen of gedownloade opdracht. Dat is typisch voor malware.'
-        'advice.suspiciousTask'  = 'Bekijk hem in Taakplanner. Schakel hem na het ja van de klant uit (nog niet verwijderen) en doe een volledige scan in Windows-beveiliging.'
+        'advice.suspiciousTask'  = 'Na het ja van de klant kan Housecall hem hieronder uitschakelen (kan weer worden aangezet). Doe daarna een volledige scan in Windows-beveiliging.'
         'finding.unknownTask'    = 'De geplande taak "{0}" start een script op de achtergrond. Gewone programma''s doen dat ook, maar malware ook.'
-        'advice.unknownTask'     = 'Kijk in Taakplanner bij welk programma hij hoort. Kent de klant het niet, zoek het dan eerst op voordat u hem uitschakelt.'
+        'advice.unknownTask'     = 'Vraag of de klant hem kent. Zo niet, dan kan Housecall hem hieronder uitschakelen (kan weer worden aangezet).'
         'finding.notifySites'    = '{0} website(s) mogen pop-upmeldingen tonen. Zo komen nep-virusmeldingen op het scherm.'
         'advice.notifySites'     = 'Blokkeer ze in de browser: Instellingen > Privacy en beveiliging > Site-instellingen > Meldingen. Bel nooit een telefoonnummer uit zo''n melding.'
         'finding.hostsRedirect'  = 'Het hosts-bestand stuurt namen van websites naar andere adressen.'
@@ -488,6 +556,72 @@ $script:Strings = @{
         'advice.cleanCall'       = 'Vroeg de beller om bankgegevens of codes, bel dan toch de bank. Snelle hulp (Quick Assist) zit in Windows en laat na afloop niets achter.'
         'finding.cleanAll'       = 'Geen veiligheidsproblemen gevonden.'
         'advice.cleanAll'        = 'Houd Windows en de browser bijgewerkt. Echte bedrijven bellen nooit over een virus.'
+
+        # ---- fixes and undo
+        'fix.heading'      = 'Wat nu?'
+        'fix.steps'        = 'Stap voor stap: zelf oplossen'
+        'fix.stepOf'       = 'Stap {0} van {1}:'
+        'fix.stepNext'     = 'Enter = volgende stap, 0 = stoppen'
+        'fix.stepLast'     = 'Enter = klaar'
+        'fix.enterBack'    = 'Enter = terug naar het menu'
+        'fix.note.undo'    = '(kan worden teruggedraaid)'
+        'fix.note.safe'    = '(veilig, verandert verder niets)'
+        'fix.note.restart' = '(het programma kan gewoon weer worden gestart)'
+        'fix.needsAdmin'   = '(beheerder nodig)'
+        'fix.confirm'      = '{0}? (J/N)'
+        'fix.dryRun'       = 'PROEFDRAAI: er is niets veranderd.'
+        'fix.done'         = 'Gedaan.'
+        'fix.failed'       = 'Dat lukte niet: {0}'
+        'fix.adminHow'     = 'Hiervoor is beheerder nodig. Sluit dit venster, klik met rechts op de Startknop, kies Terminal (beheerder), en start Housecall opnieuw.'
+        'fix.checkingAgain' = 'Opnieuw controleren of het gelukt is...'
+        'fix.cancelled'    = 'Er is niets veranderd.'
+        'fix.disableTask'  = 'Geplande taak "{0}" uitschakelen'
+        'fix.stopRemote'   = '{0} nu afsluiten'
+        'fix.proxyOff'     = 'De proxy uitzetten'
+        'fix.flushDns'     = 'De DNS-cache legen'
+        'fix.renewIp'      = 'De router om een nieuw adres vragen'
+        'menu.undo'        = 'Wijzigingen terugdraaien'
+        'undo.nothing'     = 'Er is niets om terug te draaien.'
+        'undo.confirm'     = '{0} wijziging(en) van deze sessie terugdraaien? (J/N)'
+        'undo.done'        = 'Teruggedraaid: {0}'
+        'undo.failed'      = 'Kon niet terugdraaien: {0}'
+        'sec.taskKnown'    = 'Geplande taak "{0}" hoort bij {1}, een bekend programma'
+        'sec.taskDisabled' = 'Geplande taak "{0}" staat uit'
+
+        # ---- step-by-step guides: steps.<finding id>, steps separated by |
+        'steps.noAdapter'        = 'Klik met rechts op de Startknop en kies Apparaatbeheer. | Open "Netwerkadapters". Zoek een regel met een geel waarschuwingsteken. Ziet u niets, kies dan Beeld > Verborgen apparaten weergeven. | Noteer merk en model van de pc (vaak op een sticker aan de onderkant). | Download op een telefoon of andere pc het netwerkstuurprogramma van de supportsite van de fabrikant en zet het op een USB-stick. | Installeer het stuurprogramma, herstart de pc, en kies opnieuw A1.'
+        'steps.wifiDisabled'     = 'Klik rechtsonder op het netwerk-icoon, naast de klok. | Is de tegel Wi-Fi grijs, klik er dan op zodat hij blauw wordt. | Is de tegel Vliegtuigstand blauw, klik er dan op om hem uit te zetten. | Probeer op een laptop ook de wifitoets op het toetsenbord (vaak Fn plus een toets met een antenne). | Kies opnieuw A1 om te controleren.'
+        'steps.adapterOff'       = 'Open Instellingen (Windows-toets + I) en ga naar Netwerk en internet. | Klik op Geavanceerde netwerkinstellingen. | Zoek de adapter met Uitgeschakeld en klik ernaast op Inschakelen. | Kies opnieuw A1 om te controleren.'
+        'steps.wifiNotConnected' = 'Klik rechtsonder op het netwerk-icoon, naast de klok. | Controleer of Vliegtuigstand uit staat. | Klik op het pijltje naast de tegel Wi-Fi om de netwerken te zien. | Kies het thuisnetwerk en klik op Verbinding maken. | Typ het wifi-wachtwoord: dat staat vaak op een sticker op de router. | Kies opnieuw A1 om te controleren.'
+        'steps.cableUnplugged'   = 'Volg de kabel van de pc naar de router. | Druk de stekker aan beide kanten stevig aan tot hij klikt. Het lampje naast de aansluiting hoort te gaan knipperen. | Geen lampje? Probeer een andere aansluiting op de router. | Nog steeds niets? Probeer een andere kabel. | Kies opnieuw A1 om te controleren.'
+        'steps.noAddress'        = 'Kies hierboven de oplossing om de router om een nieuw adres te vragen (beheerder nodig), of ga met de hand verder. | Trek de stekker uit de router, en uit het modem als dat een apart kastje is. | Wacht 30 seconden en steek de stekker er weer in. | Wacht ongeveer 3 minuten tot de lampjes rustig branden. | Kies opnieuw A1 om te controleren.'
+        'steps.noGateway'        = 'Open Instellingen (Windows-toets + I) en ga naar Netwerk en internet. | Klik op Wi-Fi of Ethernet, en dan op de verbinding die gebruikt wordt (bij wifi: de eigenschappen). | Klik naast IP-toewijzing op Bewerken. | Kies Automatisch (DHCP) en klik op Opslaan. | Kies opnieuw A1 om te controleren.'
+        'steps.gatewayDown'      = 'Kijk naar de router: branden de lampjes? | Trek de stekker uit de router, en uit het modem als dat een apart kastje is. | Wacht 30 seconden en steek de stekker er weer in. | Wacht ongeveer 3 minuten tot de lampjes rustig branden. | Kies opnieuw A1. Blijft de router donker, dan is hij misschien kapot: bel de provider.'
+        'steps.internetDown'     = 'Kijk naar de router: het internet- of WAN-lampje is waarschijnlijk rood of uit. | Herstart modem en router: 30 seconden stroom eraf, daarna 3 minuten wachten. | Kijk op een telefoon met wifi uit of er een storing is bij de provider, bijvoorbeeld op allestoringen.nl. | Nog steeds geen internet? Bel de provider: het probleem zit buiten het huis. | Kies opnieuw A1 om te controleren.'
+        'steps.dnsDown'          = 'Kies hierboven de oplossing om de DNS-cache te legen, of ga met de hand verder. | Open Instellingen (Windows-toets + I) > Netwerk en internet en klik op de verbinding die gebruikt wordt. | Klik naast Toewijzing van DNS-server op Bewerken. | Kies Automatisch (DHCP) en klik op Opslaan. | Kies opnieuw A1 om te controleren.'
+        'steps.webIntercepted'   = 'Open een webbrowser en ga naar een willekeurige website, bijvoorbeeld nu.nl. | Verschijnt er een inlogpagina of "voorwaarden accepteren" (hotel, bibliotheek, gastnetwerk), vul die dan in. | Verschijnt er niets, kies dan F3 om naar een proxy of onbekende programma''s te zoeken. | Kies opnieuw A1 om te controleren.'
+        'steps.proxy'            = 'Kies hierboven de oplossing om de proxy uit te zetten (kan worden teruggedraaid), of ga met de hand verder. | Open Instellingen (Windows-toets + I) > Netwerk en internet > Proxy. | Klik bij Handmatige proxy-instelling op Bewerken en zet "Een proxyserver gebruiken" uit. | Zet bij Automatische proxy-instelling "Installatiescript gebruiken" uit. | Kies F3 om het programma te zoeken dat hem heeft ingesteld.'
+        'steps.weakSignal'       = 'Loop met de laptop naar de router en kies opnieuw A1. Daar sterk? Dan is de afstand het probleem. | Haal de router uit kasten, van de vloer, en weg van metaal. | Heeft de router twee netwerken (2,4 en 5 GHz), gebruik dan 2,4 GHz in kamers ver weg. | In een groot huis helpt een wifi-versterker of mesh-punt halverwege.'
+        'steps.unstable'         = 'Herstart de router: 30 seconden stroom eraf, daarna 3 minuten wachten. | Ga dichter bij de router zitten en kies opnieuw A2. | Zet grote downloads, streamen en videobellen op andere apparaten even stil en test opnieuw. | Nog steeds onstabiel? Gebruik een netwerkkabel, of vraag de provider om een nieuwe router.'
+        'steps.dropsMany'        = 'Klik met rechts op de Startknop en kies Apparaatbeheer. | Open Netwerkadapters en dubbelklik op de wifi-adapter. | Haal op het tabblad Energiebeheer het vinkje weg bij "De computer mag dit apparaat uitschakelen om energie te besparen". | Klik op het tabblad Stuurprogramma op Stuurprogramma bijwerken > Automatisch naar stuurprogramma''s zoeken. | Herstart de router en de pc.'
+        'steps.connHealthy'      = 'Sluit andere programma''s en browsertabbladen. | Open speedtest.net op deze pc en klik op Go. | Vergelijk de downloadsnelheid met het abonnement (op de rekening of de website van de provider). | Veel lager? Test opnieuw met een netwerkkabel. Nog steeds laag: bel de provider. | Alleen ''s avonds traag? Dan is het druk bij de provider.'
+        'steps.siteHosts'        = 'Open Kladblok als administrator: typ Kladblok in Start, klik er met rechts op, kies Als administrator uitvoeren. | Kies Bestand > Openen, zet het bestandstype op Alle bestanden, en plak: C:\Windows\System32\drivers\etc\hosts | Verwijder de regel met de naam van de site en sla op. | Kies F3 om te zoeken wat hem daar heeft neergezet.'
+        'steps.siteNotFound'     = 'Controleer samen met de klant de spelling van het adres. | Zoek de naam van de site op in een zoekmachine in plaats van het adres te typen. | Probeer het op een telefoon: lukt het daar ook niet, dan ligt de site eruit of bestaat hij niet meer.'
+        'steps.siteBlocked'      = 'Probeer de site op een telefoon met wifi uit. | Werkt het daar wel? Zet de virusscanner of firewall op deze pc even op pauze en probeer het opnieuw. | Helpt dat, voeg de site dan toe als uitzondering in dat beveiligingsprogramma, en zet de beveiliging weer aan.'
+        'steps.siteError'        = 'Wacht 15 minuten en probeer het opnieuw. | Kijk op een telefoon of de site daar ook een fout geeft. | Zoek naar een storing van de site, bijvoorbeeld op allestoringen.nl.'
+        'steps.siteOk'           = 'Open de site in de browser en druk op Ctrl + F5 om hem helemaal opnieuw te laden. | Nog steeds mis? Probeer het in een andere browser, bijvoorbeeld Edge. | Werkt het daar wel? In de eerste browser: Instellingen > Privacy > Browsegegevens wissen (cookies en cache). | Nog steeds mis? Zet browserextensies een voor een uit. | Bij een app: werk hem bij, of verwijder hem en installeer hem opnieuw.'
+        'steps.remoteActive'     = 'Verbreek het internet: zet wifi uit (netwerk-icoon rechtsonder) of trek de netwerkkabel eruit. | Kies hierboven de oplossing om het programma af te sluiten. | Vraag of de klant het programma kent, en wie vroeg om het te installeren. | Was het een onbekende: bel direct de bank, op het nummer op de bankpas. | Wijzig de wachtwoorden van e-mail en bank vanaf een ander apparaat, niet vanaf deze pc. | Kies F3 voor een volledige controle.'
+        'steps.remoteRecent'     = 'Vraag de klant wie het programma op de pc heeft gezet, en wanneer ze die persoon voor het laatst spraken. | Was het een onbekende: bel direct de bank, op het nummer op de bankpas. | Verwijder het programma: Instellingen > Apps, zoek het in de lijst, klik op de drie puntjes ernaast en kies Verwijderen. | Wijzig de wachtwoorden van e-mail en bank vanaf een ander apparaat. | Kies opnieuw F2 om te controleren.'
+        'steps.remoteOld'        = 'Vraag of de klant of de familie het programma gebruikt. | Gebruikt niemand het: Instellingen > Apps, zoek het in de lijst, klik op de drie puntjes ernaast en kies Verwijderen. | Kies opnieuw F2 om te controleren.'
+        'steps.defenderOff'      = 'Typ Windows-beveiliging in Start en open het. | Klik op Virus- en bedreigingsbeveiliging. | Staat er een andere virusscanner die verlopen is? Verwijder die: Instellingen > Apps, zoek hem in de lijst, drie puntjes, Verwijderen. | Klik bij Instellingen voor virus- en bedreigingsbeveiliging op Instellingen beheren en zet Realtime-beveiliging aan. | Kies opnieuw F3 om te controleren.'
+        'steps.avOld'            = 'Typ Windows-beveiliging in Start en open het. | Klik op Virus- en bedreigingsbeveiliging. | Klik bij Beveiligingsupdates op Controleren op updates. | Lukt dat niet? Kies E1 om Windows Update te controleren.'
+        'steps.threatsFound'     = 'Typ Windows-beveiliging in Start en open het. | Klik op Virus- en bedreigingsbeveiliging > Beveiligingsgeschiedenis. | Bekijk wat er gevonden is, en of er Verwijderd of In quarantaine staat. | Ga terug, klik op Scanopties, kies Volledige scan en klik op Nu scannen. Laat hem afmaken.'
+        'steps.suspiciousTask'   = 'Kies hierboven de oplossing om de taak uit te schakelen (kan weer worden aangezet). | Typ Windows-beveiliging in Start en open het. | Klik op Virus- en bedreigingsbeveiliging > Scanopties, kies Microsoft Defender Offline-scan en klik op Nu scannen. De pc start hiervoor opnieuw op. | Kies daarna opnieuw F3.'
+        'steps.unknownTask'      = 'Vraag of de klant het programma kent waar de taak "{0}" bij hoort. | Zoek de naam "{0}" online op om te zien van welk programma hij is. | Onbekend en niet nodig? Kies hierboven de oplossing om hem uit te schakelen (kan weer worden aangezet).'
+        'steps.notifySites'      = 'Open de browser die naast de site staat. | Chrome, Edge of Brave: Instellingen > Privacy en beveiliging > Site-instellingen > Meldingen. | Klik onder "Toegestaan om meldingen te sturen" op de drie puntjes naast elke onbekende site en kies Blokkeren of Verwijderen. | Zeg tegen de klant: een pop-up met een telefoonnummer is nooit echt. Sluit hem, en bel nooit.'
+        'steps.hostsRedirect'    = 'Open Kladblok als administrator: typ Kladblok in Start, klik er met rechts op, kies Als administrator uitvoeren. | Kies Bestand > Openen, zet het bestandstype op Alle bestanden, en plak: C:\Windows\System32\drivers\etc\hosts | Verwijder de regels die de klant niet kent en sla op. | Kies opnieuw F3 om te controleren.'
+        'steps.cleanPopup'       = ('Staat de pop-up nog op het scherm? Druk op Ctrl + Shift + Esc om Taakbeheer te openen. | Selecteer de browser en klik op Taak be' + [char]0xEB + 'indigen. | Open de browser opnieuw. Vraagt hij om de tabbladen terug te zetten, zeg dan nee. | Zeg tegen de klant: zulke pagina''s zien er eng uit maar doen niets zodra ze dicht zijn. Bel nooit het nummer.')
+        'steps.cleanCall'        = 'Vraag wat de beller deed: keek hij mee op het scherm, of vroeg hij om codes of bankgegevens? | Vroeg hij om bankgegevens of codes: bel de bank op het nummer op de bankpas. | Wijzig het wachtwoord van de e-mail vanaf een ander apparaat. | Zeg tegen de klant: banken en Microsoft bellen nooit over een virus.'
     }
 }
 
@@ -735,7 +869,7 @@ function Get-HcEnvironment {
     straight to a problem, and inside an area a bare 1 means the same as A1.
 
     Reserved keys, never to be used as an area letter:
-        ?  AI chat       0  back       L  language       Q  quit
+        ?  AI chat    0  back    L  language    U  undo this session's fixes    Q  quit
 #>
 
 $script:Areas = [ordered]@{
@@ -751,7 +885,7 @@ $script:Areas = [ordered]@{
     Turn what was typed into one decision. Pure: no output, no state, so the
     tests can cover every kind of input.
 
-    Kind is one of: empty, area, problem, ai, back, language, quit,
+    Kind is one of: empty, area, problem, ai, back, language, undo, quit,
     freetext (a sentence, which the AI chat will take), unknown.
 #>
 function Resolve-HcChoice {
@@ -770,6 +904,7 @@ function Resolve-HcChoice {
     if ($key -eq '0') { return & $result 'back' $null }
     if ($key -eq 'L') { return & $result 'language' $null }
     if ($key -eq 'Q') { return & $result 'quit' $null }
+    if ($key -eq 'U') { return & $result 'undo' $null }
 
     if ($script:Areas.Contains($key)) { return & $result 'area' $key }
 
@@ -804,7 +939,7 @@ function Show-HcHome {
     Write-Host ''
     Write-Option '?' (T 'menu.ai')
     Write-Host ''
-    Write-OptionRow @(@('L', (T 'menu.language')), @('Q', (T 'menu.quit')))
+    Write-OptionRow (Get-HcFooter)
     Write-Host ''
     if ($Message) { Write-Warn2 $Message } else { Write-Dim (T 'menu.hintHome') }
 }
@@ -821,13 +956,27 @@ function Show-HcArea {
     Write-Host ''
     Write-Option '?' (T 'area.ai')
     Write-Host ''
-    Write-OptionRow @(@('0', (T 'menu.back')), @('L', (T 'menu.language')), @('Q', (T 'menu.quit')))
+    Write-OptionRow (@(, @('0', (T 'menu.back'))) + (Get-HcFooter))
     Write-Host ''
     if ($Message) { Write-Warn2 $Message } else { Write-Dim (T 'area.hint') }
 }
 
-# Runs the handler registered for $Code (see src\checks\), or says which
-# checks will run once it is built.
+# The footer keys shared by every menu screen. U only shows once something
+# was changed in this session.
+function Get-HcFooter {
+    $row = @(, @('L', (T 'menu.language')))
+    if ($script:HcChanges.Count -gt 0) { $row += , @('U', (T 'menu.undo')) }
+    $row + (, @('Q', (T 'menu.quit')))
+}
+
+<#
+    Runs the handler registered for $Code (see src\checks\), or says which
+    checks will run once it is built.
+
+    The handler returns a scriptblock that checks the PC and returns a
+    report. After the report come the fixes it offers; once one is applied,
+    the same check runs again, so the screen shows whether it worked.
+#>
 function Invoke-HcProblem {
     param([pscustomobject]$Environment, [string]$Code)
     Clear-HcScreen
@@ -835,12 +984,32 @@ function Invoke-HcProblem {
     Write-Host ('  ' + $Code + '  ' + (T "problem.$Code")) -ForegroundColor Yellow
     Write-Host ''
     $handler = $script:ProblemHandlers[$Code]
-    if ($handler) {
-        & $handler
-    } else {
+    if (-not $handler) {
         Write-Warn2 (T 'problem.notBuilt')
         Write-Dim (T 'problem.willLook')
         Write-Dim ('  ' + (T ('looks.' + $Code.Substring(0, 1))))
+        Write-Host ''
+        [void](Read-HcLine (T 'pressEnter'))
+        return
+    }
+
+    $check = & $handler
+    if (-not $check) { return }      # e.g. A3 when no site was typed
+    Write-Dim (T 'run.checking')
+    Write-Host ''
+    $report = & $check
+    Write-HcReport $report
+
+    while (@($report.Actions).Count -gt 0 -or @(Get-HcSteps $report).Count -gt 0) {
+        $result = Invoke-HcActionMenu $report
+        if ($result -eq 'back') { return }
+        if ($result -eq 'changed') {
+            Write-Host ''
+            Write-Dim (T 'fix.checkingAgain')
+            Write-Host ''
+            $report = & $check
+            Write-HcReport $report
+        }
     }
     Write-Host ''
     [void](Read-HcLine (T 'pressEnter'))
@@ -875,6 +1044,7 @@ function Start-Housecall {
     )
 
     $script:DryRun = [bool]$DryRun
+    $script:HcChanges.Clear()
     $script:Lang = if ($script:Strings.ContainsKey("$Lang".ToLowerInvariant())) { "$Lang".ToLowerInvariant() } else { Get-HcDefaultLanguage }
     $script:HcInputQueue = $null
     if ($PSBoundParameters.ContainsKey('Answers')) {
@@ -888,6 +1058,7 @@ function Start-Housecall {
         Write-Warn2 (T 'env.oldPowerShell' $environment.PSVersion.ToString())
         return
     }
+    $script:IsAdmin = [bool]$environment.IsAdmin
 
     $area = ''          # '' = home menu, otherwise the letter on screen
     $message = $null    # one-off warning shown under the menu
@@ -904,10 +1075,11 @@ function Start-Housecall {
             'freetext' { Invoke-HcAi $environment $choice.Value }
             'back'     { $area = '' }
             'language' { $script:Lang = if ($script:Lang -eq 'nl') { 'en' } else { 'nl' } }
+            'undo'     { $message = Invoke-HcUndo }
             'unknown'  { $message = T 'menu.unknown' $choice.Value }
             'quit'     {
                 Write-Host ''
-                Write-Ok (T 'goodbye')
+                if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
                 Write-Host ''
                 return
             }
@@ -929,7 +1101,12 @@ function Start-Housecall {
 
     A report is a list of result lines plus one finding: the id of the most
     important thing found (finding.<id> and advice.<id> in strings.ps1).
-    Phase 2 maps finding ids to fixes.
+    It can also offer actions: fixes from srcixes.ps1 that the verdict
+    thinks will help, which the person can pick after reading the report.
+
+    A handler returns a scriptblock that reads the PC and returns the
+    report. Invoke-HcProblem runs it once, and again after every fix, as
+    proof that the fix worked.
 #>
 
 # Problem code -> the function that handles it. Each area's file registers
@@ -948,7 +1125,15 @@ function New-HcReport {
         Results     = New-Object System.Collections.ArrayList
         FindingId   = $null
         FindingArgs = @()
+        Actions     = New-Object System.Collections.ArrayList
     }
+}
+
+# Offers a fix. $FixId names an entry in $script:Fixes (srcixes.ps1);
+# $Target is what it acts on, for example a task's name and folder.
+function Add-HcAction {
+    param([pscustomobject]$Report, [string]$FixId, [hashtable]$Target = @{})
+    [void]$Report.Actions.Add([pscustomobject]@{ FixId = $FixId; Target = $Target })
 }
 
 # Adds a line to the report. Written as a function so the Test- functions
@@ -1222,6 +1407,7 @@ function Test-HcInternet {
         $shown = if ($f.IPv4) { $f.IPv4 } else { T 'net.none' }
         Add-HcLine $r problem (T 'net.noAddress' $shown)
         Set-HcFinding $r 'noAddress'
+        Add-HcAction $r 'renewIp'
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -1265,6 +1451,7 @@ function Test-HcInternet {
         $servers = if (@($f.DnsServers).Count) { @($f.DnsServers) -join ', ' } else { T 'net.none' }
         Add-HcLine $r problem (T 'net.dnsDown' $servers)
         Set-HcFinding $r 'dnsDown'
+        Add-HcAction $r 'flushDns'
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -1278,7 +1465,7 @@ function Test-HcInternet {
     }
 
     # Nothing broken: the smaller things, then all good.
-    if ($f.Proxy) { Set-HcFinding $r 'proxy' }
+    if ($f.Proxy) { Set-HcFinding $r 'proxy'; Add-HcAction $r 'proxyOff' }
     if ($weak) { Set-HcFinding $r 'weakSignal' }
     Set-HcFinding $r 'allGood'
     $r
@@ -1453,21 +1640,18 @@ function Test-HcSite {
 
 # ---------------------------------------------------------------- handlers --
 
-function Invoke-HcA1 {
-    Write-Dim (T 'run.checking')
-    Write-Host ''
-    Write-HcReport (Test-HcInternet (Get-HcNetworkFacts))
-}
+# Each handler returns the check as a scriptblock (see src\checks\common.ps1).
+function Invoke-HcA1 { { Test-HcInternet (Get-HcNetworkFacts) } }
 
 function Invoke-HcA2 {
-    Write-Dim (T 'run.checking')
-    Write-Host ''
-    $facts = Get-HcNetworkFacts
-    $quality = $null
-    $drops = $null
-    if ($facts.GatewayMs -ge 0) { $quality = Get-HcConnectionQuality $facts.Gateway }
-    if ($facts.Active.IsWifi) { $drops = Get-HcWifiDrops }
-    Write-HcReport (Test-HcConnectionQuality $facts $quality $drops)
+    {
+        $facts = Get-HcNetworkFacts
+        $quality = $null
+        $drops = $null
+        if ($facts.GatewayMs -ge 0) { $quality = Get-HcConnectionQuality $facts.Gateway }
+        if ($facts.Active.IsWifi) { $drops = Get-HcWifiDrops }
+        Test-HcConnectionQuality $facts $quality $drops
+    }
 }
 
 function Invoke-HcA3 {
@@ -1479,16 +1663,15 @@ function Invoke-HcA3 {
         if (-not $hostName) { Write-Warn2 (T 'site.invalid' $typed) }
     }
     Write-Host ''
-    Write-Dim (T 'run.checking')
-    Write-Host ''
-
-    $base = Test-HcInternet (Get-HcNetworkFacts)
-    if ($script:InternetWorks -notcontains $base.FindingId) {
+    # Not .GetNewClosure(): a closure cannot see Housecall's functions when it
+    # runs through [scriptblock]::Create. A script variable carries the site.
+    $script:HcSiteHost = $hostName
+    {
+        $base = Test-HcInternet (Get-HcNetworkFacts)
         # The internet itself is down: that is the answer, not the site.
-        Write-HcReport $base
-        return
+        if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
+        Test-HcSite (Get-HcSiteFacts $script:HcSiteHost)
     }
-    Write-HcReport (Test-HcSite (Get-HcSiteFacts $hostName))
 }
 
 $script:ProblemHandlers['A1'] = 'Invoke-HcA1'
@@ -1542,6 +1725,14 @@ $script:RemoteToolList = @(
     @{ Name = 'Atera';                 Pattern = 'AteraAgent|Atera Networks';    Processes = @('AteraAgent');                       Traces = @() }
     # Built into Windows: nothing to find installed, but running means a session is on.
     @{ Name = 'Quick Assist';          Pattern = $null;                          Processes = @('QuickAssist');                      Traces = @() }
+)
+
+# Scheduled tasks of tools Shamil installs himself. They start a hidden
+# script from AppData, like malware does, so they are recognised by name AND
+# by the script they run -- a look-alike name alone does not pass.
+$script:KnownTasks = @(
+    @{ Owner = 'Reveille'; Name = '^(Reveille|PCRemote)'; Command = '\\(Reveille|PCRemote)\\start-agent-hidden\.vbs' }
+    @{ Owner = 'Courier';  Name = '^Courier';             Command = '\\Courier\\start-agent-hidden\.vbs' }
 )
 
 # Browsers built on Chrome keep site permissions in a Preferences file per
@@ -1623,7 +1814,7 @@ function Get-HcRemoteTools {
     foreach ($tool in $script:RemoteToolList) {
         $found = [pscustomobject]@{
             Name = $tool.Name; Installed = $false; InstallDate = $null; Running = $false
-            AutoStart = $false; Downloaded = $null; LastUsed = $null
+            AutoStart = $false; Downloaded = $null; LastUsed = $null; Processes = $tool.Processes
         }
         $p = $tool.Pattern
         if ($p) {
@@ -1738,14 +1929,25 @@ function Get-HcTaskLevel {
     $null
 }
 
+function Get-HcKnownTaskOwner {
+    param([string]$Name, [string]$Command)
+    foreach ($k in $script:KnownTasks) {
+        if ($Name -match $k.Name -and $Command -match $k.Command) { return $k.Owner }
+    }
+    $null
+}
+
 function Get-HcSuspiciousTasks {
     foreach ($task in @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskPath -notlike '\Microsoft\*' })) {
         foreach ($action in @($task.Actions | Where-Object { $_.Execute })) {
             $level = Get-HcTaskLevel $action.Execute $action.Arguments
             if ($level) {
-                $command = ("$($action.Execute) $($action.Arguments)").Trim()
-                if ($command.Length -gt 70) { $command = $command.Substring(0, 67) + '...' }
-                [pscustomobject]@{ Name = $task.TaskName; Command = $command; Level = $level }
+                $full = ("$($action.Execute) $($action.Arguments)").Trim()
+                $command = if ($full.Length -gt 70) { $full.Substring(0, 67) + '...' } else { $full }
+                [pscustomobject]@{
+                    Name = $task.TaskName; Path = $task.TaskPath; Command = $command; Level = $level
+                    Disabled = ([string]$task.State -eq 'Disabled'); Owner = Get-HcKnownTaskOwner $task.TaskName $full
+                }
                 break
             }
         }
@@ -1824,6 +2026,7 @@ function Test-HcSecurity {
                     $status = if ($t.Running -or $isRecent) { 'problem' } else { 'warn' }
                     Add-HcLine $r $status ('{0}: {1}' -f $t.Name, ($bits -join ', '))
 
+                    if ($t.Running) { Add-HcAction $r 'stopRemote' @{ Label = $t.Name; Processes = $t.Processes } }
                     if ($t.Running -and -not $found['remoteActive']) { $found['remoteActive'] = @($t.Name) }
                     elseif ($isRecent -and -not $found['remoteRecent']) { $found['remoteRecent'] = @($t.Name, (Format-HcDate $newest)) }
                     elseif (-not $found['remoteOld']) { $found['remoteOld'] = @($t.Name) }
@@ -1833,8 +2036,11 @@ function Test-HcSecurity {
                 $tasks = @($Facts.Tasks)
                 if ($tasks.Count -eq 0) { Add-HcLine $r ok (T 'sec.noTasks'); break }
                 foreach ($t in $tasks) {
+                    if ($t.Owner) { Add-HcLine $r ok (T 'sec.taskKnown' $t.Name $t.Owner); continue }
+                    if ($t.Disabled) { Add-HcLine $r ok (T 'sec.taskDisabled' $t.Name); continue }
                     $status = if ($t.Level -eq 'strong') { 'problem' } else { 'warn' }
                     Add-HcLine $r $status (T 'sec.task' $t.Name $t.Command)
+                    Add-HcAction $r 'disableTask' @{ Label = $t.Name; Name = $t.Name; Path = $t.Path }
                     $id = if ($t.Level -eq 'strong') { 'suspiciousTask' } else { 'unknownTask' }
                     if (-not $found[$id]) { $found[$id] = @($t.Name) }
                 }
@@ -1878,6 +2084,7 @@ function Test-HcSecurity {
             'proxy' {
                 if ($Facts.Proxy) {
                     Add-HcLine $r warn (T 'net.proxy' $Facts.Proxy)
+                    Add-HcAction $r 'proxyOff'
                     $found['proxy'] = @()
                 } else {
                     Add-HcLine $r ok (T 'sec.noProxy')
@@ -1911,10 +2118,9 @@ $script:SecurityChecks = @{
 
 function Invoke-HcSecurityCheck {
     param([string]$Code)
-    $plan = $script:SecurityChecks[$Code]
-    Write-Dim (T 'run.checking')
-    Write-Host ''
-    Write-HcReport (Test-HcSecurity (Get-HcSecurityFacts $plan.Parts) $plan.Parts $plan.Clean)
+    # A script variable, not a closure; see Invoke-HcA3.
+    $script:HcSecurityPlan = $script:SecurityChecks[$Code]
+    { Test-HcSecurity (Get-HcSecurityFacts $script:HcSecurityPlan.Parts) $script:HcSecurityPlan.Parts $script:HcSecurityPlan.Clean }
 }
 
 function Invoke-HcF1 { Invoke-HcSecurityCheck 'F1' }
@@ -1924,6 +2130,189 @@ function Invoke-HcF3 { Invoke-HcSecurityCheck 'F3' }
 $script:ProblemHandlers['F1'] = 'Invoke-HcF1'
 $script:ProblemHandlers['F2'] = 'Invoke-HcF2'
 $script:ProblemHandlers['F3'] = 'Invoke-HcF3'
+
+# ==================================================== src\fixes.ps1 ==
+<#
+    Fixes: the only code in Housecall that changes the PC.
+
+    Every fix is on this list; nothing else, and never the AI, may change
+    anything. A report offers fixes (Add-HcAction), the person picks one and
+    confirms it, and only then does Apply run. Each fix says:
+
+      Label    fix.<id> in strings.ps1, filled from the target
+      Note     undo = can be undone, safe = harmless and needs no undo,
+               restart = closes a program, which can simply be started again
+      Admin    needs an administrator PowerShell
+      Apply    does it; throws when it fails
+      Undo     puts it back ($null when there is nothing to put back)
+
+    Fixes never delete. A scheduled task is disabled, not removed; a program
+    is closed, not uninstalled (uninstalling needs its own uninstaller).
+
+    Every applied fix goes on $script:HcChanges, so U can undo the session.
+#>
+
+$script:HcChanges = New-Object System.Collections.ArrayList
+
+$script:Fixes = @{
+    disableTask = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Disable-ScheduledTask -TaskName $t.Name -TaskPath $t.Path -ErrorAction Stop | Out-Null }
+        Undo  = { param($t) Enable-ScheduledTask -TaskName $t.Name -TaskPath $t.Path -ErrorAction Stop | Out-Null }
+    }
+    stopRemote = @{
+        Note = 'restart'; Admin = $false
+        Apply = { param($t) Get-Process -Name $t.Processes -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction Stop }
+        Undo  = $null
+    }
+    proxyOff = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
+            $now = Get-ItemProperty $key
+            $t.Saved = @{ ProxyEnable = $now.ProxyEnable; AutoConfigURL = $now.AutoConfigURL }
+            Set-ItemProperty $key -Name ProxyEnable -Value 0 -ErrorAction Stop
+            if ($now.AutoConfigURL) { Remove-ItemProperty $key -Name AutoConfigURL -ErrorAction Stop }
+        }
+        Undo = {
+            param($t)
+            $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
+            if ($null -ne $t.Saved.ProxyEnable) { Set-ItemProperty $key -Name ProxyEnable -Value $t.Saved.ProxyEnable -ErrorAction Stop }
+            if ($t.Saved.AutoConfigURL) { Set-ItemProperty $key -Name AutoConfigURL -Value $t.Saved.AutoConfigURL -ErrorAction Stop }
+        }
+    }
+    flushDns = @{
+        Note = 'safe'; Admin = $false
+        Apply = { param($t) & ipconfig.exe /flushdns | Out-Null; if ($LASTEXITCODE -ne 0) { throw "ipconfig /flushdns: $LASTEXITCODE" } }
+        Undo  = $null
+    }
+    renewIp = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            & ipconfig.exe /release | Out-Null
+            & ipconfig.exe /renew | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "ipconfig /renew: $LASTEXITCODE" }
+        }
+        Undo = $null
+    }
+}
+
+# "Disable scheduled task "X" (can be undone)" -- the label with its note.
+function Get-HcFixLabel {
+    param([pscustomobject]$Action)
+    $fix = $script:Fixes[$Action.FixId]
+    $label = T ('fix.' + $Action.FixId) $Action.Target.Label
+    $note = T ('fix.note.' + $fix.Note)
+    if ($fix.Admin -and -not $script:IsAdmin) { $note += ' ' + (T 'fix.needsAdmin') }
+    "$label $note"
+}
+
+# The step-by-step guide for a report's finding: steps.<id> in strings.ps1,
+# steps separated by " | ", filled from the finding's arguments. Empty when
+# the finding has no guide (for example "all good").
+function Get-HcSteps {
+    param([pscustomobject]$Report)
+    if (-not $Report.FindingId) { return @() }
+    $key = 'steps.' + $Report.FindingId
+    if ($null -eq $script:Strings['en'][$key]) { return @() }
+    $all = @($key) + @($Report.FindingArgs)
+    @((T @all) -split '\s*\|\s*' | Where-Object { $_ })
+}
+
+# One step at a time, so it can be done together with the client: Enter
+# shows the next step, 0 stops.
+function Show-HcSteps {
+    param([string[]]$Steps)
+    for ($i = 0; $i -lt $Steps.Count; $i++) {
+        Write-Host ''
+        Write-HcLabelled (T 'fix.stepOf' ($i + 1) $Steps.Count) $Steps[$i] 'Cyan'
+        $last = ($i -eq $Steps.Count - 1)
+        $answer = "$(Read-HcLine (T $(if ($last) { 'fix.stepLast' } else { 'fix.stepNext' })))".Trim()
+        if ($answer -in @('0', 'Q', 'q')) { break }
+    }
+}
+
+function Test-HcYes {
+    param([string]$Answer)
+    "$Answer".Trim() -match '^(y|yes|j|ja)$'
+}
+
+<#
+    Shows the offered fixes under a report and runs the one picked. Returns
+    'changed' when something was changed (the caller checks again), 'back'
+    when Enter was pressed, and 'none' when it was cancelled or failed (the
+    list is shown again).
+#>
+function Invoke-HcActionMenu {
+    param([pscustomobject]$Report)
+    $actions = @($Report.Actions)
+    $steps = @(Get-HcSteps $Report)
+    if ($actions.Count -eq 0 -and $steps.Count -eq 0) { return 'back' }
+
+    Write-Host ''
+    Write-Host ('  ' + (T 'fix.heading')) -ForegroundColor Yellow
+    for ($i = 0; $i -lt $actions.Count; $i++) {
+        Write-Option ([string]($i + 1)) (Get-HcFixLabel $actions[$i])
+    }
+    if ($steps.Count) { Write-Option 'S' (T 'fix.steps') }
+    Write-Dim (T 'fix.enterBack')
+
+    $pick = "$(Read-HcLine (T 'menu.prompt'))".Trim()
+    if ($steps.Count -and $pick -match '^[sS]$') {
+        Show-HcSteps $steps
+        return 'none'
+    }
+    $n = 0
+    if (-not [int]::TryParse($pick, [ref]$n) -or $n -lt 1 -or $n -gt $actions.Count) { return 'back' }
+    $action = $actions[$n - 1]
+    $fix = $script:Fixes[$action.FixId]
+    $label = T ('fix.' + $action.FixId) $action.Target.Label
+
+    if ($fix.Admin -and -not $script:IsAdmin) {
+        Write-Warn2 (T 'fix.adminHow')
+        return 'none'
+    }
+    if (-not (Test-HcYes (Read-HcLine (T 'fix.confirm' $label)))) {
+        Write-Dim (T 'fix.cancelled')
+        return 'none'
+    }
+    if ($script:DryRun) {
+        Write-Host ('  ' + (T 'fix.dryRun')) -ForegroundColor Magenta
+        return 'none'
+    }
+
+    try {
+        & $fix.Apply $action.Target
+    } catch {
+        Write-Warn2 (T 'fix.failed' $_.Exception.Message)
+        return 'none'
+    }
+    [void]$script:HcChanges.Add([pscustomobject]@{ FixId = $action.FixId; Target = $action.Target; Label = $label })
+    Write-Ok (T 'fix.done')
+    'changed'
+}
+
+# U on the menu: undo this session's changes, newest first.
+function Invoke-HcUndo {
+    $undoable = @($script:HcChanges | Where-Object { $script:Fixes[$_.FixId].Undo })
+    if ($undoable.Count -eq 0) { return (T 'undo.nothing') }
+    if (-not (Test-HcYes (Read-HcLine (T 'undo.confirm' $undoable.Count)))) { return (T 'fix.cancelled') }
+
+    $messages = @()
+    for ($i = $undoable.Count - 1; $i -ge 0; $i--) {
+        $change = $undoable[$i]
+        try {
+            & $script:Fixes[$change.FixId].Undo $change.Target
+            $script:HcChanges.Remove($change)
+            $messages += T 'undo.done' $change.Label
+        } catch {
+            $messages += T 'undo.failed' $change.Label
+        }
+    }
+    $messages -join ' / '
+}
 
 
 Start-Housecall -DryRun:$DryRun -Lang $Lang

@@ -196,6 +196,7 @@ function Test-HcInternet {
         $shown = if ($f.IPv4) { $f.IPv4 } else { T 'net.none' }
         Add-HcLine $r problem (T 'net.noAddress' $shown)
         Set-HcFinding $r 'noAddress'
+        Add-HcAction $r 'renewIp'
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -239,6 +240,7 @@ function Test-HcInternet {
         $servers = if (@($f.DnsServers).Count) { @($f.DnsServers) -join ', ' } else { T 'net.none' }
         Add-HcLine $r problem (T 'net.dnsDown' $servers)
         Set-HcFinding $r 'dnsDown'
+        Add-HcAction $r 'flushDns'
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -252,7 +254,7 @@ function Test-HcInternet {
     }
 
     # Nothing broken: the smaller things, then all good.
-    if ($f.Proxy) { Set-HcFinding $r 'proxy' }
+    if ($f.Proxy) { Set-HcFinding $r 'proxy'; Add-HcAction $r 'proxyOff' }
     if ($weak) { Set-HcFinding $r 'weakSignal' }
     Set-HcFinding $r 'allGood'
     $r
@@ -427,21 +429,18 @@ function Test-HcSite {
 
 # ---------------------------------------------------------------- handlers --
 
-function Invoke-HcA1 {
-    Write-Dim (T 'run.checking')
-    Write-Host ''
-    Write-HcReport (Test-HcInternet (Get-HcNetworkFacts))
-}
+# Each handler returns the check as a scriptblock (see src\checks\common.ps1).
+function Invoke-HcA1 { { Test-HcInternet (Get-HcNetworkFacts) } }
 
 function Invoke-HcA2 {
-    Write-Dim (T 'run.checking')
-    Write-Host ''
-    $facts = Get-HcNetworkFacts
-    $quality = $null
-    $drops = $null
-    if ($facts.GatewayMs -ge 0) { $quality = Get-HcConnectionQuality $facts.Gateway }
-    if ($facts.Active.IsWifi) { $drops = Get-HcWifiDrops }
-    Write-HcReport (Test-HcConnectionQuality $facts $quality $drops)
+    {
+        $facts = Get-HcNetworkFacts
+        $quality = $null
+        $drops = $null
+        if ($facts.GatewayMs -ge 0) { $quality = Get-HcConnectionQuality $facts.Gateway }
+        if ($facts.Active.IsWifi) { $drops = Get-HcWifiDrops }
+        Test-HcConnectionQuality $facts $quality $drops
+    }
 }
 
 function Invoke-HcA3 {
@@ -453,16 +452,15 @@ function Invoke-HcA3 {
         if (-not $hostName) { Write-Warn2 (T 'site.invalid' $typed) }
     }
     Write-Host ''
-    Write-Dim (T 'run.checking')
-    Write-Host ''
-
-    $base = Test-HcInternet (Get-HcNetworkFacts)
-    if ($script:InternetWorks -notcontains $base.FindingId) {
+    # Not .GetNewClosure(): a closure cannot see Housecall's functions when it
+    # runs through [scriptblock]::Create. A script variable carries the site.
+    $script:HcSiteHost = $hostName
+    {
+        $base = Test-HcInternet (Get-HcNetworkFacts)
         # The internet itself is down: that is the answer, not the site.
-        Write-HcReport $base
-        return
+        if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
+        Test-HcSite (Get-HcSiteFacts $script:HcSiteHost)
     }
-    Write-HcReport (Test-HcSite (Get-HcSiteFacts $hostName))
 }
 
 $script:ProblemHandlers['A1'] = 'Invoke-HcA1'

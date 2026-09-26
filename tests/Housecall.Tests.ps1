@@ -12,6 +12,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\checks\common.ps1')
 . (Join-Path $root 'src\checks\network.ps1')
 . (Join-Path $root 'src\checks\security.ps1')
+. (Join-Path $root 'src\fixes.ps1')
 
 # A clean PC on 26 Sep 2026; each scenario changes only what it is about.
 function New-FakeSecurity {
@@ -79,8 +80,12 @@ Describe 'Resolve-HcChoice' {
         }
     }
 
+    It 'reads U as undo' {
+        (Resolve-HcChoice 'u').Kind | Should Be 'undo'
+    }
+
     It 'never uses a reserved key as an area letter' {
-        foreach ($reserved in @('?', '0', 'L', 'Q')) {
+        foreach ($reserved in @('?', '0', 'L', 'Q', 'U', 'S')) {
             $script:Areas.Contains($reserved) | Should Be $false
         }
     }
@@ -335,6 +340,137 @@ Describe 'F: reading the PC' {
         foreach ($tool in $script:RemoteToolList | Where-Object { $_.Pattern }) {
             foreach ($name in $everyday) { $name -match $tool.Pattern | Should Be $false }
         }
+    }
+}
+
+Describe 'Fixes offered by the checks' {
+    $script:Lang = 'en'
+    $task = { param($name, $command, $level = 'weak', $disabled = $false)
+        [pscustomobject]@{ Name = $name; Path = '\'; Command = $command; Level = $level; Disabled = $disabled
+                           Owner = Get-HcKnownTaskOwner $name $command } }
+
+    It 'offers to disable an unknown task, with its name and folder' {
+        $r = Test-HcSecurity (New-FakeSecurity @{ Tasks = @(& $task 'Updater' 'wscript.exe C:\Users\x\AppData\Roaming\u.vbs') }) @('tasks') 'cleanCall'
+        @($r.Actions).Count | Should Be 1
+        $r.Actions[0].FixId | Should Be 'disableTask'
+        $r.Actions[0].Target.Name | Should Be 'Updater'
+        $r.Actions[0].Target.Path | Should Be '\'
+    }
+
+    It 'recognises Shamil''s own tools by name and script, and offers nothing for them' {
+        $reveille = & $task 'ReveilleAgent' 'wscript.exe "C:\Users\shami\AppData\Local\Reveille\start-agent-hidden.vbs"'
+        $courier = & $task 'CourierAgent' 'wscript.exe "C:\Users\shami\AppData\Local\Courier\start-agent-hidden.vbs"'
+        $r = Test-HcSecurity (New-FakeSecurity @{ Tasks = @($reveille, $courier) }) @('tasks') 'cleanCall'
+        @($r.Results | Where-Object { $_.Status -ne 'ok' }).Count | Should Be 0
+        @($r.Actions).Count | Should Be 0
+        $r.FindingId | Should Be 'cleanCall'
+    }
+
+    It 'does not trust a look-alike name that runs something else' {
+        Get-HcKnownTaskOwner 'ReveilleAgent' 'powershell.exe -enc SQBFAFgA' | Should Be $null
+        Get-HcKnownTaskOwner 'Updater' 'wscript.exe C:\Users\x\AppData\Local\Reveille\start-agent-hidden.vbs' | Should Be $null
+    }
+
+    It 'shows a disabled task as fine' {
+        $r = Test-HcSecurity (New-FakeSecurity @{ Tasks = @(& $task 'Updater' 'wscript.exe u.vbs' 'weak' $true) }) @('tasks') 'cleanCall'
+        $r.Results[0].Status | Should Be 'ok'
+        @($r.Actions).Count | Should Be 0
+    }
+
+    It 'offers to close a running remote tool, and to turn off a proxy' {
+        $tool = New-FakeTool -Running $true
+        $tool | Add-Member Processes @('AnyDesk')
+        $r = Test-HcSecurity (New-FakeSecurity @{ RemoteTools = @($tool); Proxy = '1.2.3.4:80' }) @('remote', 'proxy') 'cleanAll'
+        @($r.Actions | ForEach-Object { $_.FixId }) | Should Be @('stopRemote', 'proxyOff')
+        $r.Actions[0].Target.Processes | Should Be @('AnyDesk')
+    }
+
+    It 'offers the network fixes where they help' {
+        @((Test-HcInternet (New-FakeFacts @{ DnsOk = $false; Web = $null })).Actions)[0].FixId | Should Be 'flushDns'
+        @((Test-HcInternet (New-FakeFacts @{ IPv4 = '169.254.1.1'; InternetMs = $null })).Actions)[0].FixId | Should Be 'renewIp'
+        @((Test-HcInternet (New-FakeFacts)).Actions).Count | Should Be 0
+    }
+
+    It 'has a label and note for every fix, in both languages' {
+        foreach ($lang in @('en', 'nl')) {
+            foreach ($id in $script:Fixes.Keys) {
+                $script:Strings[$lang]["fix.$id"] | Should Not BeNullOrEmpty
+                $script:Strings[$lang]['fix.note.' + $script:Fixes[$id].Note] | Should Not BeNullOrEmpty
+            }
+        }
+    }
+}
+
+Describe 'Step-by-step guides' {
+    It 'has the same number of steps in English and Dutch for every guide' {
+        foreach ($key in @($script:Strings.en.Keys | Where-Object { $_ -like 'steps.*' })) {
+            $en = @($script:Strings.en[$key] -split '\s*\|\s*')
+            $nl = @($script:Strings.nl[$key] -split '\s*\|\s*')
+            "$key $($en.Count)" | Should Be "$key $($nl.Count)"
+        }
+    }
+
+    It 'has a guide for every finding except the all-clear ones' {
+        $ids = @($script:Strings.en.Keys | Where-Object { $_ -like 'finding.*' } | ForEach-Object { $_.Substring(8) })
+        $missing = @($ids | Where-Object { $_ -notin @('allGood', 'cleanAll') -and -not $script:Strings.en.ContainsKey("steps.$_") })
+        $missing -join ', ' | Should Be ''
+    }
+
+    It 'fills the finding''s name into its steps' {
+        $script:Lang = 'nl'
+        $r = New-HcReport
+        Set-HcFinding $r 'unknownTask' @('Updater')
+        (Get-HcSteps $r)[0] | Should Match '"Updater"'
+        $script:Lang = 'en'
+    }
+
+    It 'shows steps one at a time and stops on 0' {
+        $script:HcInputQueue = New-Object System.Collections.Queue
+        foreach ($a in @('', '0', 'extra')) { $script:HcInputQueue.Enqueue($a) }
+        Show-HcSteps @('one', 'two', 'three', 'four')
+        $script:HcInputQueue.Count | Should Be 1     # two answers used: Enter, then 0
+        $script:HcInputQueue = $null
+    }
+}
+
+Describe 'Fix, check again, undo (scripted run)' {
+    $unknown = [pscustomobject]@{ Name = 'Updater'; Path = '\'; Command = 'wscript.exe u.vbs'; Level = 'weak'; Disabled = $false; Owner = $null }
+    Mock Get-HcEnvironment {
+        [pscustomobject]@{ IsWindows = $true; PSVersion = [version]'5.1'; Os = 'Windows 11 Home'; IsAdmin = $false; Online = $true }
+    }
+    Mock Disable-ScheduledTask { $script:TaskDisabled = $true }
+    Mock Enable-ScheduledTask { $script:TaskDisabled = $false }
+    Mock Get-HcSecurityFacts {
+        $t = $unknown.PSObject.Copy()
+        $t.Disabled = [bool]$script:TaskDisabled
+        New-FakeSecurity @{ Tasks = @($t) }
+    }
+
+    It 'disables the task after a yes, shows it fixed, and undoes it with U' {
+        $script:TaskDisabled = $false
+        Start-Housecall -Lang nl -Answers @('F2', '1', 'j', '', 'U', 'j', 'Q')
+        Assert-MockCalled Disable-ScheduledTask -Times 1 -Exactly -Scope It -ParameterFilter { $TaskName -eq 'Updater' -and $TaskPath -eq '\' }
+        Assert-MockCalled Get-HcSecurityFacts -Times 2 -Exactly -Scope It      # once, then again as proof
+        Assert-MockCalled Enable-ScheduledTask -Times 1 -Exactly -Scope It
+        $script:TaskDisabled | Should Be $false
+        $script:HcChanges.Count | Should Be 0
+    }
+
+    It 'changes nothing on N' {
+        Start-Housecall -Lang en -Answers @('F2', '1', 'n', '', 'Q')
+        Assert-MockCalled Disable-ScheduledTask -Times 0 -Exactly -Scope It
+    }
+
+    It 'changes nothing in a dry run, even after a yes' {
+        Start-Housecall -Lang en -DryRun -Answers @('F2', '1', 'y', '', 'Q')
+        Assert-MockCalled Disable-ScheduledTask -Times 0 -Exactly -Scope It
+    }
+
+    It 'refuses an admin fix without admin and explains how' {
+        Mock Get-HcNetworkFacts { New-FakeFacts @{ IPv4 = '169.254.1.1'; InternetMs = $null } }
+        Mock ipconfig.exe { }
+        Start-Housecall -Lang en -Answers @('A1', '1', '', 'Q')
+        Assert-MockCalled ipconfig.exe -Times 0 -Exactly -Scope It
     }
 }
 

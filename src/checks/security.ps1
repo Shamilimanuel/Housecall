@@ -46,6 +46,14 @@ $script:RemoteToolList = @(
     @{ Name = 'Quick Assist';          Pattern = $null;                          Processes = @('QuickAssist');                      Traces = @() }
 )
 
+# Scheduled tasks of tools Shamil installs himself. They start a hidden
+# script from AppData, like malware does, so they are recognised by name AND
+# by the script they run -- a look-alike name alone does not pass.
+$script:KnownTasks = @(
+    @{ Owner = 'Reveille'; Name = '^(Reveille|PCRemote)'; Command = '\\(Reveille|PCRemote)\\start-agent-hidden\.vbs' }
+    @{ Owner = 'Courier';  Name = '^Courier';             Command = '\\Courier\\start-agent-hidden\.vbs' }
+)
+
 # Browsers built on Chrome keep site permissions in a Preferences file per
 # profile. Firefox keeps them in a database this cannot read yet.
 $script:BrowserRoots = @(
@@ -125,7 +133,7 @@ function Get-HcRemoteTools {
     foreach ($tool in $script:RemoteToolList) {
         $found = [pscustomobject]@{
             Name = $tool.Name; Installed = $false; InstallDate = $null; Running = $false
-            AutoStart = $false; Downloaded = $null; LastUsed = $null
+            AutoStart = $false; Downloaded = $null; LastUsed = $null; Processes = $tool.Processes
         }
         $p = $tool.Pattern
         if ($p) {
@@ -240,14 +248,25 @@ function Get-HcTaskLevel {
     $null
 }
 
+function Get-HcKnownTaskOwner {
+    param([string]$Name, [string]$Command)
+    foreach ($k in $script:KnownTasks) {
+        if ($Name -match $k.Name -and $Command -match $k.Command) { return $k.Owner }
+    }
+    $null
+}
+
 function Get-HcSuspiciousTasks {
     foreach ($task in @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskPath -notlike '\Microsoft\*' })) {
         foreach ($action in @($task.Actions | Where-Object { $_.Execute })) {
             $level = Get-HcTaskLevel $action.Execute $action.Arguments
             if ($level) {
-                $command = ("$($action.Execute) $($action.Arguments)").Trim()
-                if ($command.Length -gt 70) { $command = $command.Substring(0, 67) + '...' }
-                [pscustomobject]@{ Name = $task.TaskName; Command = $command; Level = $level }
+                $full = ("$($action.Execute) $($action.Arguments)").Trim()
+                $command = if ($full.Length -gt 70) { $full.Substring(0, 67) + '...' } else { $full }
+                [pscustomobject]@{
+                    Name = $task.TaskName; Path = $task.TaskPath; Command = $command; Level = $level
+                    Disabled = ([string]$task.State -eq 'Disabled'); Owner = Get-HcKnownTaskOwner $task.TaskName $full
+                }
                 break
             }
         }
@@ -326,6 +345,7 @@ function Test-HcSecurity {
                     $status = if ($t.Running -or $isRecent) { 'problem' } else { 'warn' }
                     Add-HcLine $r $status ('{0}: {1}' -f $t.Name, ($bits -join ', '))
 
+                    if ($t.Running) { Add-HcAction $r 'stopRemote' @{ Label = $t.Name; Processes = $t.Processes } }
                     if ($t.Running -and -not $found['remoteActive']) { $found['remoteActive'] = @($t.Name) }
                     elseif ($isRecent -and -not $found['remoteRecent']) { $found['remoteRecent'] = @($t.Name, (Format-HcDate $newest)) }
                     elseif (-not $found['remoteOld']) { $found['remoteOld'] = @($t.Name) }
@@ -335,8 +355,11 @@ function Test-HcSecurity {
                 $tasks = @($Facts.Tasks)
                 if ($tasks.Count -eq 0) { Add-HcLine $r ok (T 'sec.noTasks'); break }
                 foreach ($t in $tasks) {
+                    if ($t.Owner) { Add-HcLine $r ok (T 'sec.taskKnown' $t.Name $t.Owner); continue }
+                    if ($t.Disabled) { Add-HcLine $r ok (T 'sec.taskDisabled' $t.Name); continue }
                     $status = if ($t.Level -eq 'strong') { 'problem' } else { 'warn' }
                     Add-HcLine $r $status (T 'sec.task' $t.Name $t.Command)
+                    Add-HcAction $r 'disableTask' @{ Label = $t.Name; Name = $t.Name; Path = $t.Path }
                     $id = if ($t.Level -eq 'strong') { 'suspiciousTask' } else { 'unknownTask' }
                     if (-not $found[$id]) { $found[$id] = @($t.Name) }
                 }
@@ -380,6 +403,7 @@ function Test-HcSecurity {
             'proxy' {
                 if ($Facts.Proxy) {
                     Add-HcLine $r warn (T 'net.proxy' $Facts.Proxy)
+                    Add-HcAction $r 'proxyOff'
                     $found['proxy'] = @()
                 } else {
                     Add-HcLine $r ok (T 'sec.noProxy')
@@ -413,10 +437,9 @@ $script:SecurityChecks = @{
 
 function Invoke-HcSecurityCheck {
     param([string]$Code)
-    $plan = $script:SecurityChecks[$Code]
-    Write-Dim (T 'run.checking')
-    Write-Host ''
-    Write-HcReport (Test-HcSecurity (Get-HcSecurityFacts $plan.Parts) $plan.Parts $plan.Clean)
+    # A script variable, not a closure; see Invoke-HcA3.
+    $script:HcSecurityPlan = $script:SecurityChecks[$Code]
+    { Test-HcSecurity (Get-HcSecurityFacts $script:HcSecurityPlan.Parts) $script:HcSecurityPlan.Parts $script:HcSecurityPlan.Clean }
 }
 
 function Invoke-HcF1 { Invoke-HcSecurityCheck 'F1' }

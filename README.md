@@ -11,7 +11,10 @@ Pick a letter for the area and a number for the problem (`A1` = no internet),
 or `?` to describe it in your own words. Housecall checks that part of the PC,
 says what it found in plain English or Dutch, and says what to do about it.
 
-- **Read-only.** Checking never changes anything. Fixes (coming) always ask first.
+- **Read-only until you say yes.** Checking never changes anything. After the
+  findings, Housecall offers fixes; each one asks first, is checked again
+  afterwards, and can be undone with `U`. Or press `S` for step-by-step
+  instructions to do it by hand.
 - **Nothing is installed.** Close the window and it's gone.
 - **Works offline.** The menu and the checks don't need internet, which matters
   when the internet is the problem.

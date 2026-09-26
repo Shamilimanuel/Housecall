@@ -1,20 +1,20 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 34%** `███████░░░░░░░░░░░░░` 14 of 41 done · 0 in progress · 24 open · 0 blocked · 3 waiting on a decision
+**Progress: 43%** `█████████░░░░░░░░░░░` 18 of 42 done · 0 in progress · 21 open · 0 blocked · 3 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/24) |
+| Next up | `░░░░░░░░░░` | 0% (0/21) |
 | Blocked on Shamil | `░░░░░░░░░░` | 0% (0/3) |
-| Recently done | `██████████` | 100% (9/9) |
+| Recently done | `██████████` | 100% (13/13) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
 
 Working notes, kept so a new chat can pick up without re-deriving anything.
-Last updated: **26 September 2026**, after Phase 0 and areas A and F of Phase 1.
+Last updated: **26 September 2026**, after areas A and F, and the start of Phase 2 (fixes, undo, step-by-step guides).
 
 **How we work this list:** items are worked top to bottom. Pick one, say the
 name, and it gets built. When it is done it moves to *Recently done* and we go
@@ -47,9 +47,14 @@ finding and say what to do, in English and Dutch. **Area F** (the scam
 check) is built too: F1, F2 and F3 are live on GitHub. A4 (email) and areas
 B–E still show "not built yet".
 
-Next, recommended: **Phase 2 for A and F** (fixes with a yes, before/after
-proof, the note window). That turns a diagnosis into a finished visit, which
-is what sets Housecall apart. B–E can follow the same pattern afterwards.
+**Phase 2 has started:** after every report comes **Wat nu?**: numbered
+fixes (pick one, confirm with J/N, and the same check runs again as proof)
+and **[S] Stap voor stap**, a guide shown one step at a time. **U** on the
+menu undoes the session's fixes. Five fixes exist so far; see *Recently done*.
+
+Next, recommended: **the note window** (the end of a visit), then
+**relaunch as admin** so admin fixes (renew IP) work without restarting by
+hand. B–E follow the same pattern afterwards.
 
 **Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
 name and **95%** signal correctly. The drop-out count in A2 has not been
@@ -178,13 +183,10 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - [ ] **E** Windows Update service, last success, pending reboot
 
 **Phase 2: fixes, proof and the note**
-- [ ] The shape of a fix ← recommended, next (start with A and F): description (NL + EN), needs-admin, reversible, apply, undo
-- [ ] First fixes: renew IP, flush DNS, reset Winsock, restart adapter; set default audio; restart spooler + clear queue; restart audio service; remove a remote-access tool; block a notification site
-- [ ] If admin is needed: explain, then relaunch elevated and continue where it was
+- [ ] More fixes. Done: disable task, close remote tool, proxy off, flush DNS, renew IP. Still to do: reset Winsock, restart adapter; set default audio; restart spooler + clear queue; restart audio service; uninstall a remote-access tool (through its own uninstaller); block a notification site (the browser must be closed first, or it overwrites the change)
+- [ ] If admin is needed: relaunch elevated and continue where it was. It already *explains* how today
 - [ ] Restore point before any admin fix, where Windows allows one
-- [ ] **Before/after proof**: rerun the check that found the problem
-- [ ] **Change log + undo** for the session
-- [ ] **Client note**: opens by itself at the end, in the client's language:
+- [ ] **Client note** ← recommended, next:: opens by itself at the end, in the client's language:
       problem, found, changed, Shamil's contact. **Decided 26 Sep: no file
       left behind.** Build it as Housecall's own window (WinForms, which works
       under `irm | iex`) with large text, and nothing on disk. Not Notepad on a
@@ -224,6 +226,27 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Phase 2, part 1: fixes, proof, undo, step by step** *(26 Sep)*
+- [x] **The shape of a fix** (`src/fixes.ps1`): the only code that changes
+      the PC. Each fix has a label, a note (*can be undone* / *safe* /
+      *program can be started again*), an admin flag, Apply and Undo. A
+      report offers fixes (`Add-HcAction`); the list shows under **Wat nu?**;
+      nothing runs without a J/Y. `-DryRun` stops at the confirmation. Fixes
+      only disable and close, never delete or uninstall
+- [x] **Before/after proof**: handlers now return the check as a
+      scriptblock, and `Invoke-HcProblem` runs it again after every fix. Live
+      on Shamil's PC: a test task went Ready → Disabled, and the second
+      report showed it as OK
+- [x] **Undo**: every applied fix is logged; **U** on the menu (only shown
+      once something changed) undoes them, newest first. Live: Disabled →
+      U → Ready. The goodbye now says how many approved changes stay
+- [x] **Step-by-step guides** *(Shamil's idea)*: **[S]** under every
+      finding shows the manual route one step at a time (Enter = next, 0 =
+      stop), with the real Windows 11 menu names, and the Dutch Windows
+      labels in Dutch. 34 guides, same number of steps in both languages
+      (tested). Also: Reveille and Courier tasks are recognised as known
+      tools by name *and* script, so a look-alike name doesn't pass. 16 new tests
 
 **Phase 1, area F: Safety & scams** *(26 Sep)*
 - [x] **F1, F2, F3** (`src/checks/security.ps1`), all without admin, 1–2 s
@@ -339,6 +362,15 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - **The known-sites list is a judgment call** (`$script:KnownNotificationSites`).
   Add a site there when clients keep allowing it on purpose. Never add one
   just because it's popular with scammers' victims.
+- **Undo only covers the current session.** Once Housecall is closed, a
+  disabled task has to be switched back on in Task Scheduler. The step-by-step
+  guide says where.
+- **No closures (`.GetNewClosure()`) for checks.** Under the options form
+  (`& ([scriptblock]::Create(...)) -Lang nl`) a closure can't see Housecall's
+  functions. Pass values through `$script:` variables, as A3 and F do.
+- **A Dutch accent in a string** is built from its char code, like
+  `'Taak be' + [char]0xEB + 'indigen'`: the button text has to match exactly
+  what the client sees.
 - **Keep every source file plain ASCII.** PowerShell 5.1 reads a `.ps1`
   without a byte-order mark as ANSI. `build.ps1` and a test both refuse
   anything else, so Dutch text avoids accents (or uses `[char]` codes).
@@ -357,6 +389,8 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Tests | `tests/Housecall.Tests.ps1` |
 | Check shape | `src/checks/common.ps1`: reports, findings, `Write-HcReport`, the handler list |
 | Area A | `src/checks/network.ps1`: facts, `Test-HcInternet` (A1), `Test-HcConnectionQuality` (A2), `Test-HcSite` (A3) |
+| Fixes | `src/fixes.ps1`: `$script:Fixes` (the only changes Housecall makes), the **Wat nu?** menu, the step-by-step viewer, undo |
+| Guides | `steps.<finding id>` in `src/strings.ps1`, steps separated by `\|` |
 | Area F | `src/checks/security.ps1`: the remote-tool list, known notification sites, `Test-HcSecurity` (F1–F3 share it; `$script:SecurityChecks` says which parts each runs) |
 | Next areas | `src/checks/<area>.ps1`, one file per letter, registering its own handlers |
 | Fixes | `fixes/` *(planned)*: the approved list, each with its undo |
