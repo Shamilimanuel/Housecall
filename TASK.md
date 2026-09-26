@@ -1,20 +1,20 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 32%** `██████░░░░░░░░░░░░░░` 13 of 41 done · 0 in progress · 25 open · 0 blocked · 3 waiting on a decision
+**Progress: 34%** `███████░░░░░░░░░░░░░` 14 of 41 done · 0 in progress · 24 open · 0 blocked · 3 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/25) |
+| Next up | `░░░░░░░░░░` | 0% (0/24) |
 | Blocked on Shamil | `░░░░░░░░░░` | 0% (0/3) |
-| Recently done | `██████████` | 100% (8/8) |
+| Recently done | `██████████` | 100% (9/9) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
 
 Working notes, kept so a new chat can pick up without re-deriving anything.
-Last updated: **26 September 2026**, after Phase 0 and area A of Phase 1.
+Last updated: **26 September 2026**, after Phase 0 and areas A and F of Phase 1.
 
 **How we work this list:** items are worked top to bottom. Pick one, say the
 name, and it gets built. When it is done it moves to *Recently done* and we go
@@ -43,10 +43,13 @@ irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex
 
 **Right now (26 Sep, end of day):** Phase 0 and **area A** are built and
 tested (see *Recently done*). A1, A2 and A3 run real read-only checks, give a
-finding and say what to do, in English and Dutch. A4 (email) and areas B–F
-still show "not built yet". Next: the rest of Phase 1. **F** is the
-recommended next area, because it's the standout feature. The open decisions
-(AI provider, hosting) still don't block anything in Phase 1.
+finding and say what to do, in English and Dutch. **Area F** (the scam
+check) is built too: F1, F2 and F3 are live on GitHub. A4 (email) and areas
+B–E still show "not built yet".
+
+Next, recommended: **Phase 2 for A and F** (fixes with a yes, before/after
+proof, the note window). That turns a diagnosis into a finished visit, which
+is what sets Housecall apart. B–E can follow the same pattern afterwards.
 
 **Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
 name and **95%** signal correctly. The drop-out count in A2 has not been
@@ -168,7 +171,6 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ## Next up
 
 **Phase 1: checks (offline, read-only)**
-- [ ] **F** ← recommended, next: remote-access tools (AnyDesk, TeamViewer, UltraViewer, RustDesk, …) with install date and running state; browser notification permissions; Defender state; unknown scheduled tasks
 - [ ] **A4** email: which mail program or webmail, then reach its servers (IMAP/SMTP ports). Needs a question first, like A3
 - [ ] **B** audio default device, mute, audio service; camera/mic privacy per app; display scale
 - [ ] **C** spooler, stuck jobs, default printer; USB devices with errors; Bluetooth radio
@@ -176,7 +178,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - [ ] **E** Windows Update service, last success, pending reboot
 
 **Phase 2: fixes, proof and the note**
-- [ ] The shape of a fix: description (NL + EN), needs-admin, reversible, apply, undo
+- [ ] The shape of a fix ← recommended, next (start with A and F): description (NL + EN), needs-admin, reversible, apply, undo
 - [ ] First fixes: renew IP, flush DNS, reset Winsock, restart adapter; set default audio; restart spooler + clear queue; restart audio service; remove a remote-access tool; block a notification site
 - [ ] If admin is needed: explain, then relaunch elevated and continue where it was
 - [ ] Restore point before any admin fix, where Windows allows one
@@ -222,6 +224,24 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Phase 1, area F: Safety & scams** *(26 Sep)*
+- [x] **F1, F2, F3** (`src/checks/security.ps1`), all without admin, 1–2 s
+      each on Shamil's PC. *Remote-access tools*: 21 of them (AnyDesk,
+      TeamViewer, UltraViewer, RustDesk, ScreenConnect, Quick Assist, …), each
+      found as installed (with date), downloaded to Downloads or the Desktop,
+      running now, starting with Windows, or used before (the settings folder
+      AnyDesk, TeamViewer and RustDesk leave behind even after removal).
+      Running = someone may be connected now; within 30 days = fits a scam;
+      older = worth asking. *Notification sites* from every Chrome, Edge,
+      Brave, Opera and Opera GX profile, with the date allowed. Well-known
+      sites (Gmail, WhatsApp Web, …) get an OK line, so only unfamiliar ones
+      are flagged. Look-alikes such as `mail.google.com.evil.example` don't
+      pass. *Antivirus* from Windows Security, and Defender's update age and
+      threats from the last 30 days. *Scheduled tasks* in two levels:
+      encoded or downloading commands = problem, a plain hidden script =
+      "check this". *Proxy* and *hosts file*. One finding by urgency:
+      running remote tool first. Nothing is ever removed here. 32 new tests
 
 **Hosting** *(26 Sep)*
 - [x] **Decided: GitHub**, public repo `Shamilimanuel/Housecall`, file
@@ -311,6 +331,14 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - **`netsh wlan` is the one place text is parsed.** Only "SSID" and a
   number followed by "%" are matched, which Windows doesn't translate. If the
   signal ever reads wrong on a Dutch laptop, look here first.
+- **F can't read Firefox's notification permissions yet.** They sit in a
+  SQLite database, not a JSON file. Chrome, Edge, Brave and Opera are covered.
+- **Hidden-script tasks are only "check this"**, because legitimate tools do
+  it too: on Shamil's own PC, F2 lists the Reveille and Courier agents. That's
+  correct, and it's why they don't count as a problem.
+- **The known-sites list is a judgment call** (`$script:KnownNotificationSites`).
+  Add a site there when clients keep allowing it on purpose. Never add one
+  just because it's popular with scammers' victims.
 - **Keep every source file plain ASCII.** PowerShell 5.1 reads a `.ps1`
   without a byte-order mark as ANSI. `build.ps1` and a test both refuse
   anything else, so Dutch text avoids accents (or uses `[char]` codes).
@@ -329,6 +357,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Tests | `tests/Housecall.Tests.ps1` |
 | Check shape | `src/checks/common.ps1`: reports, findings, `Write-HcReport`, the handler list |
 | Area A | `src/checks/network.ps1`: facts, `Test-HcInternet` (A1), `Test-HcConnectionQuality` (A2), `Test-HcSite` (A3) |
+| Area F | `src/checks/security.ps1`: the remote-tool list, known notification sites, `Test-HcSecurity` (F1–F3 share it; `$script:SecurityChecks` says which parts each runs) |
 | Next areas | `src/checks/<area>.ps1`, one file per letter, registering its own handlers |
 | Fixes | `fixes/` *(planned)*: the approved list, each with its undo |
 | Relay | `relay/` *(planned)*: holds the API key and visit memory |

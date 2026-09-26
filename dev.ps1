@@ -37,6 +37,7 @@ $src = Join-Path $PSScriptRoot 'src'
 . (Join-Path $src 'menu.ps1')
 . (Join-Path $src 'checks\common.ps1')
 . (Join-Path $src 'checks\network.ps1')
+. (Join-Path $src 'checks\security.ps1')
 # <<< sources
 
 Start-Housecall -DryRun:$DryRun -Lang $Lang

@@ -214,6 +214,58 @@ $script:Strings = @{
         'advice.siteError'     = 'Try again later. Check on a phone whether it fails there too.'
         'finding.siteOk'       = 'The site works from this PC. The problem is probably in the browser or the app.'
         'advice.siteOk'        = 'Clear the browser cache and cookies for this site, try another browser, or turn off browser extensions. For an app: update or reinstall it.'
+
+        # ---- F: check lines
+        'sec.noRemote'         = 'No remote-access programs found'
+        'sec.installed'        = 'installed {0}'
+        'sec.installedUnknown' = 'installed, date unknown'
+        'sec.downloaded'       = 'downloaded {0}'
+        'sec.running'          = 'RUNNING NOW'
+        'sec.autoStart'        = 'starts with Windows'
+        'sec.lastUsed'         = 'last used {0}'
+        'sec.noTasks'          = 'No suspicious scheduled tasks'
+        'sec.task'             = 'Scheduled task "{0}" runs: {1}'
+        'sec.avUnknown'        = 'Could not read the virus protection status'
+        'sec.avOff'            = 'No virus protection is switched on'
+        'sec.avOld'            = '{0} is on, but last updated {1} days ago'
+        'sec.avOutdated'       = '{0} is on, but out of date'
+        'sec.avOk'             = '{0} is on and up to date'
+        'sec.threats'          = 'Threats stopped in the past 30 days: {0}'
+        'sec.notifyNone'       = 'No websites may send pop-up notifications'
+        'sec.notifyKnown'      = 'Well-known sites may send notifications: {0}'
+        'sec.notifySite'       = '{0} may send notifications ({1}, since {2})'
+        'sec.notifySiteNoDate' = '{0} may send notifications ({1})'
+        'sec.noProxy'          = 'No proxy set'
+        'sec.hostsOk'          = 'The hosts file is normal'
+        'sec.hostsRedirect'    = 'The hosts file redirects {0} name(s): {1}'
+
+        # ---- F: findings, and what to do about each
+        'finding.remoteActive'   = '{0} is running right now. Someone may be connected to this PC at this moment.'
+        'advice.remoteActive'    = 'Cut the internet first: Wi-Fi off or pull the cable. Then close the program and ask the client whether they know it. If not: remove it after their yes, call the bank, and change the email and bank passwords from another device.'
+        'finding.remoteRecent'   = '{0} was put on this PC recently ({1}). If the client did not do that themselves, it fits a tech-support scam.'
+        'advice.remoteRecent'    = 'Ask the client who installed it. If it was a stranger: remove it after their yes, call the bank straight away, and change the email and bank passwords from another device.'
+        'finding.remoteOld'      = '{0} has been on this PC for a while. Probably on purpose, but worth asking.'
+        'advice.remoteOld'       = 'Ask the client whether they or their family use it. If nobody does, removing it closes a door.'
+        'finding.defenderOff'    = 'Virus protection is switched off.'
+        'advice.defenderOff'     = 'Turn it on: Windows Security > Virus & threat protection. If another antivirus has expired, remove it so Microsoft Defender takes over.'
+        'finding.avOld'          = 'Virus protection is on, but not up to date.'
+        'advice.avOld'           = 'Windows Security > Virus & threat protection > Protection updates > Check for updates. If that fails, choose E1.'
+        'finding.threatsFound'   = 'Virus protection stopped {0} threat(s) in the past 30 days.'
+        'advice.threatsFound'    = 'Open Windows Security > Protection history to see what it was, and run a full scan.'
+        'finding.suspiciousTask' = 'The scheduled task "{0}" starts a hidden or downloaded command. That is typical of malware.'
+        'advice.suspiciousTask'  = 'Look at it in Task Scheduler. After the client''s yes, disable it (do not delete it yet) and run a full scan in Windows Security.'
+        'finding.unknownTask'    = 'The scheduled task "{0}" starts a script in the background. Legitimate programs do this too, but so does malware.'
+        'advice.unknownTask'     = 'Check in Task Scheduler which program it belongs to. If the client does not know it, look it up before disabling it.'
+        'finding.notifySites'    = '{0} website(s) may show pop-up notifications. That is how fake virus warnings get onto the screen.'
+        'advice.notifySites'     = 'Block them in the browser: Settings > Privacy and security > Site settings > Notifications. Never call a phone number from such a pop-up.'
+        'finding.hostsRedirect'  = 'The hosts file sends website names to other addresses.'
+        'advice.hostsRedirect'   = 'Check C:\Windows\System32\drivers\etc\hosts. Lines the client does not recognise can go (needs admin).'
+        'finding.cleanPopup'     = 'Nothing on this PC explains the pop-up. It was most likely a scam web page, not a real virus.'
+        'advice.cleanPopup'      = 'Such a page is harmless once it is closed: close the browser (Alt+F4, or Task Manager if it will not close). Never call the number on it. If the client did call: choose F2.'
+        'finding.cleanCall'      = 'No remote-access program or other trace of an intruder found.'
+        'advice.cleanCall'       = 'If the caller asked for bank details or codes, call the bank anyway. Quick Assist is built into Windows and leaves nothing behind once closed.'
+        'finding.cleanAll'       = 'No security problems found.'
+        'advice.cleanAll'        = 'Keep Windows and the browser up to date. Real companies never call about a virus.'
     }
 
     nl = @{
@@ -384,6 +436,58 @@ $script:Strings = @{
         'advice.siteError'     = 'Probeer het later nog eens. Kijk op een telefoon of het daar ook misgaat.'
         'finding.siteOk'       = 'De site werkt vanaf deze pc. Het probleem zit waarschijnlijk in de browser of de app.'
         'advice.siteOk'        = 'Wis de cache en cookies van deze site in de browser, probeer een andere browser, of zet browserextensies uit. Bij een app: bijwerken of opnieuw installeren.'
+
+        # ---- F: check lines
+        'sec.noRemote'         = 'Geen programma''s voor overname op afstand gevonden'
+        'sec.installed'        = 'op de pc gezet op {0}'
+        'sec.installedUnknown' = 'staat op de pc, datum onbekend'
+        'sec.downloaded'       = 'gedownload op {0}'
+        'sec.running'          = 'DRAAIT NU'
+        'sec.autoStart'        = 'start mee met Windows'
+        'sec.lastUsed'         = 'laatst gebruikt op {0}'
+        'sec.noTasks'          = 'Geen verdachte geplande taken'
+        'sec.task'             = 'Geplande taak "{0}" start: {1}'
+        'sec.avUnknown'        = 'De status van de virusbescherming kon niet worden gelezen'
+        'sec.avOff'            = 'Er staat geen virusbescherming aan'
+        'sec.avOld'            = '{0} staat aan, maar is {1} dagen niet bijgewerkt'
+        'sec.avOutdated'       = '{0} staat aan, maar is niet bijgewerkt'
+        'sec.avOk'             = '{0} staat aan en is bijgewerkt'
+        'sec.threats'          = 'Bedreigingen tegengehouden, afgelopen 30 dagen: {0}'
+        'sec.notifyNone'       = 'Geen websites mogen pop-upmeldingen sturen'
+        'sec.notifyKnown'      = 'Bekende sites mogen meldingen sturen: {0}'
+        'sec.notifySite'       = '{0} mag meldingen sturen ({1}, sinds {2})'
+        'sec.notifySiteNoDate' = '{0} mag meldingen sturen ({1})'
+        'sec.noProxy'          = 'Geen proxy ingesteld'
+        'sec.hostsOk'          = 'Het hosts-bestand is normaal'
+        'sec.hostsRedirect'    = 'Het hosts-bestand stuurt {0} naam/namen door: {1}'
+
+        # ---- F: findings, and what to do about each
+        'finding.remoteActive'   = '{0} draait op dit moment. Er kan nu iemand met deze pc verbonden zijn.'
+        'advice.remoteActive'    = 'Verbreek eerst het internet: wifi uit of kabel eruit. Sluit dan het programma en vraag of de klant het kent. Zo niet: verwijder het na hun ja, bel de bank, en wijzig de wachtwoorden van e-mail en bank vanaf een ander apparaat.'
+        'finding.remoteRecent'   = '{0} is kort geleden op deze pc gezet ({1}). Heeft de klant dat niet zelf gedaan, dan past het bij oplichting door een nep-helpdesk.'
+        'advice.remoteRecent'    = 'Vraag de klant wie het op de pc heeft gezet. Was het een onbekende: verwijder het na hun ja, bel direct de bank, en wijzig de wachtwoorden van e-mail en bank vanaf een ander apparaat.'
+        'finding.remoteOld'      = '{0} staat al langer op deze pc. Waarschijnlijk bewust, maar vraag het na.'
+        'advice.remoteOld'       = 'Vraag of de klant of de familie het gebruikt. Gebruikt niemand het, dan sluit verwijderen een deur.'
+        'finding.defenderOff'    = 'De virusbescherming staat uit.'
+        'advice.defenderOff'     = 'Zet hem aan: Windows-beveiliging > Virus- en bedreigingsbeveiliging. Is een andere virusscanner verlopen, verwijder die dan zodat Microsoft Defender het overneemt.'
+        'finding.avOld'          = 'De virusbescherming staat aan, maar is niet bijgewerkt.'
+        'advice.avOld'           = 'Windows-beveiliging > Virus- en bedreigingsbeveiliging > Beveiligingsupdates > Controleren op updates. Lukt dat niet, kies dan E1.'
+        'finding.threatsFound'   = 'De virusbescherming heeft de afgelopen 30 dagen {0} bedreiging(en) tegengehouden.'
+        'advice.threatsFound'    = 'Open Windows-beveiliging > Beveiligingsgeschiedenis om te zien wat het was, en doe een volledige scan.'
+        'finding.suspiciousTask' = 'De geplande taak "{0}" start een verborgen of gedownloade opdracht. Dat is typisch voor malware.'
+        'advice.suspiciousTask'  = 'Bekijk hem in Taakplanner. Schakel hem na het ja van de klant uit (nog niet verwijderen) en doe een volledige scan in Windows-beveiliging.'
+        'finding.unknownTask'    = 'De geplande taak "{0}" start een script op de achtergrond. Gewone programma''s doen dat ook, maar malware ook.'
+        'advice.unknownTask'     = 'Kijk in Taakplanner bij welk programma hij hoort. Kent de klant het niet, zoek het dan eerst op voordat u hem uitschakelt.'
+        'finding.notifySites'    = '{0} website(s) mogen pop-upmeldingen tonen. Zo komen nep-virusmeldingen op het scherm.'
+        'advice.notifySites'     = 'Blokkeer ze in de browser: Instellingen > Privacy en beveiliging > Site-instellingen > Meldingen. Bel nooit een telefoonnummer uit zo''n melding.'
+        'finding.hostsRedirect'  = 'Het hosts-bestand stuurt namen van websites naar andere adressen.'
+        'advice.hostsRedirect'   = 'Bekijk C:\Windows\System32\drivers\etc\hosts. Regels die de klant niet kent, mogen weg (beheerder nodig).'
+        'finding.cleanPopup'     = 'Niets op deze pc verklaart de pop-up. Het was hoogstwaarschijnlijk een nepwebsite, geen echt virus.'
+        'advice.cleanPopup'      = 'Zo''n pagina is onschuldig zodra hij dicht is: sluit de browser (Alt+F4, of Taakbeheer als hij niet sluit). Bel nooit het nummer dat erop staat. Heeft de klant wel gebeld: kies F2.'
+        'finding.cleanCall'      = 'Geen programma voor overname op afstand of ander spoor van een indringer gevonden.'
+        'advice.cleanCall'       = 'Vroeg de beller om bankgegevens of codes, bel dan toch de bank. Snelle hulp (Quick Assist) zit in Windows en laat na afloop niets achter.'
+        'finding.cleanAll'       = 'Geen veiligheidsproblemen gevonden.'
+        'advice.cleanAll'        = 'Houd Windows en de browser bijgewerkt. Echte bedrijven bellen nooit over een virus.'
     }
 }
 
@@ -1390,6 +1494,436 @@ function Invoke-HcA3 {
 $script:ProblemHandlers['A1'] = 'Invoke-HcA1'
 $script:ProblemHandlers['A2'] = 'Invoke-HcA2'
 $script:ProblemHandlers['A3'] = 'Invoke-HcA3'
+
+# ==================================================== src\checks\security.ps1 ==
+<#
+    Area F: Safety & scams.
+
+      F1  a pop-up says I have a virus         notifications, antivirus, proxy, hosts file
+      F2  someone called and got into my PC    remote-access programs, scheduled tasks, antivirus, notifications
+      F3  full security check                  all of the above
+
+    The scam this is built around: a caller (or a fake virus pop-up with a
+    phone number) talks the client into installing AnyDesk, TeamViewer or
+    similar, then takes over the PC and the bank account. So F2 looks for
+    remote-access programs installed, downloaded, running or merely used
+    before, and dates each one: "installed two days ago" is what matters.
+
+    Everything is read-only and works without admin. Nothing is ever removed
+    here -- plenty of families use these tools on purpose. Housecall reports
+    and asks; removal (Phase 2) always needs the client's yes.
+#>
+
+$script:RecentDays = 30
+
+# Remote-access programs. Pattern matches the installed name and service
+# names; Processes are process names without .exe; Traces are folders a tool
+# leaves behind even after it is removed or was only run once.
+$script:RemoteToolList = @(
+    @{ Name = 'AnyDesk';               Pattern = 'AnyDesk';                      Processes = @('AnyDesk');                          Traces = @('%APPDATA%\AnyDesk', '%ProgramData%\AnyDesk') }
+    @{ Name = 'TeamViewer';            Pattern = 'TeamViewer';                   Processes = @('TeamViewer', 'TeamViewer_Service', 'tv_w32', 'tv_x64'); Traces = @('%APPDATA%\TeamViewer') }
+    @{ Name = 'UltraViewer';           Pattern = 'UltraViewer';                  Processes = @('UltraViewer_Desktop', 'UltraViewer_Service'); Traces = @() }
+    @{ Name = 'RustDesk';              Pattern = 'RustDesk';                     Processes = @('rustdesk');                         Traces = @('%APPDATA%\RustDesk') }
+    @{ Name = 'HopToDesk';             Pattern = 'HopToDesk';                    Processes = @('HopToDesk');                        Traces = @('%APPDATA%\HopToDesk') }
+    @{ Name = 'Supremo';               Pattern = '^Supremo';                     Processes = @('Supremo', 'SupremoService', 'SupremoHelper'); Traces = @() }
+    @{ Name = 'ScreenConnect';         Pattern = 'ScreenConnect';                Processes = @('ScreenConnect.ClientService', 'ScreenConnect.WindowsClient'); Traces = @() }
+    @{ Name = 'LogMeIn / GoTo';        Pattern = 'LogMeIn(?! Hamachi)|GoTo Resolve|GoToAssist'; Processes = @('LogMeIn', 'LMIGuardianSvc', 'GoToAssist'); Traces = @() }
+    @{ Name = 'Splashtop';             Pattern = 'Splashtop';                    Processes = @('SRService', 'SRManager', 'strwinclt');  Traces = @() }
+    @{ Name = 'AeroAdmin';             Pattern = 'AeroAdmin';                    Processes = @('AeroAdmin');                        Traces = @() }
+    @{ Name = 'Ammyy Admin';           Pattern = 'Ammyy';                        Processes = @('AA_v3', 'Ammyy');                   Traces = @() }
+    @{ Name = 'RemotePC';              Pattern = 'RemotePC';                     Processes = @('RemotePCService', 'RemotePCDesktop'); Traces = @() }
+    @{ Name = 'Zoho Assist';           Pattern = 'Zoho Assist';                  Processes = @('ZA_Connect', 'ZohoURS');            Traces = @() }
+    @{ Name = 'Chrome Remote Desktop'; Pattern = 'Chrome Remote Desktop';        Processes = @('remoting_host');                    Traces = @() }
+    @{ Name = 'DWService';             Pattern = 'DWAgent|DWService';            Processes = @('dwagent', 'dwagsvc');               Traces = @() }
+    @{ Name = 'VNC';                   Pattern = 'VNC';                          Processes = @('winvnc', 'tvnserver', 'vncserver'); Traces = @() }
+    @{ Name = 'Getscreen.me';          Pattern = 'Getscreen';                    Processes = @('getscreen');                        Traces = @() }
+    @{ Name = 'ISL Light';             Pattern = 'ISL Light|ISL AlwaysOn';       Processes = @('ISLLight', 'ISLAlwaysOnMonitor');   Traces = @() }
+    @{ Name = 'Remote Utilities';      Pattern = 'Remote Utilities';             Processes = @('rutserv', 'rfusclient');            Traces = @() }
+    @{ Name = 'Atera';                 Pattern = 'AteraAgent|Atera Networks';    Processes = @('AteraAgent');                       Traces = @() }
+    # Built into Windows: nothing to find installed, but running means a session is on.
+    @{ Name = 'Quick Assist';          Pattern = $null;                          Processes = @('QuickAssist');                      Traces = @() }
+)
+
+# Browsers built on Chrome keep site permissions in a Preferences file per
+# profile. Firefox keeps them in a database this cannot read yet.
+$script:BrowserRoots = @(
+    @{ Name = 'Chrome';   Path = '%LOCALAPPDATA%\Google\Chrome\User Data' }
+    @{ Name = 'Edge';     Path = '%LOCALAPPDATA%\Microsoft\Edge\User Data' }
+    @{ Name = 'Brave';    Path = '%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data' }
+    @{ Name = 'Opera';    Path = '%APPDATA%\Opera Software\Opera Stable' }
+    @{ Name = 'Opera GX'; Path = '%APPDATA%\Opera Software\Opera GX Stable' }
+)
+
+# Sites that people really do allow to send notifications. They are listed
+# as fine; everything else is flagged, because that is where fake virus
+# warnings come from. Matched on the host name, subdomains included.
+$script:KnownNotificationSites = @(
+    'mail.google.com', 'calendar.google.com', 'meet.google.com', 'chat.google.com', 'youtube.com'
+    'web.whatsapp.com', 'web.telegram.org', 'messenger.com', 'facebook.com', 'instagram.com'
+    'outlook.live.com', 'outlook.office.com', 'outlook.office365.com', 'teams.microsoft.com', 'teams.live.com'
+    'discord.com', 'x.com', 'linkedin.com', 'marktplaats.nl', 'nu.nl', 'nos.nl'
+    'localhost', '127.0.0.1'
+)
+
+function Test-HcKnownSite {
+    param([string]$Site)
+    $h = ($Site -replace '^[a-z]+://', '' -replace '[:/].*$', '').ToLowerInvariant()
+    foreach ($known in $script:KnownNotificationSites) {
+        if ($h -eq $known -or $h.EndsWith('.' + $known)) { return $true }
+    }
+    $false
+}
+
+# Which finding wins when several are found: the most urgent first.
+$script:SecurityPriority = @(
+    'remoteActive', 'remoteRecent', 'defenderOff', 'suspiciousTask', 'notifySites',
+    'proxy', 'hostsRedirect', 'avOld', 'threatsFound', 'remoteOld', 'unknownTask'
+)
+
+# ------------------------------------------------------------------- facts --
+
+function ConvertFrom-HcInstallDate {
+    param([string]$Text)
+    $d = [datetime]::MinValue
+    if ($Text -and [datetime]::TryParseExact($Text.Trim(), 'yyyyMMdd', [Globalization.CultureInfo]::InvariantCulture, 'None', [ref]$d)) { return $d }
+    $null
+}
+
+function Get-HcDownloadFolders {
+    $folders = @()
+    try { $folders += (New-Object -ComObject Shell.Application).Namespace('shell:Downloads').Self.Path } catch { }
+    $folders += Join-Path $env:USERPROFILE 'Downloads'
+    $folders += [Environment]::GetFolderPath('Desktop')
+    @($folders | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Sort-Object -Unique)
+}
+
+function Get-HcRemoteTools {
+    $uninstallKeys = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    )
+    $installed = @(Get-ItemProperty $uninstallKeys -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName })
+    $processes = @(Get-Process -ErrorAction SilentlyContinue | ForEach-Object { $_.ProcessName })
+    $services = @(Get-CimInstance Win32_Service -ErrorAction SilentlyContinue |
+        Where-Object { $_.StartMode -eq 'Auto' } | ForEach-Object { "$($_.Name) $($_.DisplayName) $($_.PathName)" })
+    $runKeys = @(
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run'
+    )
+    $runValues = @(foreach ($k in $runKeys) {
+        $item = Get-ItemProperty $k -ErrorAction SilentlyContinue
+        if ($item) { $item.PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object { "$($_.Name) $($_.Value)" } }
+    })
+    $downloads = @(foreach ($folder in Get-HcDownloadFolders) {
+        Get-ChildItem -LiteralPath $folder -File -Filter *.exe -ErrorAction SilentlyContinue
+    })
+
+    foreach ($tool in $script:RemoteToolList) {
+        $found = [pscustomobject]@{
+            Name = $tool.Name; Installed = $false; InstallDate = $null; Running = $false
+            AutoStart = $false; Downloaded = $null; LastUsed = $null
+        }
+        $p = $tool.Pattern
+        if ($p) {
+            $entry = $installed | Where-Object { $_.DisplayName -match $p } | Select-Object -First 1
+            if ($entry) {
+                $found.Installed = $true
+                $found.InstallDate = ConvertFrom-HcInstallDate $entry.InstallDate
+            }
+            $found.AutoStart = [bool](@($services + $runValues) -match $p)
+            $file = $downloads | Where-Object { $_.Name -match $p } | Sort-Object CreationTime -Descending | Select-Object -First 1
+            if ($file) { $found.Downloaded = $file.CreationTime }
+        }
+        $found.Running = [bool]($processes | Where-Object { $tool.Processes -contains $_ })
+        foreach ($trace in $tool.Traces) {
+            $folder = [Environment]::ExpandEnvironmentVariables($trace)
+            if (Test-Path -LiteralPath $folder) {
+                $when = (Get-Item -LiteralPath $folder).LastWriteTime
+                if ($null -eq $found.LastUsed -or $when -gt $found.LastUsed) { $found.LastUsed = $when }
+            }
+        }
+        if ($found.Installed -or $found.Running -or $found.AutoStart -or $found.Downloaded -or $found.LastUsed) { $found }
+    }
+}
+
+# Sites allowed to send notifications, from every Chrome-family profile.
+# Preferences can be large, so this uses the .NET JSON reader with the size
+# limit lifted instead of ConvertFrom-Json, which fails on big files in 5.1.
+function Get-HcNotificationSites {
+    try { Add-Type -AssemblyName System.Web.Extensions -ErrorAction Stop } catch { return @() }
+    $json = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+    $json.MaxJsonLength = [int]::MaxValue
+
+    foreach ($browser in $script:BrowserRoots) {
+        $root = [Environment]::ExpandEnvironmentVariables($browser.Path)
+        if (-not (Test-Path -LiteralPath $root)) { continue }
+        # Opera keeps Preferences in the root; the others in one folder per profile.
+        $files = @(Get-Item -LiteralPath (Join-Path $root 'Preferences') -ErrorAction SilentlyContinue) +
+                 @(Get-ChildItem -LiteralPath $root -Directory -ErrorAction SilentlyContinue |
+                    ForEach-Object { Get-Item -LiteralPath (Join-Path $_.FullName 'Preferences') -ErrorAction SilentlyContinue })
+        foreach ($file in $files) {
+            try {
+                $prefs = $json.DeserializeObject([IO.File]::ReadAllText($file.FullName))
+                $sites = $prefs['profile']['content_settings']['exceptions']['notifications']
+            } catch { continue }
+            if ($null -eq $sites) { continue }
+            foreach ($key in $sites.Keys) {
+                if ($sites[$key]['setting'] -ne 1) { continue }
+                $since = $null
+                try {
+                    # Microseconds since 1601, the same epoch as a Windows file time.
+                    $since = [DateTime]::FromFileTimeUtc([int64]$sites[$key]['last_modified'] * 10).ToLocalTime()
+                } catch { }
+                [pscustomobject]@{ Browser = $browser.Name; Site = ($key -split ',')[0] -replace ':443$', ''; Since = $since }
+            }
+        }
+    }
+}
+
+# The antivirus Windows Security reports, and for Defender its update age and
+# recent detections. productState's middle byte is 0x10 or 0x11 when on; the
+# last byte is 0x00 when up to date.
+function Get-HcAntivirus {
+    $av = [pscustomobject]@{ Known = $false; Name = $null; Enabled = $false; Outdated = $false; DaysOld = $null; Threats = $null }
+    try {
+        $products = @(Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntiVirusProduct -ErrorAction Stop)
+        $av.Known = $true
+        foreach ($p in $products) {
+            $hex = '{0:X6}' -f [int]$p.productState
+            if ($hex.Substring(2, 2) -in @('10', '11')) {
+                $av.Enabled = $true
+                $av.Name = $p.displayName
+                $av.Outdated = ($hex.Substring(4, 2) -ne '00')
+                break
+            }
+        }
+        if (-not $av.Name -and $products.Count) { $av.Name = $products[0].displayName }
+    } catch { }
+    try {
+        $mp = Get-MpComputerStatus -ErrorAction Stop
+        if ($av.Name -match 'Defender' -or -not $av.Known) {
+            $av.Known = $true
+            if (-not $av.Name) { $av.Name = 'Microsoft Defender' }
+            $av.Enabled = [bool]($mp.AntivirusEnabled -and $mp.RealTimeProtectionEnabled)
+            if ($mp.AntivirusSignatureLastUpdated) {
+                $av.DaysOld = [int]((Get-Date) - $mp.AntivirusSignatureLastUpdated).TotalDays
+                $av.Outdated = ($av.DaysOld -gt 7)
+            }
+        }
+        $av.Threats = @(Get-MpThreatDetection -ErrorAction Stop |
+            Where-Object { $_.InitialDetectionTime -gt (Get-Date).AddDays(-$script:RecentDays) }).Count
+    } catch { }
+    $av
+}
+
+<#
+    Scheduled tasks outside Windows' own folder whose command looks like
+    malware. Two levels:
+      strong  a script host with an encoded, hidden or downloading command,
+              or a program run from Temp, Public or Downloads
+      weak    a script host running a script file from the user's folders --
+              legitimate tools do this too, so it is only "check this"
+#>
+$script:ScriptHosts = 'powershell|pwsh|mshta|wscript|cscript|cmd|rundll32|regsvr32'
+
+function Get-HcTaskLevel {
+    param([string]$Execute, [string]$Arguments)
+    $exe = [IO.Path]::GetFileNameWithoutExtension(($Execute -replace '"', ''))
+    $isHost = $exe -match "^($script:ScriptHosts)$"
+    if ($isHost -and $Arguments -match '-e(nc|ncodedcommand)?\s|FromBase64|https?://|-w(indowstyle)?\s+hid|DownloadString|Invoke-WebRequest|iwr |\biex\b') { return 'strong' }
+    if ($Execute -match '\\(Temp|Users\\Public|Downloads)\\') { return 'strong' }
+    if ($isHost -and $Arguments -match '\\(AppData|ProgramData|Users)\\') { return 'weak' }
+    $null
+}
+
+function Get-HcSuspiciousTasks {
+    foreach ($task in @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskPath -notlike '\Microsoft\*' })) {
+        foreach ($action in @($task.Actions | Where-Object { $_.Execute })) {
+            $level = Get-HcTaskLevel $action.Execute $action.Arguments
+            if ($level) {
+                $command = ("$($action.Execute) $($action.Arguments)").Trim()
+                if ($command.Length -gt 70) { $command = $command.Substring(0, 67) + '...' }
+                [pscustomobject]@{ Name = $task.TaskName; Command = $command; Level = $level }
+                break
+            }
+        }
+    }
+}
+
+# Hosts-file lines that send a name somewhere, other than the usual localhost.
+function Get-HcHostsRedirects {
+    param([string]$Path = (Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'))
+    try {
+        foreach ($line in (Get-Content -LiteralPath $Path -ErrorAction Stop)) {
+            $clean = ($line -replace '#.*$', '').Trim()
+            if (-not $clean) { continue }
+            $parts = $clean -split '\s+'
+            if ($parts.Count -lt 2) { continue }
+            foreach ($name in $parts[1..($parts.Count - 1)]) {
+                if ($name -notmatch '^(localhost|localhost\.localdomain|broadcasthost)$') { "$name -> $($parts[0])" }
+            }
+        }
+    } catch { }
+}
+
+# Reads only the parts asked for: F1 does not need to wait for the task list.
+function Get-HcSecurityFacts {
+    param([string[]]$Parts)
+    $f = [pscustomobject]@{
+        Now = Get-Date; RemoteTools = $null; Tasks = $null; Antivirus = $null
+        Notifications = $null; Proxy = $null; Hosts = $null
+    }
+    if ($Parts -contains 'remote')        { $f.RemoteTools = @(Get-HcRemoteTools) }
+    if ($Parts -contains 'tasks')         { $f.Tasks = @(Get-HcSuspiciousTasks) }
+    if ($Parts -contains 'antivirus')     { $f.Antivirus = Get-HcAntivirus }
+    if ($Parts -contains 'notifications') { $f.Notifications = @(Get-HcNotificationSites) }
+    if ($Parts -contains 'proxy')         { $f.Proxy = Get-HcProxy }
+    if ($Parts -contains 'hosts')         { $f.Hosts = @(Get-HcHostsRedirects) }
+    $f
+}
+
+# ------------------------------------------------------------------ verdict --
+
+function Format-HcDate {
+    param([datetime]$Date)
+    $culture = if ($script:Lang -eq 'nl') { 'nl-NL' } else { 'en-GB' }
+    $Date.ToString('d MMM yyyy', [Globalization.CultureInfo]::GetCultureInfo($culture))
+}
+
+<#
+    One verdict for F1, F2 and F3: $Parts says which sections to show, in
+    that order. Every section adds its lines and names what it found; the
+    finding is then the most urgent one by $script:SecurityPriority, or
+    $CleanId when nothing was found.
+#>
+function Test-HcSecurity {
+    param([pscustomobject]$Facts, [string[]]$Parts, [string]$CleanId)
+    $r = New-HcReport
+    $found = @{}
+    $recent = $Facts.Now.AddDays(-$script:RecentDays)
+
+    foreach ($part in $Parts) {
+        switch ($part) {
+            'remote' {
+                $tools = @($Facts.RemoteTools)
+                if ($tools.Count -eq 0) { Add-HcLine $r ok (T 'sec.noRemote'); break }
+                foreach ($t in $tools) {
+                    $bits = @()
+                    if ($t.Installed) {
+                        $bits += $(if ($t.InstallDate) { T 'sec.installed' (Format-HcDate $t.InstallDate) } else { T 'sec.installedUnknown' })
+                    }
+                    if ($t.Downloaded) { $bits += T 'sec.downloaded' (Format-HcDate $t.Downloaded) }
+                    if ($t.Running) { $bits += T 'sec.running' }
+                    if ($t.AutoStart) { $bits += T 'sec.autoStart' }
+                    if ($t.LastUsed -and -not $t.Running) { $bits += T 'sec.lastUsed' (Format-HcDate $t.LastUsed) }
+
+                    $newest = @($t.InstallDate, $t.Downloaded, $t.LastUsed) | Where-Object { $_ } | Sort-Object -Descending | Select-Object -First 1
+                    $isRecent = ($newest -and $newest -gt $recent)
+                    $status = if ($t.Running -or $isRecent) { 'problem' } else { 'warn' }
+                    Add-HcLine $r $status ('{0}: {1}' -f $t.Name, ($bits -join ', '))
+
+                    if ($t.Running -and -not $found['remoteActive']) { $found['remoteActive'] = @($t.Name) }
+                    elseif ($isRecent -and -not $found['remoteRecent']) { $found['remoteRecent'] = @($t.Name, (Format-HcDate $newest)) }
+                    elseif (-not $found['remoteOld']) { $found['remoteOld'] = @($t.Name) }
+                }
+            }
+            'tasks' {
+                $tasks = @($Facts.Tasks)
+                if ($tasks.Count -eq 0) { Add-HcLine $r ok (T 'sec.noTasks'); break }
+                foreach ($t in $tasks) {
+                    $status = if ($t.Level -eq 'strong') { 'problem' } else { 'warn' }
+                    Add-HcLine $r $status (T 'sec.task' $t.Name $t.Command)
+                    $id = if ($t.Level -eq 'strong') { 'suspiciousTask' } else { 'unknownTask' }
+                    if (-not $found[$id]) { $found[$id] = @($t.Name) }
+                }
+            }
+            'antivirus' {
+                $av = $Facts.Antivirus
+                if ($null -eq $av -or -not $av.Known) { Add-HcLine $r skipped (T 'sec.avUnknown'); break }
+                if (-not $av.Enabled) {
+                    Add-HcLine $r problem (T 'sec.avOff')
+                    $found['defenderOff'] = @()
+                } elseif ($av.Outdated) {
+                    $text = if ($av.DaysOld) { T 'sec.avOld' $av.Name $av.DaysOld } else { T 'sec.avOutdated' $av.Name }
+                    Add-HcLine $r warn $text
+                    $found['avOld'] = @()
+                } else {
+                    Add-HcLine $r ok (T 'sec.avOk' $av.Name)
+                }
+                if ($av.Threats -gt 0) {
+                    Add-HcLine $r warn (T 'sec.threats' $av.Threats)
+                    $found['threatsFound'] = @($av.Threats)
+                }
+            }
+            'notifications' {
+                $sites = @($Facts.Notifications)
+                $known = @($sites | Where-Object { Test-HcKnownSite $_.Site })
+                $unknown = @($sites | Where-Object { -not (Test-HcKnownSite $_.Site) })
+                if ($known.Count) {
+                    $names = @($known | ForEach-Object { $_.Site -replace '^[a-z]+://', '' } | Sort-Object -Unique) -join ', '
+                    Add-HcLine $r ok (T 'sec.notifyKnown' $names)
+                }
+                if ($unknown.Count -eq 0) {
+                    if (-not $known.Count) { Add-HcLine $r ok (T 'sec.notifyNone') }
+                    break
+                }
+                foreach ($s in $unknown) {
+                    $text = if ($s.Since) { T 'sec.notifySite' $s.Site $s.Browser (Format-HcDate $s.Since) } else { T 'sec.notifySiteNoDate' $s.Site $s.Browser }
+                    Add-HcLine $r warn $text
+                }
+                $found['notifySites'] = @($unknown.Count)
+            }
+            'proxy' {
+                if ($Facts.Proxy) {
+                    Add-HcLine $r warn (T 'net.proxy' $Facts.Proxy)
+                    $found['proxy'] = @()
+                } else {
+                    Add-HcLine $r ok (T 'sec.noProxy')
+                }
+            }
+            'hosts' {
+                $lines = @($Facts.Hosts)
+                if ($lines.Count -eq 0) { Add-HcLine $r ok (T 'sec.hostsOk'); break }
+                $shown = ($lines | Select-Object -First 3) -join ', '
+                if ($lines.Count -gt 3) { $shown += ', ...' }
+                Add-HcLine $r warn (T 'sec.hostsRedirect' $lines.Count $shown)
+                $found['hostsRedirect'] = @()
+            }
+        }
+    }
+
+    foreach ($id in $script:SecurityPriority) {
+        if ($found.ContainsKey($id)) { Set-HcFinding $r $id $found[$id]; break }
+    }
+    Set-HcFinding $r $CleanId
+    $r
+}
+
+# ---------------------------------------------------------------- handlers --
+
+$script:SecurityChecks = @{
+    F1 = @{ Parts = @('notifications', 'antivirus', 'proxy', 'hosts');                  Clean = 'cleanPopup' }
+    F2 = @{ Parts = @('remote', 'tasks', 'antivirus', 'notifications');                 Clean = 'cleanCall' }
+    F3 = @{ Parts = @('remote', 'tasks', 'antivirus', 'notifications', 'proxy', 'hosts'); Clean = 'cleanAll' }
+}
+
+function Invoke-HcSecurityCheck {
+    param([string]$Code)
+    $plan = $script:SecurityChecks[$Code]
+    Write-Dim (T 'run.checking')
+    Write-Host ''
+    Write-HcReport (Test-HcSecurity (Get-HcSecurityFacts $plan.Parts) $plan.Parts $plan.Clean)
+}
+
+function Invoke-HcF1 { Invoke-HcSecurityCheck 'F1' }
+function Invoke-HcF2 { Invoke-HcSecurityCheck 'F2' }
+function Invoke-HcF3 { Invoke-HcSecurityCheck 'F3' }
+
+$script:ProblemHandlers['F1'] = 'Invoke-HcF1'
+$script:ProblemHandlers['F2'] = 'Invoke-HcF2'
+$script:ProblemHandlers['F3'] = 'Invoke-HcF3'
 
 
 Start-Housecall -DryRun:$DryRun -Lang $Lang

