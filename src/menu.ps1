@@ -194,6 +194,7 @@ function Start-Housecall {
     $script:RestorePointDone = $false
     $script:HcChanges.Clear()
     $script:HcVisit.Clear()
+    $script:HcWork.Clear()
     $script:HandedOff = $false
     $script:HcToken = $null
     $script:HcKnownLabel = $null

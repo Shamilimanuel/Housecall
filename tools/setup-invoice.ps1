@@ -6,7 +6,8 @@
         powershell -ExecutionPolicy Bypass -File tools\setup-invoice.ps1
 
     It asks for your Google Authenticator code, then only what the invoice
-    needs now: your name, email, phone, hourly rate and call-out fee. The
+    needs now: your name, email, phone, hourly rate, starting price and
+    call-out fee. The
     business part (address, KvK, IBAN, BTW) comes after one question and is
     skipped by default -- until you are registered it is not needed, and
     fields left empty are simply not printed. Enter keeps the current value,
@@ -82,6 +83,17 @@ $s.business_name = $name
 $s.email         = Read-Field 'Email' $now.email
 $s.phone         = Read-Field 'Phone (optional)' $now.phone
 $s.hourly_rate   = Read-Money 'Hourly rate in euros' $now.hourly_rate
+$s.start_fee     = Read-Money 'Starting price in euros: a fixed amount for the first part of a visit (0 = none)' $now.start_fee
+if ($s.start_fee -gt 0) {
+    $s.start_minutes = $null
+    while ($null -eq $s.start_minutes) {
+        $m = Read-Field 'Minutes included in the starting price' $(if ($now.start_minutes) { $now.start_minutes } else { 30 })
+        if ("$m" -match '^\d{1,3}$' -and [int]$m -ge 1 -and [int]$m -le 240) { $s.start_minutes = [int]$m }
+        else { Write-Host '  Type a number of minutes, for example 30.' -ForegroundColor Yellow }
+    }
+} else {
+    $s.start_minutes = $null
+}
 $s.callout_fee   = Read-Money 'Call-out fee in euros (0 = none)' $now.callout_fee
 
 Write-Host ''
@@ -116,7 +128,11 @@ foreach ($line in @(
     (@($(if ($x.kvk) { "KvK $($x.kvk)" }), $(if ($x.iban) { "IBAN $($x.iban)" })) | Where-Object { $_ }) -join '   '
     (@($x.email, $x.phone) | Where-Object { $_ }) -join '   '
 )) { if ($line) { Write-Host "     $line" } }
-Write-Host "     Rate $($x.hourly_rate) per hour, call-out fee $($x.callout_fee)"
+if ($x.start_fee -and $x.start_minutes) {
+    Write-Host "     Starting price $($x.start_fee) for the first $($x.start_minutes) min, then $($x.hourly_rate) per hour, call-out fee $($x.callout_fee)"
+} else {
+    Write-Host "     Rate $($x.hourly_rate) per hour, call-out fee $($x.callout_fee)"
+}
 if (-not $x.iban) { Write-Host '     Payment choices: card, cash, payment request (Tikkie or your bank's betaalverzoek); bank transfer appears once an IBAN is set' -ForegroundColor DarkGray }
 Write-Host ''
 Write-Host '  Filled in something that is not needed? Run this again and type a dash (-) to empty it.' -ForegroundColor DarkGray

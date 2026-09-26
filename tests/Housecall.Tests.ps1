@@ -1098,6 +1098,44 @@ Describe 'The invoice' {
         (ConvertTo-HcInvoiceForm $empty $settings).Error | Should Match 'niets te factureren'
     }
 
+    It 'a starting price covers the first minutes; only the time after it goes by the hour' {
+        $script:Lang = 'nl'
+        $settings = [pscustomobject]@{ hourly_rate = 20; start_fee = 15; start_minutes = 30 }
+        $short = @(Get-HcLabourLines 30 $settings)
+        $short.Count | Should Be 1
+        $short[0].Description | Should Be 'Starttarief (eerste 30 min)'
+        $short[0].Amount | Should Be 15
+        $long = @(Get-HcLabourLines 75 $settings)
+        $long.Count | Should Be 2
+        $long[1].Description | Should Be "Extra tijd: 45 min, $euro 20,00 per uur"
+        $long[1].Amount | Should Be 15
+        @(Get-HcLabourLines 0 $settings).Count | Should Be 0
+        # Without a starting price: all of it by the hour, as before.
+        $plain = @(Get-HcLabourLines 45 ([pscustomobject]@{ hourly_rate = 20 }))
+        $plain[0].Description | Should Be "Arbeid: 45 min, $euro 20,00 per uur"
+        $plain[0].Amount | Should Be 15
+        Get-HcRateText $settings | Should Be "$euro 15,00 voor de eerste 30 min, daarna $euro 20,00 per uur"
+    }
+
+    It 'what was done by hand: on the note under done or not fixed, and in the history' {
+        $script:Lang = 'nl'
+        $script:HcVisit.Clear(); $script:HcChanges.Clear(); $script:HcWork.Clear()
+        [void]$script:HcVisit.Add([pscustomobject]@{ Code = 'A1'; FindingId = $null; FindingArgs = @() })
+        @(Get-HcWorkPresets).Count | Should BeGreaterThan 10
+        (Get-HcWorkPresets) -contains ('Printer ge' + [char]0xEF + 'nstalleerd') | Should Be $true
+        Add-HcWorkItem ' Printer   geinstalleerd ' $true | Should Be $true
+        Add-HcWorkItem 'Printer geinstalleerd' $false | Should Be $false
+        Add-HcWorkItem '  ' $true | Should Be $false
+        Add-HcWorkItem 'Onderdeel moet besteld worden' $false | Should Be $true
+        $text = @(Get-HcVisitBlocks | ForEach-Object { $_.Text })
+        ($text -contains 'Printer geinstalleerd') | Should Be $true
+        ($text -contains 'Nog niet opgelost') | Should Be $true
+        ($text -contains 'Onderdeel moet besteld worden') | Should Be $true
+        ($text -contains 'Er is niets veranderd aan deze pc.') | Should Be $false
+        (@(Get-HcVisitChanges) -contains 'Niet opgelost: Onderdeel moet besteld worden') | Should Be $true
+        $script:HcWork.Clear(); $script:HcVisit.Clear()
+    }
+
     It 'Enter at the code: no invoice, no second question, the plain note' {
         $script:Sent = @{}
         Mock Invoke-HcRelay { $script:Sent[$Body.action] = $Body; & $ok ([pscustomobject]@{}) }

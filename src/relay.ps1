@@ -61,6 +61,7 @@ function Get-HcRelayMessage {
         'unreachable' { T 'relay.unreachable' }
         'ai_key'      { T 'relay.aiKey' }
         'ai_busy'     { T 'relay.aiBusy' }
+        'ai_credit'   { T 'relay.aiCredit' }
         'no_settings' { T 'inv.noSettings' }
         default       { T 'relay.error' $Code }
     }
@@ -222,7 +223,7 @@ function Save-HcVisitRecord {
         lang     = $script:Lang
         os       = $Environment.Os
         problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
-        changes  = @($script:HcChanges | ForEach-Object { $_.Label })
+        changes  = @(Get-HcVisitChanges)
         invoice_number = $(if ($Invoice) { [string]$Invoice.number } else { $null })
     }
     if ($r.Ok) { Write-Ok (T 'mem.saved') } else { Write-Warn2 (T 'mem.notSaved' (Get-HcRelayMessage $r.Error)) }

@@ -1,15 +1,15 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 92%** `██████████████████░░` 48 of 52 done · 0 in progress · 4 open · 0 blocked · 0 waiting on a decision
+**Progress: 94%** `███████████████████░` 51 of 54 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
 | Next up | `░░░░░░░░░░` | 0% (0/3) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
-| Recently done | `██████████` | 100% (34/34) |
-| Found in testing | `█████████░` | 90% (9/10) |
+| Recently done | `██████████` | 100% (36/36) |
+| Found in testing | `██████████` | 100% (10/10) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
@@ -57,7 +57,7 @@ irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex
 2. A test visit: a check, then Q, fill in the form, see the invoice, print
    it to PDF. Then H: the visit shows its invoice number; delete it (the
    invoice stays). The first real invoice will be 2026-0001.
-3. Build *No credit: a clear message* (under Found in testing).
+3. ~~No credit: a clear message~~ done (relay v7 returns `ai_credit`).
 4. Once there is credit: the first real AI chat, and watch it once.
 5. Then Shamil's testing round (below).
 
@@ -225,6 +225,18 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Pricing and the work list** *(26 Sep)*
+- [x] **Starting price.** Settings `start_fee` and `start_minutes` (Supabase
+      columns, relay, `setup-invoice.ps1`). Now set: EUR 15 for the first
+      30 min, then EUR 20 per hour. `Get-HcLabourLines` makes the lines
+      ("Starttarief (eerste 30 min)" + "Extra tijd: 45 min, ..."); 0
+      minutes = no labour, for a fixed-price job as an extra line. Tests added
+- [x] **What was done / not fixed** in the invoice window: pick one of 18
+      options or type your own, then *Opgelost* or *Niet opgelost* (Enter =
+      Opgelost), remove with a button. Shows on the note and invoice under
+      "Wat er is gedaan" and "Nog niet opgelost", and goes into the visit
+      history. Window only: the console fallback does not ask for it
 
 **The relay, visit memory and the AI chat** *(26 Sep)*
 - [x] **Decisions:** Claude Opus 5; the relay on a new free Supabase project
@@ -519,7 +531,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
       `tools/setup-invoice.ps1` into Supabase `settings`, never the public
       script. Checked on screen once. 8 new tests, 239 in total
 
-- [ ] **No credit: a clear message.** With an API key but no credit,
+- [x] **No credit: a clear message.** Done 26 Sep, relay version 7. With an API key but no credit,
       Anthropic answers "credit balance too low" and the relay turns that
       into the vague `ai_request`. Make the relay return `ai_credit` for it
       (match the error type or message), map it in `Get-HcRelayMessage`, add

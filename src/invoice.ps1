@@ -47,6 +47,44 @@ function Get-HcSuggestedMinutes {
     [int][Math]::Max(15, $minutes)
 }
 
+<#
+    The labour lines for the time worked. With a starting price (settings
+    start_fee and start_minutes) the first minutes cost that fixed amount
+    and only the time after them goes by the hour; without one, all of it
+    goes by the hour. 0 minutes gives no labour: a job at a fixed price is
+    then an extra line.
+#>
+function Get-HcLabourLines {
+    param([int]$Minutes, $Settings)
+    if ($Minutes -le 0) { return }
+    $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
+    $start = [decimal]$(if ($Settings.start_fee) { $Settings.start_fee } else { 0 })
+    $included = [int]$(if ($Settings.start_minutes) { $Settings.start_minutes } else { 0 })
+    if ($start -gt 0 -and $included -gt 0) {
+        [pscustomobject]@{ Description = (T 'inv.startLine' $included); Amount = $start }
+        $extra = $Minutes - $included
+        if ($extra -gt 0 -and $rate -gt 0) {
+            [pscustomobject]@{ Description = (T 'inv.extraTime' $extra (Format-HcMoney $rate)); Amount = [Math]::Round($rate * $extra / 60, 2) }
+        }
+        return
+    }
+    if ($rate -gt 0) {
+        [pscustomobject]@{ Description = (T 'inv.labour' $Minutes (Format-HcMoney $rate)); Amount = [Math]::Round($rate * $Minutes / 60, 2) }
+    }
+}
+
+# The price next to the minutes in the window.
+function Get-HcRateText {
+    param($Settings)
+    $rate = Format-HcMoney ([decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 }))
+    # The relay sends amounts as text ("0.00"), so compare them as numbers.
+    $start = [decimal]$(if ($Settings.start_fee) { $Settings.start_fee } else { 0 })
+    if ($start -gt 0 -and [int]$Settings.start_minutes -gt 0) {
+        return (T 'inv.win.rateStart' (Format-HcMoney ([decimal]$Settings.start_fee)) $Settings.start_minutes $rate)
+    }
+    T 'inv.win.rate' $rate
+}
+
 function Get-HcSettings {
     $r = Invoke-HcRelay @{ action = 'settings_get'; token = $script:HcToken }
     if (-not $r.Ok) { return [pscustomobject]@{ Ok = $false; Settings = $null; Error = $r.Error } }
@@ -85,7 +123,6 @@ function Read-HcInvoiceForm {
     $email = Read-HcField (T 'inv.email'); if ($null -eq $email) { return $null }
 
     $lines = New-Object System.Collections.ArrayList
-    $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
     $suggested = Get-HcSuggestedMinutes
     $minutes = $null
     while ($null -eq $minutes) {
@@ -93,10 +130,7 @@ function Read-HcInvoiceForm {
         if ($null -eq $typed) { return $null }
         if ($typed -match '^\d{1,4}$') { $minutes = [int]$typed } else { Write-Warn2 (T 'inv.minutesBad') }
     }
-    if ($minutes -gt 0 -and $rate -gt 0) {
-        $amount = [Math]::Round($rate * $minutes / 60, 2)
-        [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.labour' $minutes (Format-HcMoney $rate)); Amount = $amount })
-    }
+    foreach ($l in @(Get-HcLabourLines $minutes $Settings)) { [void]$lines.Add($l) }
 
     $fee = [decimal]$(if ($Settings.callout_fee) { $Settings.callout_fee } else { 0 })
     if ($fee -gt 0) {
@@ -152,11 +186,7 @@ function ConvertTo-HcInvoiceForm {
     if (-not $name) { return [pscustomobject]@{ Form = $null; Error = (T 'inv.win.needName') } }
 
     $lines = New-Object System.Collections.ArrayList
-    $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
-    $minutes = [int]$Values.Minutes
-    if ($minutes -gt 0 -and $rate -gt 0) {
-        [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.labour' $minutes (Format-HcMoney $rate)); Amount = [Math]::Round($rate * $minutes / 60, 2) })
-    }
+    foreach ($l in @(Get-HcLabourLines ([int]$Values.Minutes) $Settings)) { [void]$lines.Add($l) }
     $fee = [decimal]$(if ($Settings.callout_fee) { $Settings.callout_fee } else { 0 })
     if ($Values.Callout -and $fee -gt 0) {
         [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.calloutLine'); Amount = $fee })
@@ -200,8 +230,11 @@ function Show-HcInvoiceWindow {
     $form = New-Object Windows.Forms.Form
     $form.Text = 'Housecall - ' + (T 'inv.title')
     $form.StartPosition = 'CenterScreen'
-    $form.Size = New-Object Drawing.Size(620, 780)
-    $form.MinimumSize = $form.Size
+    # Tall enough for everything, but never taller than the screen: the
+    # fields scroll on a small laptop.
+    $height = [Math]::Min(960, [Windows.Forms.Screen]::PrimaryScreen.WorkingArea.Height - 20)
+    $form.Size = New-Object Drawing.Size(640, $height)
+    $form.MinimumSize = New-Object Drawing.Size(560, 480)
     $form.Font = $font
     # Every colour set explicitly: Windows themes with custom system colours
     # (Shamil's PC has one) otherwise give white text on white, or dark fields.
@@ -246,7 +279,8 @@ function Show-HcInvoiceWindow {
     $minutes.Value = Get-HcSuggestedMinutes
     $rateLabel = New-Object Windows.Forms.Label
     $rateLabel.AutoSize = $true; $rateLabel.Margin = New-Object Windows.Forms.Padding(8, 6, 0, 0)
-    $rateLabel.Text = T 'inv.win.rate' (Format-HcMoney ([decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })))
+    $rateLabel.MaximumSize = New-Object Drawing.Size(290, 0)
+    $rateLabel.Text = Get-HcRateText $Settings
     $minutesRow.Controls.Add($minutes); $minutesRow.Controls.Add($rateLabel)
     $layout.Controls.Add($l); $layout.Controls.Add($minutesRow)
 
@@ -256,6 +290,50 @@ function Show-HcInvoiceWindow {
         $callout.Text = T 'inv.win.callout' (Format-HcMoney $fee); $callout.AutoSize = $true; $callout.Checked = $true
         $layout.Controls.Add((New-Object Windows.Forms.Label)); $layout.Controls.Add($callout)
     }
+
+    # What was done and what not: pick an option or type one, then Fixed or
+    # Not fixed. It goes on the note or invoice, next to Housecall's own fixes.
+    & $heading (T 'inv.win.done')
+    $workRow = New-Object Windows.Forms.FlowLayoutPanel
+    $workRow.AutoSize = $true; $workRow.Dock = 'Fill'; $workRow.WrapContents = $false
+    $workPick = New-Object Windows.Forms.ComboBox
+    $workPick.DropDownStyle = 'DropDown'; $workPick.Width = 300; $workPick.FlatStyle = 'Flat'; & $paint $workPick
+    $workPick.MaxDropDownItems = 12
+    foreach ($p in @(Get-HcWorkPresets)) { [void]$workPick.Items.Add($p) }
+    $workPick.AutoCompleteMode = 'SuggestAppend'; $workPick.AutoCompleteSource = 'ListItems'
+    $addFixed = New-Object Windows.Forms.Button
+    $addFixed.Text = T 'inv.win.fixed'; $addFixed.AutoSize = $true; & $paint $addFixed
+    $addOpen = New-Object Windows.Forms.Button
+    $addOpen.Text = T 'inv.win.notFixed'; $addOpen.AutoSize = $true; & $paint $addOpen
+    $workRow.Controls.Add($workPick); $workRow.Controls.Add($addFixed); $workRow.Controls.Add($addOpen)
+    $layout.Controls.Add($workRow); $layout.SetColumnSpan($workRow, 2)
+    $workList = New-Object Windows.Forms.ListBox
+    $workList.Height = 96; $workList.Dock = 'Fill'; $workList.BorderStyle = 'FixedSingle'; & $paint $workList
+    $layout.Controls.Add($workList); $layout.SetColumnSpan($workList, 2)
+    $removeWork = New-Object Windows.Forms.Button
+    $removeWork.Text = T 'inv.win.remove'; $removeWork.AutoSize = $true; $removeWork.Anchor = 'Left'; & $paint $removeWork
+    $layout.Controls.Add($removeWork); $layout.SetColumnSpan($removeWork, 2)
+
+    $showWork = {
+        $workList.Items.Clear()
+        foreach ($w in $script:HcWork) {
+            $key = if ($w.Done) { 'inv.win.itemFixed' } else { 'inv.win.itemOpen' }
+            [void]$workList.Items.Add((T $key $w.Text))
+        }
+    }
+    $addWork = { param([bool]$done)
+        if (Add-HcWorkItem $workPick.Text $done) { $workPick.Text = ''; & $showWork }
+        $workPick.Focus() | Out-Null
+    }
+    $addFixed.Add_Click({ & $addWork $true })
+    $addOpen.Add_Click({ & $addWork $false })
+    # Enter in the box counts as Fixed, the most common answer.
+    $workPick.Add_KeyDown({ if ($_.KeyCode -eq 'Enter') { $_.SuppressKeyPress = $true; & $addWork $true } })
+    $removeWork.Add_Click({
+        $i = $workList.SelectedIndex
+        if ($i -ge 0) { $script:HcWork.RemoveAt($i); & $showWork }
+    })
+    & $showWork
 
     & $heading (T 'inv.win.extras')
     $grid = New-Object Windows.Forms.DataGridView
@@ -331,8 +409,7 @@ function Show-HcInvoiceWindow {
     # Live total: labour + call-out + valid extra lines, whatever the payment.
     $update = {
         $sum = [decimal]0
-        $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
-        $sum += [Math]::Round($rate * [int]$minutes.Value / 60, 2)
+        foreach ($l in @(Get-HcLabourLines ([int]$minutes.Value) $Settings)) { $sum += [decimal]$l.Amount }
         if ($callout.Checked) { $sum += $fee }
         foreach ($row in $grid.Rows) {
             if ($row.IsNewRow) { continue }
@@ -391,7 +468,7 @@ function Invoke-HcInvoice {
         lines    = @($form.Lines | ForEach-Object { @{ description = $_.Description; amount = [double]$_.Amount } })
         payment  = $form.Payment
         problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
-        changes  = @($script:HcChanges | ForEach-Object { $_.Label })
+        changes  = @(Get-HcVisitChanges)
     }
     if (-not $r.Ok) { Write-Warn2 (T 'inv.failed' (Get-HcRelayMessage $r.Error)); return $null }
     Write-Ok (T 'inv.made' $r.Data.invoice.number)

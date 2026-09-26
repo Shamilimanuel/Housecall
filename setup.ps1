@@ -358,6 +358,8 @@ $script:Strings = @{
         'note.found'          = 'What was found'
         'note.done'           = 'What was done'
         'note.nothingChanged' = 'Nothing was changed on this PC.'
+        'note.notFixed'       = 'Not fixed yet'
+        'note.notFixedItem'   = 'Not fixed: {0}'
         'note.contact'        = 'Questions?'
         'note.footer'         = 'This note is not saved anywhere: it disappears when you close it. Print it if you want to keep it.'
         'note.print'          = 'Print'
@@ -834,6 +836,7 @@ $script:Strings = @{
         'relay.unreachable'  = 'The relay cannot be reached. Is the Supabase project paused? Restore it in the Supabase dashboard.'
         'relay.aiKey'        = 'The AI key in Supabase is not right: check ANTHROPIC_API_KEY.'
         'relay.aiBusy'       = 'The AI is busy right now: try again in a minute.'
+        'relay.aiCredit'     = 'The Anthropic account has no credit: add credit at console.anthropic.com > Billing.'
         'relay.error'        = 'The relay answered with an error ({0}).'
         'menu.history'       = 'Visit history'
         'mem.title'          = 'Visit history of this PC'
@@ -869,6 +872,16 @@ $script:Strings = @{
         'inv.minutes'     = 'Time worked in minutes [{0}]'
         'inv.minutesBad'  = 'Type a number of minutes, e.g. 45.'
         'inv.labour'      = 'Labour: {0} min at {1} per hour'
+        'inv.startLine'       = 'Starting price (first {0} min)'
+        'inv.extraTime'       = 'Extra time: {0} min at {1} per hour'
+        'inv.win.rateStart'   = '{0} for the first {1} min, then {2} per hour'
+        'inv.win.done'        = 'What was done (choose or type)'
+        'inv.win.fixed'       = 'Fixed'
+        'inv.win.notFixed'    = 'Not fixed'
+        'inv.win.remove'      = 'Remove selected'
+        'inv.win.itemFixed'   = 'Fixed: {0}'
+        'inv.win.itemOpen'    = 'Not fixed: {0}'
+        'work.presets'        = 'Internet and Wi-Fi working again | Printer installed | Printer working again | Email set up | Windows updated | Computer made faster | Startup programs cleaned up | Virus scan done | Unwanted programs removed | Sound working again | Device connected and set up | Password reset | Backup made of photos and files | New computer set up | Explained how to use it | A part has to be ordered | The problem is with the internet provider | The computer is too old to repair'
         'inv.callout'     = 'Charge the call-out fee of {0}? (Y/N) [Y]'
         'inv.calloutLine' = 'Call-out fee'
         'inv.extra'       = 'Extra line, e.g. "Wireless mouse 19,95" (Enter = done)'
@@ -1225,6 +1238,8 @@ $script:Strings = @{
         'note.found'          = 'Wat er gevonden is'
         'note.done'           = 'Wat er is gedaan'
         'note.nothingChanged' = 'Er is niets veranderd aan deze pc.'
+        'note.notFixed'       = 'Nog niet opgelost'
+        'note.notFixedItem'   = 'Niet opgelost: {0}'
         'note.contact'        = 'Vragen?'
         'note.footer'         = 'Dit briefje wordt nergens bewaard: het verdwijnt als u het sluit. Druk het af als u het wilt houden.'
         'note.print'          = 'Afdrukken'
@@ -1701,6 +1716,7 @@ $script:Strings = @{
         'relay.unreachable'  = 'De relay is niet bereikbaar. Staat het Supabase-project op pauze? Herstel het in het Supabase-dashboard.'
         'relay.aiKey'        = 'De AI-sleutel in Supabase klopt niet: controleer ANTHROPIC_API_KEY.'
         'relay.aiBusy'       = 'De AI is nu druk: probeer het over een minuut opnieuw.'
+        'relay.aiCredit'     = 'Het Anthropic-account heeft geen tegoed: voeg tegoed toe via console.anthropic.com > Billing.'
         'relay.error'        = 'De relay gaf een fout ({0}).'
         'menu.history'       = 'Bezoekgeschiedenis'
         'mem.title'          = 'Bezoekgeschiedenis van deze pc'
@@ -1736,6 +1752,16 @@ $script:Strings = @{
         'inv.minutes'     = 'Gewerkte tijd in minuten [{0}]'
         'inv.minutesBad'  = 'Typ een aantal minuten, bijv. 45.'
         'inv.labour'      = 'Arbeid: {0} min, {1} per uur'
+        'inv.startLine'       = 'Starttarief (eerste {0} min)'
+        'inv.extraTime'       = 'Extra tijd: {0} min, {1} per uur'
+        'inv.win.rateStart'   = '{0} voor de eerste {1} min, daarna {2} per uur'
+        'inv.win.done'        = 'Wat er is gedaan (kies of typ zelf)'
+        'inv.win.fixed'       = 'Opgelost'
+        'inv.win.notFixed'    = 'Niet opgelost'
+        'inv.win.remove'      = 'Geselecteerde verwijderen'
+        'inv.win.itemFixed'   = 'Opgelost: {0}'
+        'inv.win.itemOpen'    = 'Niet opgelost: {0}'
+        'work.presets'        = ('Internet en wifi weer werkend gemaakt | Printer ge' + [char]0xEF + 'nstalleerd | Printer weer werkend gemaakt | E-mail ingesteld | Windows bijgewerkt | Computer sneller gemaakt | Opstartprogramma''s opgeruimd | Virusscan gedaan | Ongewenste programma''s verwijderd | Geluid weer werkend gemaakt | Apparaat aangesloten en ingesteld | Wachtwoord hersteld | Back-up gemaakt van foto''s en bestanden | Nieuwe computer ingesteld | Uitleg gegeven over het gebruik | Onderdeel moet besteld worden | Probleem ligt bij de internetprovider | Computer is te oud om te repareren')
         'inv.callout'     = 'Voorrijkosten van {0} rekenen? (J/N) [J]'
         'inv.calloutLine' = 'Voorrijkosten'
         'inv.extra'       = 'Extra regel, bijv. "Draadloze muis 19,95" (Enter = klaar)'
@@ -2232,6 +2258,7 @@ function Start-Housecall {
     $script:RestorePointDone = $false
     $script:HcChanges.Clear()
     $script:HcVisit.Clear()
+    $script:HcWork.Clear()
     $script:HandedOff = $false
     $script:HcToken = $null
     $script:HcKnownLabel = $null
@@ -5469,6 +5496,34 @@ $script:Contact = @(
 # one after any fixes). Filled by Invoke-HcProblem.
 $script:HcVisit = New-Object System.Collections.ArrayList
 
+# What Shamil did by hand, from the invoice window: Text, and Done ($true
+# for fixed, $false for not fixed).
+$script:HcWork = New-Object System.Collections.ArrayList
+
+# The ready-made options for that list; any other text can be typed.
+function Get-HcWorkPresets {
+    @((T 'work.presets') -split '\|' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
+
+# Adds one item; $false when it is empty or already on the list.
+function Add-HcWorkItem {
+    param([string]$Text, [bool]$Done)
+    $t = ("$Text" -replace '\s+', ' ').Trim()
+    if (-not $t) { return $false }
+    if ($t.Length -gt 150) { $t = $t.Substring(0, 150) }
+    if (@($script:HcWork | Where-Object { $_.Text -eq $t }).Count) { return $false }
+    [void]$script:HcWork.Add([pscustomobject]@{ Text = $t; Done = $Done })
+    $true
+}
+
+# Everything done this visit for the history and the invoice: Housecall's
+# fixes, then the hand-made list, with "Not fixed:" in front where needed.
+function Get-HcVisitChanges {
+    $all = @($script:HcChanges | ForEach-Object { $_.Label })
+    $all += @($script:HcWork | ForEach-Object { if ($_.Done) { $_.Text } else { T 'note.notFixedItem' $_.Text } })
+    @($all | Select-Object -First 30)
+}
+
 function Save-HcVisit {
     param([string]$Code, [pscustomobject]$Report)
     $entry = $script:HcVisit | Where-Object { $_.Code -eq $Code } | Select-Object -First 1
@@ -5517,10 +5572,17 @@ function Get-HcVisitBlocks {
 
     & $block 'heading' (T 'note.done')
     $changes = @($script:HcChanges)
-    if ($changes.Count -eq 0) {
+    $fixed = @($script:HcWork | Where-Object { $_.Done })
+    $open = @($script:HcWork | Where-Object { -not $_.Done })
+    if ($changes.Count -eq 0 -and $fixed.Count -eq 0) {
         & $block 'text' (T 'note.nothingChanged')
     } else {
         foreach ($c in $changes) { & $block 'text' $c.Label }
+        foreach ($w in $fixed) { & $block 'text' $w.Text }
+    }
+    if ($open.Count) {
+        & $block 'heading' (T 'note.notFixed')
+        foreach ($w in $open) { & $block 'text' $w.Text }
     }
 }
 
@@ -5723,6 +5785,7 @@ function Get-HcRelayMessage {
         'unreachable' { T 'relay.unreachable' }
         'ai_key'      { T 'relay.aiKey' }
         'ai_busy'     { T 'relay.aiBusy' }
+        'ai_credit'   { T 'relay.aiCredit' }
         'no_settings' { T 'inv.noSettings' }
         default       { T 'relay.error' $Code }
     }
@@ -5884,7 +5947,7 @@ function Save-HcVisitRecord {
         lang     = $script:Lang
         os       = $Environment.Os
         problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
-        changes  = @($script:HcChanges | ForEach-Object { $_.Label })
+        changes  = @(Get-HcVisitChanges)
         invoice_number = $(if ($Invoice) { [string]$Invoice.number } else { $null })
     }
     if ($r.Ok) { Write-Ok (T 'mem.saved') } else { Write-Warn2 (T 'mem.notSaved' (Get-HcRelayMessage $r.Error)) }
@@ -5940,6 +6003,44 @@ function Get-HcSuggestedMinutes {
     [int][Math]::Max(15, $minutes)
 }
 
+<#
+    The labour lines for the time worked. With a starting price (settings
+    start_fee and start_minutes) the first minutes cost that fixed amount
+    and only the time after them goes by the hour; without one, all of it
+    goes by the hour. 0 minutes gives no labour: a job at a fixed price is
+    then an extra line.
+#>
+function Get-HcLabourLines {
+    param([int]$Minutes, $Settings)
+    if ($Minutes -le 0) { return }
+    $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
+    $start = [decimal]$(if ($Settings.start_fee) { $Settings.start_fee } else { 0 })
+    $included = [int]$(if ($Settings.start_minutes) { $Settings.start_minutes } else { 0 })
+    if ($start -gt 0 -and $included -gt 0) {
+        [pscustomobject]@{ Description = (T 'inv.startLine' $included); Amount = $start }
+        $extra = $Minutes - $included
+        if ($extra -gt 0 -and $rate -gt 0) {
+            [pscustomobject]@{ Description = (T 'inv.extraTime' $extra (Format-HcMoney $rate)); Amount = [Math]::Round($rate * $extra / 60, 2) }
+        }
+        return
+    }
+    if ($rate -gt 0) {
+        [pscustomobject]@{ Description = (T 'inv.labour' $Minutes (Format-HcMoney $rate)); Amount = [Math]::Round($rate * $Minutes / 60, 2) }
+    }
+}
+
+# The price next to the minutes in the window.
+function Get-HcRateText {
+    param($Settings)
+    $rate = Format-HcMoney ([decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 }))
+    # The relay sends amounts as text ("0.00"), so compare them as numbers.
+    $start = [decimal]$(if ($Settings.start_fee) { $Settings.start_fee } else { 0 })
+    if ($start -gt 0 -and [int]$Settings.start_minutes -gt 0) {
+        return (T 'inv.win.rateStart' (Format-HcMoney ([decimal]$Settings.start_fee)) $Settings.start_minutes $rate)
+    }
+    T 'inv.win.rate' $rate
+}
+
 function Get-HcSettings {
     $r = Invoke-HcRelay @{ action = 'settings_get'; token = $script:HcToken }
     if (-not $r.Ok) { return [pscustomobject]@{ Ok = $false; Settings = $null; Error = $r.Error } }
@@ -5978,7 +6079,6 @@ function Read-HcInvoiceForm {
     $email = Read-HcField (T 'inv.email'); if ($null -eq $email) { return $null }
 
     $lines = New-Object System.Collections.ArrayList
-    $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
     $suggested = Get-HcSuggestedMinutes
     $minutes = $null
     while ($null -eq $minutes) {
@@ -5986,10 +6086,7 @@ function Read-HcInvoiceForm {
         if ($null -eq $typed) { return $null }
         if ($typed -match '^\d{1,4}$') { $minutes = [int]$typed } else { Write-Warn2 (T 'inv.minutesBad') }
     }
-    if ($minutes -gt 0 -and $rate -gt 0) {
-        $amount = [Math]::Round($rate * $minutes / 60, 2)
-        [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.labour' $minutes (Format-HcMoney $rate)); Amount = $amount })
-    }
+    foreach ($l in @(Get-HcLabourLines $minutes $Settings)) { [void]$lines.Add($l) }
 
     $fee = [decimal]$(if ($Settings.callout_fee) { $Settings.callout_fee } else { 0 })
     if ($fee -gt 0) {
@@ -6045,11 +6142,7 @@ function ConvertTo-HcInvoiceForm {
     if (-not $name) { return [pscustomobject]@{ Form = $null; Error = (T 'inv.win.needName') } }
 
     $lines = New-Object System.Collections.ArrayList
-    $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
-    $minutes = [int]$Values.Minutes
-    if ($minutes -gt 0 -and $rate -gt 0) {
-        [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.labour' $minutes (Format-HcMoney $rate)); Amount = [Math]::Round($rate * $minutes / 60, 2) })
-    }
+    foreach ($l in @(Get-HcLabourLines ([int]$Values.Minutes) $Settings)) { [void]$lines.Add($l) }
     $fee = [decimal]$(if ($Settings.callout_fee) { $Settings.callout_fee } else { 0 })
     if ($Values.Callout -and $fee -gt 0) {
         [void]$lines.Add([pscustomobject]@{ Description = (T 'inv.calloutLine'); Amount = $fee })
@@ -6093,8 +6186,11 @@ function Show-HcInvoiceWindow {
     $form = New-Object Windows.Forms.Form
     $form.Text = 'Housecall - ' + (T 'inv.title')
     $form.StartPosition = 'CenterScreen'
-    $form.Size = New-Object Drawing.Size(620, 780)
-    $form.MinimumSize = $form.Size
+    # Tall enough for everything, but never taller than the screen: the
+    # fields scroll on a small laptop.
+    $height = [Math]::Min(960, [Windows.Forms.Screen]::PrimaryScreen.WorkingArea.Height - 20)
+    $form.Size = New-Object Drawing.Size(640, $height)
+    $form.MinimumSize = New-Object Drawing.Size(560, 480)
     $form.Font = $font
     # Every colour set explicitly: Windows themes with custom system colours
     # (Shamil's PC has one) otherwise give white text on white, or dark fields.
@@ -6139,7 +6235,8 @@ function Show-HcInvoiceWindow {
     $minutes.Value = Get-HcSuggestedMinutes
     $rateLabel = New-Object Windows.Forms.Label
     $rateLabel.AutoSize = $true; $rateLabel.Margin = New-Object Windows.Forms.Padding(8, 6, 0, 0)
-    $rateLabel.Text = T 'inv.win.rate' (Format-HcMoney ([decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })))
+    $rateLabel.MaximumSize = New-Object Drawing.Size(290, 0)
+    $rateLabel.Text = Get-HcRateText $Settings
     $minutesRow.Controls.Add($minutes); $minutesRow.Controls.Add($rateLabel)
     $layout.Controls.Add($l); $layout.Controls.Add($minutesRow)
 
@@ -6149,6 +6246,50 @@ function Show-HcInvoiceWindow {
         $callout.Text = T 'inv.win.callout' (Format-HcMoney $fee); $callout.AutoSize = $true; $callout.Checked = $true
         $layout.Controls.Add((New-Object Windows.Forms.Label)); $layout.Controls.Add($callout)
     }
+
+    # What was done and what not: pick an option or type one, then Fixed or
+    # Not fixed. It goes on the note or invoice, next to Housecall's own fixes.
+    & $heading (T 'inv.win.done')
+    $workRow = New-Object Windows.Forms.FlowLayoutPanel
+    $workRow.AutoSize = $true; $workRow.Dock = 'Fill'; $workRow.WrapContents = $false
+    $workPick = New-Object Windows.Forms.ComboBox
+    $workPick.DropDownStyle = 'DropDown'; $workPick.Width = 300; $workPick.FlatStyle = 'Flat'; & $paint $workPick
+    $workPick.MaxDropDownItems = 12
+    foreach ($p in @(Get-HcWorkPresets)) { [void]$workPick.Items.Add($p) }
+    $workPick.AutoCompleteMode = 'SuggestAppend'; $workPick.AutoCompleteSource = 'ListItems'
+    $addFixed = New-Object Windows.Forms.Button
+    $addFixed.Text = T 'inv.win.fixed'; $addFixed.AutoSize = $true; & $paint $addFixed
+    $addOpen = New-Object Windows.Forms.Button
+    $addOpen.Text = T 'inv.win.notFixed'; $addOpen.AutoSize = $true; & $paint $addOpen
+    $workRow.Controls.Add($workPick); $workRow.Controls.Add($addFixed); $workRow.Controls.Add($addOpen)
+    $layout.Controls.Add($workRow); $layout.SetColumnSpan($workRow, 2)
+    $workList = New-Object Windows.Forms.ListBox
+    $workList.Height = 96; $workList.Dock = 'Fill'; $workList.BorderStyle = 'FixedSingle'; & $paint $workList
+    $layout.Controls.Add($workList); $layout.SetColumnSpan($workList, 2)
+    $removeWork = New-Object Windows.Forms.Button
+    $removeWork.Text = T 'inv.win.remove'; $removeWork.AutoSize = $true; $removeWork.Anchor = 'Left'; & $paint $removeWork
+    $layout.Controls.Add($removeWork); $layout.SetColumnSpan($removeWork, 2)
+
+    $showWork = {
+        $workList.Items.Clear()
+        foreach ($w in $script:HcWork) {
+            $key = if ($w.Done) { 'inv.win.itemFixed' } else { 'inv.win.itemOpen' }
+            [void]$workList.Items.Add((T $key $w.Text))
+        }
+    }
+    $addWork = { param([bool]$done)
+        if (Add-HcWorkItem $workPick.Text $done) { $workPick.Text = ''; & $showWork }
+        $workPick.Focus() | Out-Null
+    }
+    $addFixed.Add_Click({ & $addWork $true })
+    $addOpen.Add_Click({ & $addWork $false })
+    # Enter in the box counts as Fixed, the most common answer.
+    $workPick.Add_KeyDown({ if ($_.KeyCode -eq 'Enter') { $_.SuppressKeyPress = $true; & $addWork $true } })
+    $removeWork.Add_Click({
+        $i = $workList.SelectedIndex
+        if ($i -ge 0) { $script:HcWork.RemoveAt($i); & $showWork }
+    })
+    & $showWork
 
     & $heading (T 'inv.win.extras')
     $grid = New-Object Windows.Forms.DataGridView
@@ -6224,8 +6365,7 @@ function Show-HcInvoiceWindow {
     # Live total: labour + call-out + valid extra lines, whatever the payment.
     $update = {
         $sum = [decimal]0
-        $rate = [decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 })
-        $sum += [Math]::Round($rate * [int]$minutes.Value / 60, 2)
+        foreach ($l in @(Get-HcLabourLines ([int]$minutes.Value) $Settings)) { $sum += [decimal]$l.Amount }
         if ($callout.Checked) { $sum += $fee }
         foreach ($row in $grid.Rows) {
             if ($row.IsNewRow) { continue }
@@ -6284,7 +6424,7 @@ function Invoke-HcInvoice {
         lines    = @($form.Lines | ForEach-Object { @{ description = $_.Description; amount = [double]$_.Amount } })
         payment  = $form.Payment
         problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
-        changes  = @($script:HcChanges | ForEach-Object { $_.Label })
+        changes  = @(Get-HcVisitChanges)
     }
     if (-not $r.Ok) { Write-Warn2 (T 'inv.failed' (Get-HcRelayMessage $r.Error)); return $null }
     Write-Ok (T 'inv.made' $r.Data.invoice.number)

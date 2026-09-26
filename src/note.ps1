@@ -20,6 +20,34 @@ $script:Contact = @(
 # one after any fixes). Filled by Invoke-HcProblem.
 $script:HcVisit = New-Object System.Collections.ArrayList
 
+# What Shamil did by hand, from the invoice window: Text, and Done ($true
+# for fixed, $false for not fixed).
+$script:HcWork = New-Object System.Collections.ArrayList
+
+# The ready-made options for that list; any other text can be typed.
+function Get-HcWorkPresets {
+    @((T 'work.presets') -split '\|' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
+
+# Adds one item; $false when it is empty or already on the list.
+function Add-HcWorkItem {
+    param([string]$Text, [bool]$Done)
+    $t = ("$Text" -replace '\s+', ' ').Trim()
+    if (-not $t) { return $false }
+    if ($t.Length -gt 150) { $t = $t.Substring(0, 150) }
+    if (@($script:HcWork | Where-Object { $_.Text -eq $t }).Count) { return $false }
+    [void]$script:HcWork.Add([pscustomobject]@{ Text = $t; Done = $Done })
+    $true
+}
+
+# Everything done this visit for the history and the invoice: Housecall's
+# fixes, then the hand-made list, with "Not fixed:" in front where needed.
+function Get-HcVisitChanges {
+    $all = @($script:HcChanges | ForEach-Object { $_.Label })
+    $all += @($script:HcWork | ForEach-Object { if ($_.Done) { $_.Text } else { T 'note.notFixedItem' $_.Text } })
+    @($all | Select-Object -First 30)
+}
+
 function Save-HcVisit {
     param([string]$Code, [pscustomobject]$Report)
     $entry = $script:HcVisit | Where-Object { $_.Code -eq $Code } | Select-Object -First 1
@@ -68,10 +96,17 @@ function Get-HcVisitBlocks {
 
     & $block 'heading' (T 'note.done')
     $changes = @($script:HcChanges)
-    if ($changes.Count -eq 0) {
+    $fixed = @($script:HcWork | Where-Object { $_.Done })
+    $open = @($script:HcWork | Where-Object { -not $_.Done })
+    if ($changes.Count -eq 0 -and $fixed.Count -eq 0) {
         & $block 'text' (T 'note.nothingChanged')
     } else {
         foreach ($c in $changes) { & $block 'text' $c.Label }
+        foreach ($w in $fixed) { & $block 'text' $w.Text }
+    }
+    if ($open.Count) {
+        & $block 'heading' (T 'note.notFixed')
+        foreach ($w in $open) { & $block 'text' $w.Text }
     }
 }
 

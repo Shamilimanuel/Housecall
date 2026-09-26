@@ -231,6 +231,8 @@ async function chat(messages: Anthropic.Beta.BetaMessageParam[]): Promise<Respon
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError) return json({ error: "ai_key" }, 502);
     if (error instanceof Anthropic.RateLimitError) return json({ error: "ai_busy" }, 503);
+    // No credit on the Anthropic account arrives as a 400 about the credit balance.
+    if (error instanceof Anthropic.APIError && /credit balance/i.test(error.message)) return json({ error: "ai_credit" }, 402);
     if (error instanceof Anthropic.BadRequestError) return json({ error: "ai_request", detail: error.message }, 502);
     if (error instanceof Anthropic.APIError) return json({ error: "ai_error", status: error.status }, 502);
     return json({ error: "ai_unreachable" }, 502);
@@ -335,11 +337,16 @@ async function settingsSave(input: any): Promise<Response> {
     if (v !== null && (typeof v !== "string" || v.length > max)) return json({ error: "bad_settings", field: key }, 400);
     row[key] = v === "" ? null : v;
   }
-  for (const key of ["hourly_rate", "callout_fee"]) {
+  for (const key of ["hourly_rate", "callout_fee", "start_fee"]) {
     if (!(key in input)) continue;
     const v = input[key];
     if (v !== null && (typeof v !== "number" || v < 0 || v > 10000)) return json({ error: "bad_settings", field: key }, 400);
     row[key] = v;
+  }
+  if ("start_minutes" in input) {
+    const v = input.start_minutes;
+    if (v !== null && (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v > 240)) return json({ error: "bad_settings", field: "start_minutes" }, 400);
+    row.start_minutes = v;
   }
   if ("btw_mode" in input) {
     if (!["unset", "kor", "21"].includes(input.btw_mode)) return json({ error: "bad_settings", field: "btw_mode" }, 400);
