@@ -9,7 +9,10 @@
                fix.<id>.done for the note and undo ("Disabled task X")
       Note     undo = can be undone, safe = harmless and needs no undo,
                restart = closes a program, which can simply be started again,
-               reprint = removes stuck print jobs, which need printing again
+               reprint = removes stuck print jobs, which need printing again,
+               temp = only temporary files, noundo = cannot be undone,
+               unsaved = closes a program, and its unsaved work,
+               redownload = Windows downloads again, long = takes a while
       Admin    needs an administrator PowerShell
       Apply    does it; throws when it fails
       Undo     puts it back ($null when there is nothing to put back)
@@ -209,6 +212,126 @@ $script:Fixes = @{
         Note = 'restart'; Admin = $false
         Apply = { param($t) Get-Process -Name Magnify -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction Stop }
         Undo  = $null
+    }
+
+    # ---- D: slow or freezing
+    # The same switch Task Manager's Startup tab flips: first byte 03 = off.
+    disableStartup = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            if (-not (Test-Path $t.Approved)) { New-Item $t.Approved -Force | Out-Null }
+            $t.Saved = (Get-ItemProperty $t.Approved -ErrorAction SilentlyContinue).($t.Value)
+            Set-ItemProperty $t.Approved -Name $t.Value -Value ([byte[]](3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)) -Type Binary -ErrorAction Stop
+        }
+        Undo = {
+            param($t)
+            if ($null -eq $t.Saved) { Remove-ItemProperty $t.Approved -Name $t.Value -ErrorAction Stop }
+            else { Set-ItemProperty $t.Approved -Name $t.Value -Value ([byte[]]$t.Saved) -Type Binary -ErrorAction Stop }
+        }
+    }
+    disableStartupMachine = @{
+        Note = 'undo'; Admin = $true
+        Apply = { param($t) & $script:Fixes.disableStartup.Apply $t }
+        Undo  = { param($t) & $script:Fixes.disableStartup.Undo $t }
+    }
+    closeProcess = @{
+        Note = 'unsaved'; Admin = $false
+        Apply = { param($t) Get-Process -Name $t.Name -ErrorAction Stop | Stop-Process -Force -ErrorAction Stop }
+        Undo  = $null
+    }
+    # Only files untouched for a day: whatever is in use right now stays.
+    emptyTemp = @{
+        Note = 'temp'; Admin = $false
+        Apply = {
+            param($t)
+            $cutoff = (Get-Date).AddDays(-1)
+            Get-ChildItem -LiteralPath $env:TEMP -Recurse -File -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.LastWriteTime -lt $cutoff } | Remove-Item -Force -ErrorAction SilentlyContinue
+        }
+        Undo = $null
+    }
+    emptyRecycleBin = @{
+        Note = 'noundo'; Admin = $false
+        Apply = { param($t) Clear-RecycleBin -Force -ErrorAction Stop }
+        Undo  = $null
+    }
+
+    # ---- E: Windows and updates
+    enableUpdateService = @{
+        Note = 'undo'; Admin = $true
+        Apply = {
+            param($t)
+            $t.Saved = [string](Get-Service wuauserv).StartType
+            Set-Service wuauserv -StartupType Manual -ErrorAction Stop
+            Start-Service wuauserv -ErrorAction Stop
+        }
+        Undo = { param($t) Stop-Service wuauserv -Force -ErrorAction SilentlyContinue; Set-Service wuauserv -StartupType $t.Saved -ErrorAction Stop }
+    }
+    # The same values the "Resume updates" button in Settings clears.
+    resumeUpdates = @{
+        Note = 'undo'; Admin = $true
+        Apply = {
+            param($t)
+            $key = 'HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings'
+            $names = 'PauseUpdatesExpiryTime', 'PauseUpdatesStartTime', 'PauseFeatureUpdatesStartTime', 'PauseFeatureUpdatesEndTime', 'PauseQualityUpdatesStartTime', 'PauseQualityUpdatesEndTime'
+            $now = Get-ItemProperty $key -ErrorAction Stop
+            $t.Saved = @{}
+            foreach ($n in $names) {
+                if ($null -ne $now.$n) { $t.Saved[$n] = $now.$n; Remove-ItemProperty $key -Name $n -ErrorAction Stop }
+            }
+        }
+        Undo = {
+            param($t)
+            foreach ($n in $t.Saved.Keys) { Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings' -Name $n -Value $t.Saved[$n] -ErrorAction Stop }
+        }
+    }
+    # The classic cure for stuck updates: a fresh download folder. The old
+    # one is renamed, not deleted, so nothing is lost if it matters.
+    resetUpdates = @{
+        Note = 'redownload'; Admin = $true
+        Apply = {
+            param($t)
+            $services = 'wuauserv', 'bits', 'cryptsvc'
+            foreach ($s in $services) { Stop-Service $s -Force -ErrorAction SilentlyContinue }
+            $folder = Join-Path $env:SystemRoot 'SoftwareDistribution'
+            if (Test-Path $folder) { Rename-Item $folder ('SoftwareDistribution.old-' + (Get-Date -Format 'yyyyMMdd-HHmmss')) -ErrorAction Stop }
+            foreach ($s in $services) { Start-Service $s -ErrorAction SilentlyContinue }
+        }
+        Undo = $null
+    }
+    syncClock = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            if ([string](Get-Service w32time).StartType -eq 'Disabled') { Set-Service w32time -StartupType Manual -ErrorAction Stop }
+            Start-Service w32time -ErrorAction SilentlyContinue
+            & w32tm.exe /resync /force | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "w32tm /resync: $LASTEXITCODE" }
+        }
+        Undo = $null
+    }
+    # DISM repairs Windows' own store of system files (from Windows Update),
+    # then SFC repairs the files in use from that store. Their progress shows
+    # in the window while they run.
+    repairWindows = @{
+        Note = 'long'; Admin = $true
+        Apply = {
+            param($t)
+            & dism.exe /Online /Cleanup-Image /RestoreHealth
+            & sfc.exe /scannow
+        }
+        Undo = $null
+    }
+    disableFastStartup = @{
+        Note = 'undo'; Admin = $true
+        Apply = {
+            param($t)
+            $key = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power'
+            $t.Saved = (Get-ItemProperty $key).HiberbootEnabled
+            Set-ItemProperty $key -Name HiberbootEnabled -Value 0 -Type DWord -ErrorAction Stop
+        }
+        Undo = { param($t) Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power' -Name HiberbootEnabled -Value $t.Saved -Type DWord -ErrorAction Stop }
     }
 
     startBtService = @{

@@ -1,14 +1,14 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 55%** `███████████░░░░░░░░░` 23 of 42 done · 0 in progress · 17 open · 0 blocked · 2 waiting on a decision
+**Progress: 60%** `████████████░░░░░░░░` 25 of 42 done · 0 in progress · 15 open · 0 blocked · 2 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/17) |
+| Next up | `░░░░░░░░░░` | 0% (0/15) |
 | Blocked on Shamil | `░░░░░░░░░░` | 0% (0/2) |
-| Recently done | `██████████` | 100% (18/18) |
+| Recently done | `██████████` | 100% (20/20) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
@@ -59,8 +59,12 @@ Afdrukken / Sluiten, nothing saved), and an admin fix now offers to
 **Area C** (printer, devices, Bluetooth) is built too. **Decided 26 Sep:
 the AI chat comes last**, after everything else including 0.1.0.
 
-Next, recommended: **B** (sound, screen, video calls), then **D** and
-**E**, same pattern.
+Areas **B**, **D** and **E** followed the same day: every menu option
+except **A4** (email) now runs real checks. Shamil tests everything at the
+end (he said so on 26 Sep), so work carries on without waiting for him.
+
+Next, recommended: **A4**, then the remaining fixes and the restore point.
+Visit memory waits on the relay decision.
 
 **Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
 name and **95%** signal correctly. The drop-out count in A2 has not been
@@ -182,9 +186,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ## Next up
 
 **Phase 1: checks (offline, read-only)**
-- [ ] **A4** email: which mail program or webmail, then reach its servers (IMAP/SMTP ports). Needs a question first, like A3
-- [ ] **D** ← recommended, next: disk space, memory and CPU hogs, startup programs, recent crashes, uptime
-- [ ] **E** Windows Update service, last success, pending reboot
+- [ ] **A4** ← recommended, next: email: which mail program or webmail, then reach its servers (IMAP/SMTP ports). Needs a question first, like A3
 
 **Phase 2: fixes, proof and the note**
 - [ ] More fixes. Done: disable task, close remote tool, proxy off, flush DNS, renew IP, and for C: start/restart the print service, clear the queue, set the default printer, test page, switch a device on, restart a device, start the Bluetooth service. Still to do: reset Winsock, restart adapter; set default audio; restart audio service; uninstall a remote-access tool (through its own uninstaller); block a notification site (the browser must be closed first, or it overwrites the change)
@@ -219,6 +221,32 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Phase 1, areas D and E: Slow, freezing, Windows & updates** *(26 Sep)*
+- [x] **D1–D4** (`src/checks/performance.ps1`). CPU from the
+      Win32_PerfFormattedData classes, because Get-Counter's names are
+      translated. *D1*: system disk space, HDD or SSD, memory in use and
+      total, processor now and its busiest program, days since restart,
+      startup programs. *D2*: startup programs, disk, memory. *D3*: programs
+      that crashed or froze this week (Windows' own helpers such as dllhost
+      are left out), blue screens and unexpected power-offs in 30 days.
+      *D4*: Temp, Recycle Bin and Downloads sizes (about 10 s, so only in
+      D4). Fixes: stop a program starting with Windows (the same
+      StartupApproved switch as Task Manager, undoable; never antivirus,
+      sound, touchpad or OneDrive), close a program hogging the PC
+      (unsaved work lost, said so), delete temp files older than a day,
+      empty the Recycle Bin (cannot be undone, said so)
+- [x] **E1–E3** (`src/checks/updates.ps1`). *E1*: Windows 10 (no security
+      updates since 14 Oct 2025), the update service switched off, updates
+      paused, last real update (Defender's daily definitions left out),
+      failed updates with their error code, restart pending, space. *E2*:
+      activation, the clock against internet time (a wrong clock gives
+      certificate errors), restart pending, crashes in the last 3 days.
+      *E3*: restart pending, fast startup, uptime. Fixes: switch the update
+      service on, resume updates, reset Windows Update (the download folder
+      is renamed, not deleted), set the clock, DISM + SFC repair (15–30
+      min), fast startup off. Live on Shamil's PC: all correct. 36 guides,
+      11 fixes, 30 tests
 
 **Phase 1, area B: Sound, screen & video calls** *(26 Sep)*
 - [x] **B1, B2, B3** (`src/checks/sound.ps1`, `src/checks/audio-interop.ps1`).
@@ -445,6 +473,11 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
   documented. It's what Settings uses itself and has been stable since
   Windows 7, but a future Windows could break it. Then the step-by-step
   guide still works.
+- **Windows 11 feature versions also go out of support** (for example 24H2
+  Home in October 2026). E1 only flags Windows 10, because the Windows 11
+  dates move every year and would need updating in the code.
+- **The DISM + SFC repair runs inside the Housecall window** and prints its
+  own progress. It needs internet for DISM and takes 15–30 minutes.
 - **Undo only covers the current session.** Once Housecall is closed, a
   disabled task has to be switched back on in Task Scheduler. The step-by-step
   guide says where.
@@ -478,6 +511,8 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Admin restart | `Start-HcElevated` in `src/fixes.ps1`; `$HcSource` in `dev.ps1` and `setup.ps1` |
 | Area B | `src/checks/sound.ps1`: `Test-HcSound` (B1), `Test-HcCalls` (B2), `Test-HcScreen` (B3); `src/checks/audio-interop.ps1`: the C# for Core Audio |
 | Area C | `src/checks/devices.ps1`: `Test-HcPrinter` (C1), `Test-HcInputDevices` (C2), `Test-HcBluetooth` (C3), `Add-HcDeviceProblem` (shared by C2 and C3) |
+| Area D | `src/checks/performance.ps1`: `Test-HcSlow` (D1), `Test-HcSlowStart` (D2), `Test-HcCrashes` (D3), `Test-HcDiskSpace` (D4) |
+| Area E | `src/checks/updates.ps1`: `Test-HcUpdates` (E1), `Test-HcErrors` (E2), `Test-HcShutdown` (E3) |
 | Area F | `src/checks/security.ps1`: the remote-tool list, known notification sites, `Test-HcSecurity` (F1–F3 share it; `$script:SecurityChecks` says which parts each runs) |
 | Next areas | `src/checks/<area>.ps1`, one file per letter, registering its own handlers |
 | Fixes | `fixes/` *(planned)*: the approved list, each with its undo |

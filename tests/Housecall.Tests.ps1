@@ -15,6 +15,8 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\checks\devices.ps1')
 . (Join-Path $root 'src\checks\audio-interop.ps1')
 . (Join-Path $root 'src\checks\sound.ps1')
+. (Join-Path $root 'src\checks\performance.ps1')
+. (Join-Path $root 'src\checks\updates.ps1')
 . (Join-Path $root 'src\fixes.ps1')
 . (Join-Path $root 'src\note.ps1')
 
@@ -594,6 +596,193 @@ Describe 'B: sound, video calls and screen' {
     }
 }
 
+Describe 'D: slow or freezing' {
+    $script:Lang = 'en'
+    $item = { param($name, $enabled = $true, $machine = $false)
+        [pscustomobject]@{ Name = $name; Value = $name; Machine = $machine; Approved = 'HKCU:\x'; Enabled = $enabled } }
+    $perf = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{
+            Disk = [pscustomobject]@{ Drive = 'C:'; FreeGB = 180.5; SizeGB = 476.9; FreePercent = 38; Media = 'SSD' }
+            RamGB = 16; MemoryUsed = 45; Cpu = 12
+            Busy = @([pscustomobject]@{ Name = 'chrome'; Cpu = 5; MemoryMB = 900 })
+            UptimeDays = 1
+            Startup = @((& $item 'SecurityHealth'), (& $item 'Spotify'), (& $item 'OneDrive'))
+            CrashApps = @(); Shutdowns = 0; BlueScreens = 0; Sizes = $null
+        }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+    $disk = { param($free, $pct, $media = 'SSD') [pscustomobject]@{ Drive = 'C:'; FreeGB = $free; SizeGB = 237; FreePercent = $pct; Media = $media } }
+    $many = @(1..12 | ForEach-Object { & $item "App$_" })
+
+    $slowCases = @(
+        @{ Name = 'a healthy PC';              Change = @{};                                            Finding = 'slowOk' }
+        @{ Name = 'a full disk';               Change = @{ Disk = (& $disk 3.1 1) };                    Finding = 'diskFull' }
+        @{ Name = 'a nearly full disk';        Change = @{ Disk = (& $disk 20 9) };                     Finding = 'diskLow' }
+        @{ Name = 'memory at 95%';             Change = @{ MemoryUsed = 95 };                           Finding = 'memoryFull' }
+        @{ Name = 'the processor at 97%';      Change = @{ Cpu = 97 };                                  Finding = 'cpuBusy' }
+        @{ Name = 'running for 23 days';       Change = @{ UptimeDays = 23 };                           Finding = 'longUptime' }
+        @{ Name = 'Windows on an HDD';         Change = @{ Disk = (& $disk 180 38 'HDD') };             Finding = 'hddSystem' }
+        @{ Name = '4 GB of memory';            Change = @{ RamGB = 3.9 };                               Finding = 'lowRam' }
+        @{ Name = '12 startup programs';       Change = @{ Startup = $many };                           Finding = 'manyStartup' }
+        @{ Name = '12 startup programs, off';  Change = @{ Startup = @(1..12 | ForEach-Object { & $item "App$_" $false }) }; Finding = 'slowOk' }
+    )
+    foreach ($c in $slowCases) {
+        It "D1 finds '$($c.Finding)' when: $($c.Name)" { (Test-HcSlow (& $perf $c.Change)).FindingId | Should Be $c.Finding }
+    }
+
+    It 'D1 offers to stop startup programs, but never the ones that should stay' {
+        $r = Test-HcSlow (& $perf @{ Startup = @((& $item 'SecurityHealth'), (& $item 'RtkAudUService'), (& $item 'OneDrive'), (& $item 'Spotify'), (& $item 'Steam' $true $true)) })
+        @($r.Actions | ForEach-Object { "$($_.FixId) $($_.Target.Label)" }) | Should Be @('disableStartup Spotify', 'disableStartupMachine Steam')
+    }
+
+    It 'D1 offers to close a program hogging the processor, never a system process' {
+        $hog = Test-HcSlow (& $perf @{ Cpu = 95; Busy = @([pscustomobject]@{ Name = 'FortniteClient-Win64-Shipping'; Cpu = 70; MemoryMB = 4200 }) })
+        @($hog.Actions | Where-Object { $_.FixId -eq 'closeProcess' })[0].Target.Name | Should Be 'FortniteClient-Win64-Shipping'
+        $sys = Test-HcSlow (& $perf @{ Cpu = 95; Busy = @([pscustomobject]@{ Name = 'svchost'; Cpu = 70; MemoryMB = 300 }) })
+        @($sys.Actions | Where-Object { $_.FixId -eq 'closeProcess' }).Count | Should Be 0
+    }
+
+    It 'D2 looks at startup and the disk' {
+        (Test-HcSlowStart (& $perf)).FindingId | Should Be 'startOk'
+        (Test-HcSlowStart (& $perf @{ Startup = $many })).FindingId | Should Be 'manyStartup'
+        (Test-HcSlowStart (& $perf @{ Startup = $many; Disk = (& $disk 180 38 'HDD') })).FindingId | Should Be 'hddSystem'
+    }
+
+    It 'D3 finds crashing programs, blue screens and sudden power-offs' {
+        (Test-HcCrashes (& $perf)).FindingId | Should Be 'crashOk'
+        $crash = Test-HcCrashes (& $perf @{ CrashApps = @([pscustomobject]@{ Name = 'WINWORD'; Count = 6 }) })
+        $crash.FindingId | Should Be 'crashes'
+        $crash.FindingArgs | Should Be @('WINWORD', 6)
+        (Test-HcCrashes (& $perf @{ CrashApps = @([pscustomobject]@{ Name = 'WINWORD'; Count = 1 }) })).FindingId | Should Be 'someCrashes'
+        (Test-HcCrashes (& $perf @{ BlueScreens = 2; CrashApps = @([pscustomobject]@{ Name = 'x'; Count = 9 }) })).FindingId | Should Be 'blueScreens'
+        (Test-HcCrashes (& $perf @{ Shutdowns = 3 })).FindingId | Should Be 'shutdowns'
+    }
+
+    It 'D4 has its own findings, and offers the clean-ups that are worth it' {
+        $full = Test-HcDiskSpace (& $perf @{ Disk = (& $disk 3.1 1); Sizes = [pscustomobject]@{ TempGB = 2.3; BinGB = 0.04; DownloadsGB = 12 } })
+        $full.FindingId | Should Be 'spaceFull'
+        @($full.Actions | ForEach-Object { $_.FixId }) | Should Be @('emptyTemp')
+        $ok = Test-HcDiskSpace (& $perf @{ Sizes = [pscustomobject]@{ TempGB = 0.1; BinGB = 1.5; DownloadsGB = 1 } })
+        $ok.FindingId | Should Be 'diskOk'
+        $ok.FindingArgs | Should Be @('C:', 180.5)
+        @($ok.Actions | ForEach-Object { $_.FixId }) | Should Be @('emptyRecycleBin')
+        (Test-HcDiskSpace (& $perf @{ Disk = (& $disk 180 38 'HDD') })).FindingId | Should Be 'diskOk'
+    }
+
+    It 'switches a startup program off the way Task Manager does, and back' {
+        $key = 'HKCU:\Software\HousecallTest\StartupApproved\Run'
+        New-Item $key -Force | Out-Null
+        try {
+            $t = @{ Label = 'Spotify'; Approved = $key; Value = 'Spotify' }
+            & $script:Fixes.disableStartup.Apply $t
+            (Get-ItemProperty $key).Spotify[0] | Should Be 3
+            & $script:Fixes.disableStartup.Undo $t
+            $null -eq (Get-ItemProperty $key -ErrorAction SilentlyContinue).Spotify | Should Be $true
+            Set-ItemProperty $key -Name Spotify -Value ([byte[]](2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)) -Type Binary
+            $t2 = @{ Label = 'Spotify'; Approved = $key; Value = 'Spotify' }
+            & $script:Fixes.disableStartup.Apply $t2
+            & $script:Fixes.disableStartup.Undo $t2
+            (Get-ItemProperty $key).Spotify[0] | Should Be 2
+        } finally {
+            Remove-Item 'HKCU:\Software\HousecallTest' -Recurse -Force
+        }
+    }
+
+    It 'never shows a missing-string marker, in either language' {
+        foreach ($lang in @('en', 'nl')) {
+            $script:Lang = $lang
+            $reports = @($slowCases | ForEach-Object { Test-HcSlow (& $perf $_.Change) }) +
+                       @((Test-HcCrashes (& $perf @{ CrashApps = @([pscustomobject]@{ Name = 'x'; Count = 5 }); BlueScreens = 1; Shutdowns = 1 })),
+                         (Test-HcDiskSpace (& $perf @{ Disk = (& $disk 3 1); Sizes = [pscustomobject]@{ TempGB = 2; BinGB = 2; DownloadsGB = 2 } })))
+            foreach ($r in $reports) {
+                @($r.Results | Where-Object { $_.Text -match '\[\w+(\.\w+)+\]' }).Count | Should Be 0
+                @($r.Actions | ForEach-Object { Get-HcFixLabel $_ } | Where-Object { $_ -match '\[\w+(\.\w+)+\]|\{\d\}' }).Count | Should Be 0
+                $all = @('finding.' + $r.FindingId) + @($r.FindingArgs)
+                (T @all) | Should Not Match '\{\d\}|^\['
+            }
+        }
+        $script:Lang = 'en'
+    }
+}
+
+Describe 'E: Windows and updates' {
+    $script:Lang = 'en'
+    $now = [datetime]'2026-09-26 10:00'
+    $upd = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{
+            Now = $now; ServiceDisabled = $false; RebootPending = $false; PausedUntil = $null; Windows10 = $false
+            History = [pscustomobject]@{ Known = $true; LastSuccess = [datetime]'2026-09-12'; Failures = @() }
+            Disk = [pscustomobject]@{ Drive = 'C:'; FreeGB = 180; SizeGB = 476; FreePercent = 38; Media = 'SSD' }
+        }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+    $fail = [pscustomobject]@{ Known = $true; LastSuccess = [datetime]'2026-09-12'; Failures = @([pscustomobject]@{ Title = '2026-09 Cumulative Update'; Code = '0x800F0922' }) }
+
+    $updCases = @(
+        @{ Name = 'up to date';                 Change = @{};                                                               Finding = 'updatesOk' }
+        @{ Name = 'Windows 10';                 Change = @{ Windows10 = $true };                                           Finding = 'windows10' }
+        @{ Name = 'the service switched off';   Change = @{ ServiceDisabled = $true; Windows10 = $true };                  Finding = 'updateServiceDisabled' }
+        @{ Name = 'paused until October';       Change = @{ PausedUntil = [datetime]'2026-10-10' };                        Finding = 'updatesPaused' }
+        @{ Name = 'a pause that has run out';   Change = @{ PausedUntil = [datetime]'2026-08-01' };                        Finding = 'updatesOk' }
+        @{ Name = 'a restart waiting';          Change = @{ RebootPending = $true };                                       Finding = 'rebootPending' }
+        @{ Name = 'a failed update';            Change = @{ History = $fail };                                             Finding = 'updateFailures' }
+        @{ Name = 'nothing for 80 days';        Change = @{ History = [pscustomobject]@{ Known = $true; LastSuccess = [datetime]'2026-07-08'; Failures = @() } }; Finding = 'updatesStale' }
+        @{ Name = 'too little space';           Change = @{ Disk = [pscustomobject]@{ Drive = 'C:'; FreeGB = 4.2; SizeGB = 118; FreePercent = 3; Media = 'SSD' } }; Finding = 'updateSpace' }
+    )
+    foreach ($c in $updCases) {
+        It "E1 finds '$($c.Finding)' when: $($c.Name)" { (Test-HcUpdates (& $upd $c.Change)).FindingId | Should Be $c.Finding }
+    }
+
+    It 'E1 offers the matching fixes' {
+        @((Test-HcUpdates (& $upd @{ ServiceDisabled = $true })).Actions)[0].FixId | Should Be 'enableUpdateService'
+        @((Test-HcUpdates (& $upd @{ PausedUntil = [datetime]'2026-10-10' })).Actions)[0].FixId | Should Be 'resumeUpdates'
+        @((Test-HcUpdates (& $upd @{ History = $fail })).Actions)[0].FixId | Should Be 'resetUpdates'
+        @((Test-HcUpdates (& $upd)).Actions).Count | Should Be 0
+    }
+
+    $err = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{ Activated = $true; ClockOffset = 1; RebootPending = $false; Crashes = @() }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+    It 'E2 finds a wrong clock, no activation, a waiting restart and a crashing program' {
+        (Test-HcErrors (& $err)).FindingId | Should Be 'errorsOk'
+        $clock = Test-HcErrors (& $err @{ ClockOffset = -3700 })
+        $clock.FindingId | Should Be 'clockWrong'
+        $clock.FindingArgs | Should Be @(62)
+        @($clock.Actions | ForEach-Object { $_.FixId }) | Should Be @('syncClock', 'repairWindows')
+        (Test-HcErrors (& $err @{ ClockOffset = $null })).FindingId | Should Be 'errorsOk'
+        (Test-HcErrors (& $err @{ Activated = $false })).FindingId | Should Be 'notActivated'
+        (Test-HcErrors (& $err @{ RebootPending = $true })).FindingId | Should Be 'rebootPending'
+        (Test-HcErrors (& $err @{ Crashes = @([pscustomobject]@{ Name = 'EXCEL'; Count = 2 }) })).FindingArgs | Should Be @('EXCEL')
+    }
+
+    It 'E3 finds a waiting restart, fast startup and a long uptime' {
+        $sd = { param([hashtable]$c = @{}) $f = [pscustomobject]@{ RebootPending = $false; FastStartup = $false; UptimeDays = 1 }; foreach ($k in $c.Keys) { $f.$k = $c[$k] }; $f }
+        (Test-HcShutdown (& $sd)).FindingId | Should Be 'shutdownOk'
+        (Test-HcShutdown (& $sd @{ RebootPending = $true; FastStartup = $true })).FindingId | Should Be 'rebootPending'
+        $fast = Test-HcShutdown (& $sd @{ FastStartup = $true })
+        $fast.FindingId | Should Be 'fastStartup'
+        $fast.Actions[0].FixId | Should Be 'disableFastStartup'
+        (Test-HcShutdown (& $sd @{ UptimeDays = 30 })).FindingId | Should Be 'longUptime'
+    }
+
+    It 'never shows a missing-string marker, in either language' {
+        foreach ($lang in @('en', 'nl')) {
+            $script:Lang = $lang
+            $reports = @($updCases | ForEach-Object { Test-HcUpdates (& $upd $_.Change) }) +
+                       @((Test-HcErrors (& $err @{ ClockOffset = 900; Activated = $false; Crashes = @([pscustomobject]@{ Name = 'x'; Count = 1 }) })),
+                         (Test-HcShutdown ([pscustomobject]@{ RebootPending = $true; FastStartup = $true; UptimeDays = 12 })))
+            foreach ($r in $reports) {
+                @($r.Results | Where-Object { $_.Text -match '\[\w+(\.\w+)+\]' }).Count | Should Be 0
+                @($r.Actions | ForEach-Object { Get-HcFixLabel $_ } | Where-Object { $_ -match '\[\w+(\.\w+)+\]|\{\d\}' }).Count | Should Be 0
+                $all = @('finding.' + $r.FindingId) + @($r.FindingArgs)
+                (T @all) | Should Not Match '\{\d\}|^\['
+            }
+        }
+        $script:Lang = 'en'
+    }
+}
+
 Describe 'Fixes offered by the checks' {
     $script:Lang = 'en'
     $task = { param($name, $command, $level = 'weak', $disabled = $false)
@@ -842,7 +1031,8 @@ Describe 'Findings' {
         $ids += $script:SecurityPriority
         $ids += @($script:SecurityChecks.Values | ForEach-Object { $_.Clean })
         # Area C names its findings as $found['id'], Set-HcFinding $r 'id', or the clean id last on Select-HcFinding.
-        $ids += @(Get-Content (Join-Path $root 'src\checks\devices.ps1'), (Join-Path $root 'src\checks\sound.ps1') | ForEach-Object {
+        $ids += @('spaceFull', 'spaceLow')      # D4 renames diskFull / diskLow
+        $ids += @(Get-Content (Join-Path $root 'src\checks\devices.ps1'), (Join-Path $root 'src\checks\sound.ps1'), (Join-Path $root 'src\checks\performance.ps1'), (Join-Path $root 'src\checks\updates.ps1') | ForEach-Object {
             [regex]::Matches($_, "\`$found\['(\w+)'\]|Set-HcFinding \`$r '(\w+)'|Select-HcFinding .* '(\w+)'\s*$") | ForEach-Object {
                 @($_.Groups[1].Value, $_.Groups[2].Value, $_.Groups[3].Value) | Where-Object { $_ }
             }
