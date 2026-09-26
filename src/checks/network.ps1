@@ -455,15 +455,26 @@ function Invoke-HcA3 {
         if (-not $hostName) { Write-Warn2 (T 'site.invalid' $typed) }
     }
     Write-Host ''
-    # Not .GetNewClosure(): a closure cannot see Housecall's functions when it
-    # runs through [scriptblock]::Create. A script variable carries the site.
-    $script:HcSiteHost = $hostName
-    {
-        $base = Test-HcInternet (Get-HcNetworkFacts)
-        # The internet itself is down: that is the answer, not the site.
-        if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
-        Test-HcSite (Get-HcSiteFacts $script:HcSiteHost)
-    }
+    New-HcSiteCheck $hostName
+}
+
+function Invoke-HcSiteCheck {
+    param([string]$HostName)
+    $base = Test-HcInternet (Get-HcNetworkFacts)
+    # The internet itself is down: that is the answer, not the site.
+    if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
+    Test-HcSite (Get-HcSiteFacts $HostName)
+}
+
+# The A3 check for one site, as a scriptblock that names it. Built from text
+# rather than a closure: a closure cannot see Housecall's functions when it
+# runs through [scriptblock]::Create, and a shared variable would be
+# overwritten when the AI runs several checks. The name is checked first,
+# so only letters, digits, dots and dashes ever reach the text.
+function New-HcSiteCheck {
+    param([string]$HostName)
+    if ($HostName -notmatch '^[a-z0-9.-]+$') { return $null }
+    [scriptblock]::Create("Invoke-HcSiteCheck '$HostName'")
 }
 
 $script:ProblemHandlers['A1'] = 'Invoke-HcA1'

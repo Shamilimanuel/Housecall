@@ -40,7 +40,23 @@ $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
 | D | Slow or freezing | D1 slow, D2 slow start, D3 crashes, D4 disk full: working |
 | E | Windows & updates | E1 updates, E2 error message, E3 won't shut down: working |
 | F | Safety & scams | F1 fake virus pop-up, F2 someone got into my PC (AnyDesk, TeamViewer, …), F3 full check: working |
-| ? | AI chat | planned |
+| ? | AI chat | working, after a one-time setup (below) |
+| H | Visit history | working, after the same setup |
+
+## AI chat and visit history: one-time setup
+
+The AI chat (Claude, through a small relay on Supabase that holds the key)
+and the visit history are unlocked with a code from Google Authenticator,
+once per visit. To set it up, run this on your own PC (not a client's):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\setup-ai.ps1          # makes the secret, QR code, Supabase and Anthropic steps
+powershell -ExecutionPolicy Bypass -File .\tools\setup-ai.ps1 -Check   # only checks the relay
+```
+
+Only the typed problem and the check results go to the AI: no files,
+passwords or documents. The AI can only pick Housecall's own checks and
+fixes, and every fix still asks first.
 
 ## Development
 

@@ -776,6 +776,41 @@ $script:Strings = @{
         'fix.restorePointOk'         = 'Restore point made.'
         'fix.restorePointRecent'     = 'Windows already made a restore point in the past 24 hours.'
         'fix.restorePointNone'       = 'No restore point: System Protection is off on this PC.'
+
+        # ---- relay, unlock, visit memory
+        'relay.askCode'      = 'Code from Google Authenticator (Enter = skip)'
+        'relay.unlocked'     = 'Unlocked until {0}.'
+        'relay.wrongCode'    = 'That code is not right. Type the code the app shows now.'
+        'relay.codeUsed'     = 'That code was already used. Wait for the next one (every 30 seconds).'
+        'relay.locked'       = 'Too many wrong codes: wait 15 minutes.'
+        'relay.notSetUp'     = 'The relay is not set up yet: run tools\setup-ai.ps1 on your own PC.'
+        'relay.expired'      = 'The unlock has expired: type a new code.'
+        'relay.unreachable'  = 'The relay cannot be reached. Is the Supabase project paused? Restore it in the Supabase dashboard.'
+        'relay.aiKey'        = 'The AI key in Supabase is not right: check ANTHROPIC_API_KEY.'
+        'relay.aiBusy'       = 'The AI is busy right now: try again in a minute.'
+        'relay.error'        = 'The relay answered with an error ({0}).'
+        'menu.history'       = 'Visit history'
+        'mem.title'          = 'Visit history of this PC'
+        'mem.none'           = 'No earlier visits recorded for this PC.'
+        'mem.known'          = 'Known PC{0}: last visit {1}'
+        'mem.saveAsk'        = 'Save this visit in your visit history? Code from Google Authenticator (Enter = skip)'
+        'mem.labelAsk'       = 'Name or note for this PC, for your records (Enter = {0})'
+        'mem.noLabel'        = 'none'
+        'mem.saved'          = 'Visit saved in your visit history.'
+        'mem.notSaved'       = 'The visit was not saved: {0}'
+
+        # ---- the AI chat
+        'ai.describe'        = 'Describe the problem in your own words (Enter = back)'
+        'ai.privacy'         = 'Only the problem and the check results go to the AI. No files, passwords or documents.'
+        'ai.thinking'        = 'The AI is thinking...'
+        'ai.running'         = 'The AI checks: {0}  {1}'
+        'ai.answer'          = 'AI:'
+        'ai.confidence.low'    = 'Certainty: low (the checks do not show the cause)'
+        'ai.confidence.medium' = 'Certainty: medium'
+        'ai.confidence.high'   = 'Certainty: high'
+        'ai.steps'           = 'Steps:'
+        'ai.refused'         = 'The AI did not answer this question. Choose a letter from the menu.'
+        'ai.noAnswer'        = 'The AI did not reach an answer. Choose a letter from the menu.'
     }
 
     nl = @{
@@ -1541,6 +1576,41 @@ $script:Strings = @{
         'fix.restorePointOk'         = 'Herstelpunt gemaakt.'
         'fix.restorePointRecent'     = 'Windows heeft de afgelopen 24 uur al een herstelpunt gemaakt.'
         'fix.restorePointNone'       = 'Geen herstelpunt: Systeembeveiliging staat uit op deze pc.'
+
+        # ---- relay, unlock, visit memory
+        'relay.askCode'      = 'Code uit Google Authenticator (Enter = overslaan)'
+        'relay.unlocked'     = 'Ontgrendeld tot {0}.'
+        'relay.wrongCode'    = 'Die code klopt niet. Typ de code die de app nu laat zien.'
+        'relay.codeUsed'     = 'Die code is al gebruikt. Wacht op de volgende (elke 30 seconden).'
+        'relay.locked'       = 'Te veel verkeerde codes: wacht 15 minuten.'
+        'relay.notSetUp'     = 'De relay is nog niet ingesteld: start tools\setup-ai.ps1 op uw eigen pc.'
+        'relay.expired'      = 'De ontgrendeling is verlopen: typ een nieuwe code.'
+        'relay.unreachable'  = 'De relay is niet bereikbaar. Staat het Supabase-project op pauze? Herstel het in het Supabase-dashboard.'
+        'relay.aiKey'        = 'De AI-sleutel in Supabase klopt niet: controleer ANTHROPIC_API_KEY.'
+        'relay.aiBusy'       = 'De AI is nu druk: probeer het over een minuut opnieuw.'
+        'relay.error'        = 'De relay gaf een fout ({0}).'
+        'menu.history'       = 'Bezoekgeschiedenis'
+        'mem.title'          = 'Bezoekgeschiedenis van deze pc'
+        'mem.none'           = 'Geen eerdere bezoeken vastgelegd voor deze pc.'
+        'mem.known'          = 'Bekende pc{0}: laatste bezoek {1}'
+        'mem.saveAsk'        = 'Dit bezoek opslaan in uw bezoekgeschiedenis? Code uit Google Authenticator (Enter = overslaan)'
+        'mem.labelAsk'       = 'Naam of kenmerk voor deze pc, voor uw administratie (Enter = {0})'
+        'mem.noLabel'        = 'geen'
+        'mem.saved'          = 'Bezoek opgeslagen in uw bezoekgeschiedenis.'
+        'mem.notSaved'       = 'Het bezoek is niet opgeslagen: {0}'
+
+        # ---- the AI chat
+        'ai.describe'        = 'Beschrijf het probleem in uw eigen woorden (Enter = terug)'
+        'ai.privacy'         = 'Alleen het probleem en de uitkomst van de controles gaan naar de AI. Geen bestanden, wachtwoorden of documenten.'
+        'ai.thinking'        = 'De AI denkt na...'
+        'ai.running'         = 'De AI controleert: {0}  {1}'
+        'ai.answer'          = 'AI:'
+        'ai.confidence.low'    = 'Zekerheid: laag (de controles laten de oorzaak niet zien)'
+        'ai.confidence.medium' = 'Zekerheid: middel'
+        'ai.confidence.high'   = 'Zekerheid: hoog'
+        'ai.steps'           = 'Stappen:'
+        'ai.refused'         = 'De AI heeft deze vraag niet beantwoord. Kies een letter uit het menu.'
+        'ai.noAnswer'        = 'De AI kwam niet tot een antwoord. Kies een letter uit het menu.'
     }
 }
 

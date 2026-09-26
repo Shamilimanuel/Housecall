@@ -157,13 +157,21 @@ function Invoke-HcA4 {
         if (-not $domain) { Write-Warn2 (T 'mail.invalid' $typed) }
     }
     Write-Host ''
-    # A script variable, not a closure; see Invoke-HcA3.
-    $script:HcMailDomain = $domain
-    {
-        $base = Test-HcInternet (Get-HcNetworkFacts)
-        if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
-        Test-HcMail (Get-HcMailFacts $script:HcMailDomain)
-    }
+    New-HcMailCheck $domain
+}
+
+function Invoke-HcMailCheck {
+    param([string]$Domain)
+    $base = Test-HcInternet (Get-HcNetworkFacts)
+    if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
+    Test-HcMail (Get-HcMailFacts $Domain)
+}
+
+# The A4 check for one domain; built from text for the same reasons as New-HcSiteCheck.
+function New-HcMailCheck {
+    param([string]$Domain)
+    if ($Domain -notmatch '^[a-z0-9.-]+$') { return $null }
+    [scriptblock]::Create("Invoke-HcMailCheck '$Domain'")
 }
 
 $script:ProblemHandlers['A4'] = 'Invoke-HcA4'

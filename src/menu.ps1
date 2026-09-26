@@ -3,7 +3,8 @@
     straight to a problem, and inside an area a bare 1 means the same as A1.
 
     Reserved keys, never to be used as an area letter:
-        ?  AI chat    0  back    L  language    U  undo this session's fixes    Q  quit
+        ?  AI chat    0  back    L  language    H  visit history
+        U  undo this session's fixes    Q  quit
 #>
 
 $script:Areas = [ordered]@{
@@ -19,7 +20,7 @@ $script:Areas = [ordered]@{
     Turn what was typed into one decision. Pure: no output, no state, so the
     tests can cover every kind of input.
 
-    Kind is one of: empty, area, problem, ai, back, language, undo, quit,
+    Kind is one of: empty, area, problem, ai, back, language, history, undo, quit,
     freetext (a sentence, which the AI chat will take), unknown.
 #>
 function Resolve-HcChoice {
@@ -39,6 +40,7 @@ function Resolve-HcChoice {
     if ($key -eq 'L') { return & $result 'language' $null }
     if ($key -eq 'Q') { return & $result 'quit' $null }
     if ($key -eq 'U') { return & $result 'undo' $null }
+    if ($key -eq 'H') { return & $result 'history' $null }
 
     if ($script:Areas.Contains($key)) { return & $result 'area' $key }
 
@@ -96,7 +98,7 @@ function Show-HcArea {
 # The footer keys shared by every menu screen. U only shows once something
 # was changed in this session.
 function Get-HcFooter {
-    $row = @(, @('L', (T 'menu.language')))
+    $row = @(@('L', (T 'menu.language')), @('H', (T 'menu.history')))
     if ($script:HcChanges.Count -gt 0) { $row += , @('U', (T 'menu.undo')) }
     $row + (, @('Q', (T 'menu.quit')))
 }
@@ -133,39 +135,44 @@ function Invoke-HcProblem {
     $report = & $check
     Write-HcReport $report
     Save-HcVisit $Code $report
+    Invoke-HcReportLoop $Code $check $report
+}
 
-    while (@($report.Actions).Count -gt 0 -or @(Get-HcSteps $report).Count -gt 0) {
-        $result = Invoke-HcActionMenu $report
+<#
+    What follows a report: Wat nu?, a fix, the check again as proof, until
+    Enter. $OnlyFixes (from the AI chat) limits the offered fixes to the
+    ones the AI chose, in its order; they still come from the check itself.
+#>
+function Invoke-HcReportLoop {
+    param([string]$Code, [scriptblock]$Check, [pscustomobject]$Report, [string[]]$OnlyFixes)
+    if ($PSBoundParameters.ContainsKey('OnlyFixes')) { Select-HcActions $Report $OnlyFixes }
+    while (@($Report.Actions).Count -gt 0 -or @(Get-HcSteps $Report).Count -gt 0) {
+        $result = Invoke-HcActionMenu $Report
         if ($result -eq 'back') { return }
         if ($result -eq 'changed') {
             Write-Host ''
             Write-Dim (T 'fix.checkingAgain')
             Write-Host ''
-            $report = & $check
-            Write-HcReport $report
-            Save-HcVisit $Code $report
+            $Report = & $Check
+            Write-HcReport $Report
+            Save-HcVisit $Code $Report
+            if ($PSBoundParameters.ContainsKey('OnlyFixes')) { Select-HcActions $Report $OnlyFixes }
         }
     }
     Write-Host ''
     [void](Read-HcLine (T 'pressEnter'))
 }
 
-# Phase 0 placeholder for the AI chat. It already tells the offline case
-# apart, because that answer stays the same once the chat exists.
-function Invoke-HcAi {
-    param([pscustomobject]$Environment, [string]$Text)
-    Clear-HcScreen
-    Write-Banner $Environment
-    Write-Host ('  ?  ' + (T 'ai.title')) -ForegroundColor Yellow
-    Write-Host ''
-    if ($Text) { Write-Dim (T 'ai.youTyped' $Text) }
-    if (-not $Environment.Online) {
-        Write-Warn2 (T 'ai.offline')
-    } else {
-        Write-Warn2 (T 'ai.notBuilt')
+# Keeps only the offered fixes whose id is in $FixIds, in that order.
+function Select-HcActions {
+    param([pscustomobject]$Report, [string[]]$FixIds)
+    $kept = New-Object System.Collections.ArrayList
+    foreach ($id in @($FixIds)) {
+        foreach ($a in @($Report.Actions | Where-Object { $_.FixId -eq $id })) {
+            if (-not $kept.Contains($a)) { [void]$kept.Add($a) }
+        }
     }
-    Write-Host ''
-    [void](Read-HcLine (T 'pressEnter'))
+    $Report.Actions = $kept
 }
 
 # ---------------------------------------------------------------- main loop --
@@ -188,6 +195,8 @@ function Start-Housecall {
     $script:HcChanges.Clear()
     $script:HcVisit.Clear()
     $script:HandedOff = $false
+    $script:HcToken = $null
+    $script:HcKnownLabel = $null
     $script:Lang = if ($script:Strings.ContainsKey("$Lang".ToLowerInvariant())) { "$Lang".ToLowerInvariant() } else { Get-HcDefaultLanguage }
     $script:HcInputQueue = $null
     if ($PSBoundParameters.ContainsKey('Answers')) {
@@ -228,8 +237,10 @@ function Start-Housecall {
             'back'     { $area = '' }
             'language' { $script:Lang = if ($script:Lang -eq 'nl') { 'en' } else { 'nl' } }
             'undo'     { $message = Invoke-HcUndo }
+            'history'  { Show-HcHistory $environment }
             'unknown'  { $message = T 'menu.unknown' $choice.Value }
             'quit'     {
+                Save-HcVisitRecord $environment
                 Show-HcNote
                 Write-Host ''
                 if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }

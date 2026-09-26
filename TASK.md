@@ -1,20 +1,20 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 69%** `██████████████░░░░░░` 29 of 42 done · 0 in progress · 11 open · 0 blocked · 2 waiting on a decision
+**Progress: 93%** `███████████████████░` 39 of 42 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/11) |
-| Blocked on Shamil | `░░░░░░░░░░` | 0% (0/2) |
-| Recently done | `██████████` | 100% (24/24) |
+| Next up | `░░░░░░░░░░` | 0% (0/3) |
+| Blocked on Shamil | `░░░░░░░░░░` | (none) |
+| Recently done | `██████████` | 100% (34/34) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
 
 Working notes, kept so a new chat can pick up without re-deriving anything.
-Last updated: **26 September 2026**, after **every menu option A1–F3**, all planned fixes, the restore point and `-NoAI`.
+Last updated: **26 September 2026**, after **everything built**: A1–F3, all fixes, visit memory and the AI chat. Left: Shamil's testing.
 
 **How we work this list:** items are worked top to bottom. Pick one, say the
 name, and it gets built. When it is done it moves to *Recently done* and we go
@@ -69,8 +69,12 @@ everything left is either Shamil's (testing on a clean PC and a broken
 one, a real visit), waits on the relay decision (visit memory), or is the
 AI chat, which comes last.
 
-**Next: Shamil tests everything** (the one-liner, then each letter). What he
-finds goes into *Found in testing* below, and gets fixed first.
+**Then the relay, visit memory and the AI chat** (see *Recently done*).
+Before they work, Shamil runs `tools\setup-ai.ps1` once on his own PC.
+
+**Next: Shamil tests everything** (the one-liner, then each letter, then
+H and ?). What he finds goes into *Found in testing* below, and gets fixed
+first.
 
 **Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
 name and **95%** signal correctly. The drop-out count in A2 has not been
@@ -191,34 +195,62 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Next up
 
-**Phase 4: visit memory** *(waits on "where does the relay live")*
-- [ ] A PC fingerprint that is not personal (e.g. a hash of the BIOS serial)
-- [ ] After each visit, send a short record to Shamil's side (the relay, or a file he keeps). Never stored on the client's PC
-- [ ] On start: "Known PC: last visit 3 Mar, C1 printer spooler"
-
 **Phase 5: the one-liner and 0.1.0**
 - [ ] Test the one-liner on a clean Windows 11 with Defender on (hosting itself is done, see *Recently done*)
 - [ ] Break a test PC or VM on purpose (adapter off, bad DNS, stopped spooler, AnyDesk installed) and check each one is found, fixed and proven
 - [ ] Use it at one real client visit
 
-**Last: the AI chat (`?`)** *(decided 26 Sep: after everything else, including 0.1.0)*
-- [ ] Relay: small serverless function holding the key, with its own token (see decisions)
-- [ ] Send the problem text; the model calls checks as tools and reads the results
-- [ ] The model answers in a fixed shape: finding, confidence, fix id from the approved list *or* manual steps
-- [ ] Cap the loop (max tool calls), with a clear "couldn't find it" ending
-- [ ] With no internet, `?` says so and points to the menu
-
 ## Blocked on Shamil
-
-- [?] **Which AI, and who pays?** Claude API is the natural choice. It needs a
-      key and a monthly spending cap. Only blocks the AI chat, which comes last.
-- [?] **Where does the relay live?** Supabase (already used in Leeromgeving) or
-      Cloudflare Workers, both with a free tier. It also stores visit memory in
-      Phase 4.
 
 ---
 
 ## Recently done
+
+**The relay, visit memory and the AI chat** *(26 Sep)*
+- [x] **Decisions:** Claude Opus 5; the relay on a new free Supabase project
+      `housecall` (Frankfurt, separate from Leeromgeving's database, which
+      holds student data); access through a **Google Authenticator code**
+      (Shamil's idea): one code per visit, valid until Housecall closes and
+      at most 4 hours; visit memory before the AI chat
+- [x] **Relay** (`relay/housecall/index.ts`, Edge Function `housecall`,
+      deployed; JWT check off because it has its own login). Holds the
+      Anthropic key and the Authenticator secret as Supabase secrets.
+      `unlock` checks the 6-digit code (RFC 6238, one step either side),
+      lets each code work once (`used_codes`), and locks for everyone after
+      10 wrong codes in 15 minutes (`failed_unlocks`); it returns a token
+      signed with a key derived from the secret. `chat` sends one round to
+      Claude with Housecall's system prompt and two tools (`run_check`,
+      `give_answer`, both strict), prompt caching, and
+      `fallbacks: "default"`. `visit_get` / `visit_save`. `health` says which
+      secrets are set. Tables have RLS on, no policies, and no grants for
+      anon/authenticated (checked)
+- [x] **Visit memory** (`src/relay.ps1`): the PC is known by a SHA-256 of its
+      BIOS serial and machine UUID (MachineGuid added when both are
+      placeholders), never a name. After unlocking: "Bekende pc (label):
+      laatste bezoek ...". **H** on the menu shows the last 5 visits. On
+      **Q**, Housecall offers to save the visit (asks the code if needed,
+      and an optional name or note for the invoice); not in a dry run
+- [x] **AI chat** (`src/ai.ps1`, `?` or a typed sentence): the loop runs in
+      PowerShell, one relay round at a time. Claude picks checks, Housecall
+      runs them (the same read-only checks as the menu; A3/A4 get the site
+      or address the AI passes) and sends back the lines, finding, advice and
+      offered fix ids. `give_answer` gives a plain summary, certainty, manual
+      steps, the problem, and fix ids, which Housecall filters to the ones
+      the check really offered (`Select-HcActions`) and runs through the
+      normal Wat nu? with J/N, proof and undo. At most 6 checks and 10
+      rounds. Each turn's content goes back byte for byte (thinking
+      blocks). Only the problem text and check results leave the PC
+- [x] **Setup** (`tools/setup-ai.ps1`, run by Shamil): makes the secret,
+      shows a QR code (drawn in the browser on his PC) and the key, checks
+      the phone's code, puts the secret on the clipboard for Supabase and
+      clears it, opens the Anthropic key and spending-limit pages, and asks
+      the relay. `-Check` only asks the relay. The secret never passes
+      through Claude's chat. A test against the RFC 6238 values caught a
+      real bug here: in PowerShell a `[byte]` shifted left stays a byte
+- [x] A3, A4 and F checks can now be built without prompting
+      (`New-HcSiteCheck`, `New-HcMailCheck`, `Invoke-HcSecurityCheck`, built
+      from text with a validated value, never a closure). 10 new tests, 230
+      in total
 
 **A4, the last fixes, restore point, -NoAI** *(26 Sep)*
 - [x] **A4 email** (`src/checks/email.ps1`): asks for the address and uses
@@ -502,6 +534,14 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
   dates move every year and would need updating in the code.
 - **The DISM + SFC repair runs inside the Housecall window** and prints its
   own progress. It needs internet for DISM and takes 15–30 minutes.
+- **Free Supabase projects pause after a week without use.** Then `?` and
+  H say "the relay cannot be reached", and the project needs Restore in the
+  Supabase dashboard. Using Housecall at least weekly avoids it.
+- **The relay's system prompt and tools are in `index.ts`**: changing how the
+  AI behaves means editing it and redeploying the function, not a new
+  `setup.ps1`.
+- **A lost phone means a new secret:** run `tools\setup-ai.ps1` again; the old
+  Authenticator entry stops working at once.
 - **Undo only covers the current session.** Once Housecall is closed, a
   disabled task has to be switched back on in Task Scheduler. The step-by-step
   guide says where.
@@ -533,6 +573,10 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Guides | `steps.<finding id>` in `src/strings.ps1`, steps separated by `\|` |
 | Note | `src/note.ps1`: `$script:Contact` (fill in!), the visit record, `Get-HcNoteBlocks` (content), the window and printing |
 | Admin restart | `Start-HcElevated` in `src/fixes.ps1`; `$HcSource` in `dev.ps1` and `setup.ps1` |
+| Relay | `relay/housecall/index.ts` (deployed to Supabase project `housecall`, id `btwbtxjawubtgeizcrir`); redeploy after editing it |
+| Relay client, memory | `src/relay.ps1`: `Invoke-HcRelay`, `Unlock-HcRelay`, `Get-HcPcId`, `Show-HcHistory` (H), `Save-HcVisitRecord` (Q) |
+| AI chat | `src/ai.ps1`: `Invoke-HcAiConversation` (the loop), `Invoke-HcAi` (the screen); the system prompt and tools live in the relay |
+| Setup | `tools/setup-ai.ps1` (`-Check` to only test) |
 | Area B | `src/checks/sound.ps1`: `Test-HcSound` (B1), `Test-HcCalls` (B2), `Test-HcScreen` (B3); `src/checks/audio-interop.ps1`: the C# for Core Audio |
 | Area C | `src/checks/devices.ps1`: `Test-HcPrinter` (C1), `Test-HcInputDevices` (C2), `Test-HcBluetooth` (C3), `Add-HcDeviceProblem` (shared by C2 and C3) |
 | Area D | `src/checks/performance.ps1`: `Test-HcSlow` (D1), `Test-HcSlowStart` (D2), `Test-HcCrashes` (D3), `Test-HcDiskSpace` (D4) |

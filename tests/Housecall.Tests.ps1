@@ -20,6 +20,8 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\checks\updates.ps1')
 . (Join-Path $root 'src\fixes.ps1')
 . (Join-Path $root 'src\note.ps1')
+. (Join-Path $root 'src\relay.ps1')
+. (Join-Path $root 'src\ai.ps1')
 
 # Housecall's own source, put together the way dev.ps1 does it.
 function Get-HcTestSource {
@@ -98,7 +100,7 @@ Describe 'Resolve-HcChoice' {
     }
 
     It 'never uses a reserved key as an area letter' {
-        foreach ($reserved in @('?', '0', 'L', 'Q', 'U', 'S')) {
+        foreach ($reserved in @('?', '0', 'L', 'Q', 'U', 'S', 'H')) {
             $script:Areas.Contains($reserved) | Should Be $false
         }
     }
@@ -875,6 +877,155 @@ Describe 'More fixes, the restore point and -NoAI' {
     }
 }
 
+Describe 'Setup: Google Authenticator codes' {
+    . (Join-Path $root 'tools\setup-ai.ps1') -FunctionsOnly
+    It 'matches the RFC 6238 test values (SHA-1)' {
+        $key = [Text.Encoding]::ASCII.GetBytes('12345678901234567890')
+        Get-Totp $key 1 | Should Be '287082'            # T = 59
+        Get-Totp $key 37037036 | Should Be '081804'     # T = 1111111109
+        Get-Totp $key 41152263 | Should Be '005924'     # T = 1234567890 (RFC: 89005924)
+    }
+    It 'turns a secret into Base32 and back' {
+        $bytes = [byte[]](1..20)
+        $text = ConvertTo-Base32 $bytes
+        $text | Should Match '^[A-Z2-7]{32}$'
+        (ConvertFrom-Base32 $text) -join ',' | Should Be ($bytes -join ',')
+        ConvertTo-Base32 ([Text.Encoding]::ASCII.GetBytes('foobar')) | Should Be 'MZXW6YTBOI'
+    }
+}
+
+Describe 'Relay: unlock and visit memory' {
+    Mock Get-HcEnvironment { [pscustomobject]@{ IsWindows = $true; PSVersion = [version]'5.1'; Os = 'Windows 11 Home'; IsAdmin = $false; Online = $true } }
+
+    It 'makes a stable 64-character id for this PC' {
+        $a = Get-HcPcId
+        $a | Should Match '^[0-9a-f]{64}$'
+        Get-HcPcId | Should Be $a
+    }
+
+    It 'unlocks with a code, retries a wrong one, and skips on Enter' {
+        $script:HcToken = $null
+        $script:Calls = @()
+        Mock Invoke-HcRelay {
+            $script:Calls += $Body.action
+            if ($Body.action -eq 'unlock' -and $Body.code -eq '111111') { return [pscustomobject]@{ Ok = $false; Status = 401; Data = $null; Error = 'wrong_code' } }
+            if ($Body.action -eq 'unlock') { return [pscustomobject]@{ Ok = $true; Status = 200; Data = [pscustomobject]@{ token = 't.s'; expires = (Get-Date).AddHours(4).ToUniversalTime().ToString('o') }; Error = $null } }
+            [pscustomobject]@{ Ok = $true; Status = 200; Data = [pscustomobject]@{ visits = @() }; Error = $null }
+        }
+        $script:HcInputQueue = New-Object System.Collections.Queue
+        foreach ($a in @('111111', '222 222')) { $script:HcInputQueue.Enqueue($a) }
+        Unlock-HcRelay | Should Be $true
+        $script:HcToken | Should Be 't.s'
+        Unlock-HcRelay | Should Be $true                    # already unlocked: no new code asked
+        @($script:Calls | Where-Object { $_ -eq 'unlock' }).Count | Should Be 2
+
+        $script:HcToken = $null
+        $script:HcInputQueue = New-Object System.Collections.Queue
+        $script:HcInputQueue.Enqueue('')
+        Unlock-HcRelay | Should Be $false
+        $script:HcInputQueue = $null
+    }
+
+    It 'saves the visit at the end, with the codes found and the fixes made, but not in a dry run' {
+        $script:Saved = $null
+        Mock Invoke-HcRelay {
+            if ($Body.action -eq 'unlock') { return [pscustomobject]@{ Ok = $true; Status = 200; Data = [pscustomobject]@{ token = 't.s'; expires = (Get-Date).AddHours(4).ToUniversalTime().ToString('o') }; Error = $null } }
+            if ($Body.action -eq 'visit_save') { $script:Saved = $Body }
+            [pscustomobject]@{ Ok = $true; Status = 200; Data = [pscustomobject]@{ visits = @() }; Error = $null }
+        }
+        Mock Get-HcNetworkFacts { New-FakeFacts }
+        Start-Housecall -Lang nl -Answers @('A1', '', 'Q', '123456', 'mevr. de Vries')
+        $script:Saved.pc | Should Match '^[0-9a-f]{64}$'
+        $script:Saved.label | Should Be 'mevr. de Vries'
+        @($script:Saved.problems)[0].code | Should Be 'A1'
+        @($script:Saved.problems)[0].finding | Should Be 'allGood'
+        $script:Saved.lang | Should Be 'nl'
+
+        $script:Saved = $null
+        Start-Housecall -Lang nl -DryRun -Answers @('A1', '', 'Q')
+        $script:Saved | Should Be $null
+    }
+}
+
+Describe 'The AI chat' {
+    $script:Lang = 'en'
+    Mock Get-HcEnvironment { [pscustomobject]@{ IsWindows = $true; PSVersion = [version]'5.1'; Os = 'Windows 11 Home'; IsAdmin = $false; Online = $true } }
+    $printers = [pscustomobject]@{ Now = Get-Date; SpoolerRunning = $true; SpoolerDisabled = $false; Jobs = @()
+        Printers = @(
+            [pscustomobject]@{ Name = 'Microsoft Print to PDF'; Default = $true; Virtual = $true; Offline = $false; State = 0; HostAddress = $null; Reachable = $null }
+            [pscustomobject]@{ Name = 'HP DeskJet 2700'; Default = $false; Virtual = $false; Offline = $false; State = 0; HostAddress = $null; Reachable = $null }) }
+    Mock Get-HcPrinterFacts { $printers }
+
+    # A scripted Claude: first it runs C1, then it answers.
+    $toolUse = '[{"type":"thinking","thinking":"","signature":"sig-1"},{"type":"tool_use","id":"tu_1","name":"run_check","input":{"code":"C1","input":""}}]'
+    $answer = '[{"type":"tool_use","id":"tu_2","name":"give_answer","input":{"summary":"Documents go to Print to PDF.","confidence":"high","problem_code":"C1","fix_ids":["setDefault","formatDisk"],"steps":["Print again."]}}]'
+    $reply = { param($json) [pscustomobject]@{ Ok = $true; Status = 200; Error = $null; Data = [pscustomobject]@{ stop_reason = 'tool_use'; content_json = $json; content = ($json | ConvertFrom-Json) } } }
+
+    It 'runs the check the AI asks for, sends back its result, and returns the answer' {
+        $script:HcToken = 't.s'; $script:HcTokenExpires = (Get-Date).AddHours(1)
+        $script:Requests = New-Object System.Collections.ArrayList
+        Mock Invoke-HcRelay {
+            [void]$script:Requests.Add((ConvertTo-Json -InputObject $Body -Depth 30 -Compress))
+            if ($script:Requests.Count -eq 1) { & $reply $toolUse } else { & $reply $answer }
+        }
+        $state = Invoke-HcAiConversation 'my printer does nothing'
+        $state.Answer.problem_code | Should Be 'C1'
+        $state.Reports.ContainsKey('C1') | Should Be $true
+        $script:Requests.Count | Should Be 2
+        $second = $script:Requests[1] | ConvertFrom-Json
+        @($second.messages).Count | Should Be 3
+        # The thinking block goes back exactly as it came.
+        $second.messages[1].content_json | Should Be $toolUse
+        $results = $second.messages[2].content_json | ConvertFrom-Json
+        @($results)[0].tool_use_id | Should Be 'tu_1'
+        @($results)[0].content | Should Match 'Offered fixes:'
+        @($results)[0].content | Should Match 'setDefault'
+        # The first message names the language and carries the problem.
+        (($second.messages[0].content_json | ConvertFrom-Json)[0].text) | Should Be "[en]`nmy printer does nothing"
+    }
+
+    It 'only offers fixes the check itself offered, in the AI''s order' {
+        $r = New-HcReport
+        Add-HcAction $r 'clearJobs'; Add-HcAction $r 'setDefault' @{ Label = 'HP'; Name = 'HP' }; Add-HcAction $r 'restartSpooler'
+        Select-HcActions $r @('setDefault', 'formatDisk', 'clearJobs')
+        @($r.Actions | ForEach-Object { $_.FixId }) | Should Be @('setDefault', 'clearJobs')
+    }
+
+    It 'stops at the limit of checks and tells the AI so' {
+        $script:HcToken = 't.s'; $script:HcTokenExpires = (Get-Date).AddHours(1)
+        $script:Requests = New-Object System.Collections.ArrayList
+        Mock Invoke-HcRelay { [void]$script:Requests.Add($Body); & $reply $toolUse }
+        $script:AiMaxChecks = 2
+        $state = Invoke-HcAiConversation 'x'
+        $script:AiMaxChecks = 6
+        $state.Answer | Should Be $null
+        $last = ($script:Requests[-1].messages[-1].content_json | ConvertFrom-Json)
+        @($last)[0].is_error | Should Be $true
+    }
+
+    It 'runs from the menu: code, problem, check, answer, then the AI''s fix through Wat nu?' {
+        $script:Requests = New-Object System.Collections.ArrayList
+        Mock Invoke-HcRelay {
+            if ($Body.action -eq 'unlock') { return [pscustomobject]@{ Ok = $true; Status = 200; Data = [pscustomobject]@{ token = 't.s'; expires = (Get-Date).AddHours(4).ToUniversalTime().ToString('o') }; Error = $null } }
+            if ($Body.action -ne 'chat') { return [pscustomobject]@{ Ok = $true; Status = 200; Data = [pscustomobject]@{ visits = @() }; Error = $null } }
+            [void]$script:Requests.Add($Body)
+            if ($script:Requests.Count -eq 1) { & $reply $toolUse } else { & $reply $answer }
+        }
+        Mock Invoke-HcActionMenu { $script:Offered = @($Report.Actions | ForEach-Object { $_.FixId }); 'back' }
+        Start-Housecall -Lang en -Answers @('?', '123456', 'my printer does nothing', '', 'Q', '')
+        $script:Requests.Count | Should Be 2
+        $script:Offered | Should Be @('setDefault')
+    }
+
+    It 'explains a relay problem instead of failing' {
+        $script:HcToken = 't.s'; $script:HcTokenExpires = (Get-Date).AddHours(1)
+        Mock Invoke-HcRelay { [pscustomobject]@{ Ok = $false; Status = 0; Data = $null; Error = 'unreachable' } }
+        { Start-Housecall -Lang nl -Answers @('?', 'geen geluid meer', '', 'Q') } | Should Not Throw
+        (Invoke-HcAiConversation 'x').Error | Should Be 'unreachable'
+        Get-HcRelayMessage 'unreachable' | Should Match 'Supabase'
+    }
+}
+
 Describe 'Fixes offered by the checks' {
     $script:Lang = 'en'
     $task = { param($name, $command, $level = 'weak', $disabled = $false)
@@ -1156,7 +1307,7 @@ Describe 'Findings' {
 Describe 'Source files' {
     It 'are plain ASCII, so PowerShell 5.1 reads them correctly' {
         $files = @(Get-ChildItem (Join-Path $root 'src') -Filter *.ps1 -Recurse) +
-                 @(Get-Item (Join-Path $root 'dev.ps1'), (Join-Path $root 'build.ps1'))
+                 @(Get-Item (Join-Path $root 'dev.ps1'), (Join-Path $root 'build.ps1'), (Join-Path $root 'tools\setup-ai.ps1'))
         foreach ($f in $files) {
             $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
             @($bytes | Where-Object { $_ -gt 127 }).Count | Should Be 0

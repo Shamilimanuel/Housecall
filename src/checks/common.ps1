@@ -71,14 +71,16 @@ $script:ResultStyle = @{
 }
 
 function Write-HcReport {
-    param([pscustomobject]$Report)
+    # -LinesOnly: the result lines without the finding, for the AI chat,
+    # which gives its own answer.
+    param([pscustomobject]$Report, [switch]$LinesOnly)
     foreach ($line in $Report.Results) {
         $style = $script:ResultStyle[$line.Status]
         Write-Host ('  ' + $style[0] + ' ') -NoNewline -ForegroundColor $style[1]
         $colour = if ($line.Status -eq 'skipped') { 'DarkGray' } else { 'Gray' }
         Write-Host $line.Text -ForegroundColor $colour
     }
-    if ($Report.FindingId) {
+    if ($Report.FindingId -and -not $LinesOnly) {
         $findingArgs = @('finding.' + $Report.FindingId) + @($Report.FindingArgs)
         Write-Host ''
         Write-HcLabelled (T 'run.found') (T @findingArgs) 'Yellow'

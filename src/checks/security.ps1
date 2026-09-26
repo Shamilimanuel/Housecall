@@ -452,11 +452,17 @@ $script:SecurityChecks = @{
     F3 = @{ Parts = @('remote', 'tasks', 'antivirus', 'notifications', 'proxy', 'hosts'); Clean = 'cleanAll' }
 }
 
+function Invoke-HcSecurityRun {
+    param([string]$Code)
+    $plan = $script:SecurityChecks[$Code]
+    Test-HcSecurity (Get-HcSecurityFacts $plan.Parts) $plan.Parts $plan.Clean
+}
+
+# Built from text, naming its own code; see New-HcSiteCheck.
 function Invoke-HcSecurityCheck {
     param([string]$Code)
-    # A script variable, not a closure; see Invoke-HcA3.
-    $script:HcSecurityPlan = $script:SecurityChecks[$Code]
-    { Test-HcSecurity (Get-HcSecurityFacts $script:HcSecurityPlan.Parts) $script:HcSecurityPlan.Parts $script:HcSecurityPlan.Clean }
+    if ($Code -notmatch '^F\d$') { return $null }
+    [scriptblock]::Create("Invoke-HcSecurityRun '$Code'")
 }
 
 function Invoke-HcF1 { Invoke-HcSecurityCheck 'F1' }

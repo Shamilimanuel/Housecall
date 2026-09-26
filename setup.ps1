@@ -822,6 +822,41 @@ $script:Strings = @{
         'fix.restorePointOk'         = 'Restore point made.'
         'fix.restorePointRecent'     = 'Windows already made a restore point in the past 24 hours.'
         'fix.restorePointNone'       = 'No restore point: System Protection is off on this PC.'
+
+        # ---- relay, unlock, visit memory
+        'relay.askCode'      = 'Code from Google Authenticator (Enter = skip)'
+        'relay.unlocked'     = 'Unlocked until {0}.'
+        'relay.wrongCode'    = 'That code is not right. Type the code the app shows now.'
+        'relay.codeUsed'     = 'That code was already used. Wait for the next one (every 30 seconds).'
+        'relay.locked'       = 'Too many wrong codes: wait 15 minutes.'
+        'relay.notSetUp'     = 'The relay is not set up yet: run tools\setup-ai.ps1 on your own PC.'
+        'relay.expired'      = 'The unlock has expired: type a new code.'
+        'relay.unreachable'  = 'The relay cannot be reached. Is the Supabase project paused? Restore it in the Supabase dashboard.'
+        'relay.aiKey'        = 'The AI key in Supabase is not right: check ANTHROPIC_API_KEY.'
+        'relay.aiBusy'       = 'The AI is busy right now: try again in a minute.'
+        'relay.error'        = 'The relay answered with an error ({0}).'
+        'menu.history'       = 'Visit history'
+        'mem.title'          = 'Visit history of this PC'
+        'mem.none'           = 'No earlier visits recorded for this PC.'
+        'mem.known'          = 'Known PC{0}: last visit {1}'
+        'mem.saveAsk'        = 'Save this visit in your visit history? Code from Google Authenticator (Enter = skip)'
+        'mem.labelAsk'       = 'Name or note for this PC, for your records (Enter = {0})'
+        'mem.noLabel'        = 'none'
+        'mem.saved'          = 'Visit saved in your visit history.'
+        'mem.notSaved'       = 'The visit was not saved: {0}'
+
+        # ---- the AI chat
+        'ai.describe'        = 'Describe the problem in your own words (Enter = back)'
+        'ai.privacy'         = 'Only the problem and the check results go to the AI. No files, passwords or documents.'
+        'ai.thinking'        = 'The AI is thinking...'
+        'ai.running'         = 'The AI checks: {0}  {1}'
+        'ai.answer'          = 'AI:'
+        'ai.confidence.low'    = 'Certainty: low (the checks do not show the cause)'
+        'ai.confidence.medium' = 'Certainty: medium'
+        'ai.confidence.high'   = 'Certainty: high'
+        'ai.steps'           = 'Steps:'
+        'ai.refused'         = 'The AI did not answer this question. Choose a letter from the menu.'
+        'ai.noAnswer'        = 'The AI did not reach an answer. Choose a letter from the menu.'
     }
 
     nl = @{
@@ -1587,6 +1622,41 @@ $script:Strings = @{
         'fix.restorePointOk'         = 'Herstelpunt gemaakt.'
         'fix.restorePointRecent'     = 'Windows heeft de afgelopen 24 uur al een herstelpunt gemaakt.'
         'fix.restorePointNone'       = 'Geen herstelpunt: Systeembeveiliging staat uit op deze pc.'
+
+        # ---- relay, unlock, visit memory
+        'relay.askCode'      = 'Code uit Google Authenticator (Enter = overslaan)'
+        'relay.unlocked'     = 'Ontgrendeld tot {0}.'
+        'relay.wrongCode'    = 'Die code klopt niet. Typ de code die de app nu laat zien.'
+        'relay.codeUsed'     = 'Die code is al gebruikt. Wacht op de volgende (elke 30 seconden).'
+        'relay.locked'       = 'Te veel verkeerde codes: wacht 15 minuten.'
+        'relay.notSetUp'     = 'De relay is nog niet ingesteld: start tools\setup-ai.ps1 op uw eigen pc.'
+        'relay.expired'      = 'De ontgrendeling is verlopen: typ een nieuwe code.'
+        'relay.unreachable'  = 'De relay is niet bereikbaar. Staat het Supabase-project op pauze? Herstel het in het Supabase-dashboard.'
+        'relay.aiKey'        = 'De AI-sleutel in Supabase klopt niet: controleer ANTHROPIC_API_KEY.'
+        'relay.aiBusy'       = 'De AI is nu druk: probeer het over een minuut opnieuw.'
+        'relay.error'        = 'De relay gaf een fout ({0}).'
+        'menu.history'       = 'Bezoekgeschiedenis'
+        'mem.title'          = 'Bezoekgeschiedenis van deze pc'
+        'mem.none'           = 'Geen eerdere bezoeken vastgelegd voor deze pc.'
+        'mem.known'          = 'Bekende pc{0}: laatste bezoek {1}'
+        'mem.saveAsk'        = 'Dit bezoek opslaan in uw bezoekgeschiedenis? Code uit Google Authenticator (Enter = overslaan)'
+        'mem.labelAsk'       = 'Naam of kenmerk voor deze pc, voor uw administratie (Enter = {0})'
+        'mem.noLabel'        = 'geen'
+        'mem.saved'          = 'Bezoek opgeslagen in uw bezoekgeschiedenis.'
+        'mem.notSaved'       = 'Het bezoek is niet opgeslagen: {0}'
+
+        # ---- the AI chat
+        'ai.describe'        = 'Beschrijf het probleem in uw eigen woorden (Enter = terug)'
+        'ai.privacy'         = 'Alleen het probleem en de uitkomst van de controles gaan naar de AI. Geen bestanden, wachtwoorden of documenten.'
+        'ai.thinking'        = 'De AI denkt na...'
+        'ai.running'         = 'De AI controleert: {0}  {1}'
+        'ai.answer'          = 'AI:'
+        'ai.confidence.low'    = 'Zekerheid: laag (de controles laten de oorzaak niet zien)'
+        'ai.confidence.medium' = 'Zekerheid: middel'
+        'ai.confidence.high'   = 'Zekerheid: hoog'
+        'ai.steps'           = 'Stappen:'
+        'ai.refused'         = 'De AI heeft deze vraag niet beantwoord. Kies een letter uit het menu.'
+        'ai.noAnswer'        = 'De AI kwam niet tot een antwoord. Kies een letter uit het menu.'
     }
 }
 
@@ -1837,7 +1907,8 @@ function Get-HcEnvironment {
     straight to a problem, and inside an area a bare 1 means the same as A1.
 
     Reserved keys, never to be used as an area letter:
-        ?  AI chat    0  back    L  language    U  undo this session's fixes    Q  quit
+        ?  AI chat    0  back    L  language    H  visit history
+        U  undo this session's fixes    Q  quit
 #>
 
 $script:Areas = [ordered]@{
@@ -1853,7 +1924,7 @@ $script:Areas = [ordered]@{
     Turn what was typed into one decision. Pure: no output, no state, so the
     tests can cover every kind of input.
 
-    Kind is one of: empty, area, problem, ai, back, language, undo, quit,
+    Kind is one of: empty, area, problem, ai, back, language, history, undo, quit,
     freetext (a sentence, which the AI chat will take), unknown.
 #>
 function Resolve-HcChoice {
@@ -1873,6 +1944,7 @@ function Resolve-HcChoice {
     if ($key -eq 'L') { return & $result 'language' $null }
     if ($key -eq 'Q') { return & $result 'quit' $null }
     if ($key -eq 'U') { return & $result 'undo' $null }
+    if ($key -eq 'H') { return & $result 'history' $null }
 
     if ($script:Areas.Contains($key)) { return & $result 'area' $key }
 
@@ -1930,7 +2002,7 @@ function Show-HcArea {
 # The footer keys shared by every menu screen. U only shows once something
 # was changed in this session.
 function Get-HcFooter {
-    $row = @(, @('L', (T 'menu.language')))
+    $row = @(@('L', (T 'menu.language')), @('H', (T 'menu.history')))
     if ($script:HcChanges.Count -gt 0) { $row += , @('U', (T 'menu.undo')) }
     $row + (, @('Q', (T 'menu.quit')))
 }
@@ -1967,39 +2039,44 @@ function Invoke-HcProblem {
     $report = & $check
     Write-HcReport $report
     Save-HcVisit $Code $report
+    Invoke-HcReportLoop $Code $check $report
+}
 
-    while (@($report.Actions).Count -gt 0 -or @(Get-HcSteps $report).Count -gt 0) {
-        $result = Invoke-HcActionMenu $report
+<#
+    What follows a report: Wat nu?, a fix, the check again as proof, until
+    Enter. $OnlyFixes (from the AI chat) limits the offered fixes to the
+    ones the AI chose, in its order; they still come from the check itself.
+#>
+function Invoke-HcReportLoop {
+    param([string]$Code, [scriptblock]$Check, [pscustomobject]$Report, [string[]]$OnlyFixes)
+    if ($PSBoundParameters.ContainsKey('OnlyFixes')) { Select-HcActions $Report $OnlyFixes }
+    while (@($Report.Actions).Count -gt 0 -or @(Get-HcSteps $Report).Count -gt 0) {
+        $result = Invoke-HcActionMenu $Report
         if ($result -eq 'back') { return }
         if ($result -eq 'changed') {
             Write-Host ''
             Write-Dim (T 'fix.checkingAgain')
             Write-Host ''
-            $report = & $check
-            Write-HcReport $report
-            Save-HcVisit $Code $report
+            $Report = & $Check
+            Write-HcReport $Report
+            Save-HcVisit $Code $Report
+            if ($PSBoundParameters.ContainsKey('OnlyFixes')) { Select-HcActions $Report $OnlyFixes }
         }
     }
     Write-Host ''
     [void](Read-HcLine (T 'pressEnter'))
 }
 
-# Phase 0 placeholder for the AI chat. It already tells the offline case
-# apart, because that answer stays the same once the chat exists.
-function Invoke-HcAi {
-    param([pscustomobject]$Environment, [string]$Text)
-    Clear-HcScreen
-    Write-Banner $Environment
-    Write-Host ('  ?  ' + (T 'ai.title')) -ForegroundColor Yellow
-    Write-Host ''
-    if ($Text) { Write-Dim (T 'ai.youTyped' $Text) }
-    if (-not $Environment.Online) {
-        Write-Warn2 (T 'ai.offline')
-    } else {
-        Write-Warn2 (T 'ai.notBuilt')
+# Keeps only the offered fixes whose id is in $FixIds, in that order.
+function Select-HcActions {
+    param([pscustomobject]$Report, [string[]]$FixIds)
+    $kept = New-Object System.Collections.ArrayList
+    foreach ($id in @($FixIds)) {
+        foreach ($a in @($Report.Actions | Where-Object { $_.FixId -eq $id })) {
+            if (-not $kept.Contains($a)) { [void]$kept.Add($a) }
+        }
     }
-    Write-Host ''
-    [void](Read-HcLine (T 'pressEnter'))
+    $Report.Actions = $kept
 }
 
 # ---------------------------------------------------------------- main loop --
@@ -2022,6 +2099,8 @@ function Start-Housecall {
     $script:HcChanges.Clear()
     $script:HcVisit.Clear()
     $script:HandedOff = $false
+    $script:HcToken = $null
+    $script:HcKnownLabel = $null
     $script:Lang = if ($script:Strings.ContainsKey("$Lang".ToLowerInvariant())) { "$Lang".ToLowerInvariant() } else { Get-HcDefaultLanguage }
     $script:HcInputQueue = $null
     if ($PSBoundParameters.ContainsKey('Answers')) {
@@ -2062,8 +2141,10 @@ function Start-Housecall {
             'back'     { $area = '' }
             'language' { $script:Lang = if ($script:Lang -eq 'nl') { 'en' } else { 'nl' } }
             'undo'     { $message = Invoke-HcUndo }
+            'history'  { Show-HcHistory $environment }
             'unknown'  { $message = T 'menu.unknown' $choice.Value }
             'quit'     {
+                Save-HcVisitRecord $environment
                 Show-HcNote
                 Write-Host ''
                 if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
@@ -2148,14 +2229,16 @@ $script:ResultStyle = @{
 }
 
 function Write-HcReport {
-    param([pscustomobject]$Report)
+    # -LinesOnly: the result lines without the finding, for the AI chat,
+    # which gives its own answer.
+    param([pscustomobject]$Report, [switch]$LinesOnly)
     foreach ($line in $Report.Results) {
         $style = $script:ResultStyle[$line.Status]
         Write-Host ('  ' + $style[0] + ' ') -NoNewline -ForegroundColor $style[1]
         $colour = if ($line.Status -eq 'skipped') { 'DarkGray' } else { 'Gray' }
         Write-Host $line.Text -ForegroundColor $colour
     }
-    if ($Report.FindingId) {
+    if ($Report.FindingId -and -not $LinesOnly) {
         $findingArgs = @('finding.' + $Report.FindingId) + @($Report.FindingArgs)
         Write-Host ''
         Write-HcLabelled (T 'run.found') (T @findingArgs) 'Yellow'
@@ -2653,15 +2736,26 @@ function Invoke-HcA3 {
         if (-not $hostName) { Write-Warn2 (T 'site.invalid' $typed) }
     }
     Write-Host ''
-    # Not .GetNewClosure(): a closure cannot see Housecall's functions when it
-    # runs through [scriptblock]::Create. A script variable carries the site.
-    $script:HcSiteHost = $hostName
-    {
-        $base = Test-HcInternet (Get-HcNetworkFacts)
-        # The internet itself is down: that is the answer, not the site.
-        if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
-        Test-HcSite (Get-HcSiteFacts $script:HcSiteHost)
-    }
+    New-HcSiteCheck $hostName
+}
+
+function Invoke-HcSiteCheck {
+    param([string]$HostName)
+    $base = Test-HcInternet (Get-HcNetworkFacts)
+    # The internet itself is down: that is the answer, not the site.
+    if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
+    Test-HcSite (Get-HcSiteFacts $HostName)
+}
+
+# The A3 check for one site, as a scriptblock that names it. Built from text
+# rather than a closure: a closure cannot see Housecall's functions when it
+# runs through [scriptblock]::Create, and a shared variable would be
+# overwritten when the AI runs several checks. The name is checked first,
+# so only letters, digits, dots and dashes ever reach the text.
+function New-HcSiteCheck {
+    param([string]$HostName)
+    if ($HostName -notmatch '^[a-z0-9.-]+$') { return $null }
+    [scriptblock]::Create("Invoke-HcSiteCheck '$HostName'")
 }
 
 $script:ProblemHandlers['A1'] = 'Invoke-HcA1'
@@ -2828,13 +2922,21 @@ function Invoke-HcA4 {
         if (-not $domain) { Write-Warn2 (T 'mail.invalid' $typed) }
     }
     Write-Host ''
-    # A script variable, not a closure; see Invoke-HcA3.
-    $script:HcMailDomain = $domain
-    {
-        $base = Test-HcInternet (Get-HcNetworkFacts)
-        if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
-        Test-HcMail (Get-HcMailFacts $script:HcMailDomain)
-    }
+    New-HcMailCheck $domain
+}
+
+function Invoke-HcMailCheck {
+    param([string]$Domain)
+    $base = Test-HcInternet (Get-HcNetworkFacts)
+    if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
+    Test-HcMail (Get-HcMailFacts $Domain)
+}
+
+# The A4 check for one domain; built from text for the same reasons as New-HcSiteCheck.
+function New-HcMailCheck {
+    param([string]$Domain)
+    if ($Domain -notmatch '^[a-z0-9.-]+$') { return $null }
+    [scriptblock]::Create("Invoke-HcMailCheck '$Domain'")
 }
 
 $script:ProblemHandlers['A4'] = 'Invoke-HcA4'
@@ -3294,11 +3396,17 @@ $script:SecurityChecks = @{
     F3 = @{ Parts = @('remote', 'tasks', 'antivirus', 'notifications', 'proxy', 'hosts'); Clean = 'cleanAll' }
 }
 
+function Invoke-HcSecurityRun {
+    param([string]$Code)
+    $plan = $script:SecurityChecks[$Code]
+    Test-HcSecurity (Get-HcSecurityFacts $plan.Parts) $plan.Parts $plan.Clean
+}
+
+# Built from text, naming its own code; see New-HcSiteCheck.
 function Invoke-HcSecurityCheck {
     param([string]$Code)
-    # A script variable, not a closure; see Invoke-HcA3.
-    $script:HcSecurityPlan = $script:SecurityChecks[$Code]
-    { Test-HcSecurity (Get-HcSecurityFacts $script:HcSecurityPlan.Parts) $script:HcSecurityPlan.Parts $script:HcSecurityPlan.Clean }
+    if ($Code -notmatch '^F\d$') { return $null }
+    [scriptblock]::Create("Invoke-HcSecurityRun '$Code'")
 }
 
 function Invoke-HcF1 { Invoke-HcSecurityCheck 'F1' }
@@ -5392,6 +5500,384 @@ function Invoke-HcNotePrint {
         try { $doc.Print() } catch { [void][Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Housecall') }
     }
     $doc.Dispose()
+}
+
+# ==================================================== src\relay.ps1 ==
+<#
+    The relay (a Supabase Edge Function, relay\housecall\index.ts) and what
+    goes through it: unlocking with a Google Authenticator code, and visit
+    memory. The AI chat (src\ai.ps1) uses the same unlock.
+
+    One code unlocks the relay until Housecall closes (at most 4 hours,
+    which the relay enforces). The token lives only in this PowerShell
+    session and is never written to disk.
+
+    Visit memory: each PC gets a scrambled id (SHA-256 of its BIOS serial
+    and machine UUID), never a name. The relay keeps the visits in Shamil's
+    Supabase; nothing is kept on the client's PC.
+#>
+
+$script:RelayUrl = 'https://btwbtxjawubtgeizcrir.supabase.co/functions/v1/housecall'
+$script:HcToken = $null
+$script:HcTokenExpires = [datetime]::MinValue
+$script:HcKnownLabel = $null
+
+# One POST to the relay. Returns Ok, Status, Data (the parsed JSON) and
+# Error (the relay's error code, or 'unreachable').
+function Invoke-HcRelay {
+    param([hashtable]$Body)
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    } catch { }
+    $json = ConvertTo-Json -InputObject $Body -Depth 30 -Compress
+    $bytes = [Text.Encoding]::UTF8.GetBytes($json)
+    $saved = $ProgressPreference
+    $ProgressPreference = 'SilentlyContinue'
+    try {
+        $r = Invoke-WebRequest -Uri $script:RelayUrl -Method Post -Body $bytes -ContentType 'application/json; charset=utf-8' `
+            -UseBasicParsing -TimeoutSec 150 -ErrorAction Stop
+        $reader = New-Object IO.StreamReader($r.RawContentStream, [Text.Encoding]::UTF8)
+        return [pscustomobject]@{ Ok = $true; Status = [int]$r.StatusCode; Data = ($reader.ReadToEnd() | ConvertFrom-Json); Error = $null }
+    } catch {
+        $response = $_.Exception.Response
+        if ($null -eq $response) { return [pscustomobject]@{ Ok = $false; Status = 0; Data = $null; Error = 'unreachable' } }
+        $status = [int]$response.StatusCode
+        $code = 'unreachable'
+        try {
+            $reader = New-Object IO.StreamReader($response.GetResponseStream(), [Text.Encoding]::UTF8)
+            $parsed = $reader.ReadToEnd() | ConvertFrom-Json
+            if ($parsed.error) { $code = [string]$parsed.error }
+        } catch { }
+        return [pscustomobject]@{ Ok = $false; Status = $status; Data = $null; Error = $code }
+    } finally {
+        $ProgressPreference = $saved
+    }
+}
+
+# A relay error in plain words.
+function Get-HcRelayMessage {
+    param([string]$Code)
+    switch ($Code) {
+        'wrong_code'  { T 'relay.wrongCode' }
+        'code_used'   { T 'relay.codeUsed' }
+        'locked'      { T 'relay.locked' }
+        'not_set_up'  { T 'relay.notSetUp' }
+        'locked_out'  { T 'relay.expired' }
+        'unreachable' { T 'relay.unreachable' }
+        'ai_key'      { T 'relay.aiKey' }
+        'ai_busy'     { T 'relay.aiBusy' }
+        default       { T 'relay.error' $Code }
+    }
+}
+
+function Test-HcUnlocked {
+    $script:HcToken -and $script:HcTokenExpires -gt (Get-Date).AddMinutes(1)
+}
+
+<#
+    Asks for the Authenticator code, unless this session is already
+    unlocked. Enter (or anything that is not a code) skips. Returns $true
+    once unlocked. The first unlock also shows what is known about this PC.
+#>
+function Unlock-HcRelay {
+    param([string]$PromptKey = 'relay.askCode')
+    if (Test-HcUnlocked) { return $true }
+    if ($script:HcToken) { Write-Dim (T 'relay.expired') }
+    for ($try = 0; $try -lt 3; $try++) {
+        $code = ("$(Read-HcLine (T $PromptKey))" -replace '\s', '')
+        if ($code -notmatch '^\d{6}$') { return $false }
+        $r = Invoke-HcRelay @{ action = 'unlock'; code = $code }
+        if ($r.Ok) {
+            $script:HcToken = $r.Data.token
+            $script:HcTokenExpires = [datetime]::Parse($r.Data.expires, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime()
+            Write-Ok (T 'relay.unlocked' $script:HcTokenExpires.ToString('HH:mm'))
+            Show-HcKnownPc
+            return $true
+        }
+        Write-Warn2 (Get-HcRelayMessage $r.Error)
+        if ($r.Error -notin @('wrong_code', 'code_used')) { return $false }
+    }
+    $false
+}
+
+# ------------------------------------------------------------ visit memory --
+
+# A scrambled, stable id for this PC. The BIOS serial and machine UUID
+# survive a Windows reinstall; when both are placeholders (cheap boards say
+# "To be filled by O.E.M."), Windows' own MachineGuid is added.
+function Get-HcPcId {
+    $serial = ''
+    $uuid = ''
+    try { $serial = [string](Get-CimInstance Win32_BIOS -ErrorAction Stop).SerialNumber } catch { }
+    try { $uuid = [string](Get-CimInstance Win32_ComputerSystemProduct -ErrorAction Stop).UUID } catch { }
+    $parts = "housecall|$($serial.Trim())|$($uuid.Trim())"
+    if ($serial -match '^\s*$|O\.?E\.?M|Default|System Serial|^0+$' -and $uuid -match '^[F0-]*$') {
+        try { $parts += '|' + (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Cryptography' -ErrorAction Stop).MachineGuid } catch { }
+    }
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        (($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($parts)) | ForEach-Object { $_.ToString('x2') }) -join '')
+    } finally {
+        $sha.Dispose()
+    }
+}
+
+function Get-HcVisits {
+    if (-not (Test-HcUnlocked)) { return $null }
+    $r = Invoke-HcRelay @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcPcId) }
+    if (-not $r.Ok) { return $null }
+    @($r.Data.visits)
+}
+
+# "3 sep. 2026: C1, D2" -- what a stored visit was about.
+function Format-HcVisitLine {
+    param($Visit)
+    $when = Format-HcDate ([datetime]::Parse([string]$Visit.visited_at, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime())
+    $codes = @($Visit.problems | ForEach-Object { $_.code }) -join ', '
+    if (-not $codes) { $codes = '-' }
+    "$when ($codes)"
+}
+
+# One line after unlocking: "Known PC (mevr. de Vries): last visit 3 sep. 2026 (C1)".
+function Show-HcKnownPc {
+    $visits = Get-HcVisits
+    if ($null -eq $visits -or $visits.Count -eq 0) { return }
+    $last = $visits[0]
+    $label = @($visits | Where-Object { $_.label } | Select-Object -First 1).label
+    $script:HcKnownLabel = $label
+    $shown = if ($label) { " ($label)" } else { '' }
+    Write-Step (T 'mem.known' $shown (Format-HcVisitLine $last))
+}
+
+# H on the menu: the visit history of this PC.
+function Show-HcHistory {
+    param([pscustomobject]$Environment)
+    Clear-HcScreen
+    Write-Banner $Environment
+    Write-Host ('  ' + (T 'mem.title')) -ForegroundColor Yellow
+    Write-Host ''
+    if (-not $Environment.Online) {
+        Write-Warn2 (T 'ai.offline')
+    } elseif (Unlock-HcRelay) {
+        $visits = Get-HcVisits
+        if ($null -eq $visits) {
+            Write-Warn2 (T 'relay.unreachable')
+        } elseif ($visits.Count -eq 0) {
+            Write-Dim (T 'mem.none')
+        } else {
+            Write-Host ''
+            foreach ($v in $visits) {
+                $label = if ($v.label) { "  [$($v.label)]" } else { '' }
+                Write-Host ('  ' + (Format-HcVisitLine $v) + $label)
+                foreach ($p in @($v.problems)) { Write-Dim ('   ' + $p.code + '  ' + (T "problem.$($p.code)")) }
+                foreach ($c in @($v.changes)) { Write-Dim ('   + ' + $c) }
+            }
+        }
+    }
+    Write-Host ''
+    [void](Read-HcLine (T 'pressEnter'))
+}
+
+<#
+    At the end of a visit (Q): offers to save it. Asks for the code when
+    the session is not unlocked yet, and for an optional name or note, so
+    Shamil can find it again for the invoice. Skipped in a dry run, offline,
+    or when no problem was opened.
+#>
+function Save-HcVisitRecord {
+    param([pscustomobject]$Environment)
+    if ($script:HcVisit.Count -eq 0 -or $script:DryRun -or -not $Environment.Online) { return }
+    Write-Host ''
+    if (-not (Unlock-HcRelay 'mem.saveAsk')) { return }
+    $current = if ($script:HcKnownLabel) { $script:HcKnownLabel } else { T 'mem.noLabel' }
+    $typed = "$(Read-HcLine (T 'mem.labelAsk' $current))".Trim()
+    $label = if ($typed -and $typed -ne 'Q') { $typed } else { $script:HcKnownLabel }
+    if ($label -and $label.Length -gt 80) { $label = $label.Substring(0, 80) }
+
+    $r = Invoke-HcRelay @{
+        action   = 'visit_save'
+        token    = $script:HcToken
+        pc       = (Get-HcPcId)
+        label    = $label
+        lang     = $script:Lang
+        os       = $Environment.Os
+        problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
+        changes  = @($script:HcChanges | ForEach-Object { $_.Label })
+    }
+    if ($r.Ok) { Write-Ok (T 'mem.saved') } else { Write-Warn2 (T 'mem.notSaved' (Get-HcRelayMessage $r.Error)) }
+}
+
+# ==================================================== src\ai.ps1 ==
+<#
+    The AI chat (?): the problem in the client's own words, and Claude picks
+    which of Housecall's checks to run.
+
+    The loop runs here, one relay round at a time. Claude (behind the
+    relay, which holds the key and the system prompt) answers with
+    run_check calls; Housecall runs those checks on this PC -- the same
+    read-only checks as the menu -- and sends the results back. Claude ends
+    with give_answer: a plain summary, the problem it points to, the fixes
+    it recommends and manual steps.
+
+    The AI never changes anything. The fixes it names must be ones the check
+    itself offered; they go through the normal Wat nu? menu with a J/N, the
+    check again as proof, and U to undo. Only the problem text and the check
+    results leave the PC.
+
+    Each turn's content is kept exactly as the API returned it (as a JSON
+    string) and sent back unchanged, because Claude's thinking blocks must
+    come back as they were.
+#>
+
+$script:AiMaxChecks = 6
+$script:AiMaxRounds = 10
+
+# One check by code, without asking anything: A3 and A4 take the site or
+# email address the AI passes along.
+function Get-HcAiCheck {
+    param([string]$Code, [string]$Value)
+    switch ($Code) {
+        'A3'    { return New-HcSiteCheck (ConvertTo-HcHostName $Value) }
+        'A4'    { return New-HcMailCheck (ConvertTo-HcMailDomain $Value) }
+        default {
+            $handler = $script:ProblemHandlers[$Code]
+            if ($handler) { return & $handler }
+            return $null
+        }
+    }
+}
+
+# A report as text for the AI: the lines, the finding, the advice, and the
+# fixes Housecall offers, by id.
+function Format-HcReportForAi {
+    param([pscustomobject]$Report)
+    $lines = New-Object System.Collections.Generic.List[string]
+    foreach ($r in $Report.Results) { $lines.Add("[$($r.Status)] $($r.Text)") }
+    if ($Report.FindingId) {
+        $all = @('finding.' + $Report.FindingId) + @($Report.FindingArgs)
+        $lines.Add("Finding ($($Report.FindingId)): $(T @all)")
+        $lines.Add("Advice: $(T ('advice.' + $Report.FindingId))")
+    }
+    $actions = @($Report.Actions)
+    if ($actions.Count) {
+        $lines.Add('Offered fixes:')
+        foreach ($a in $actions) { $lines.Add("- $($a.FixId): $(Get-HcFixLabel $a)") }
+    } else {
+        $lines.Add('Offered fixes: none')
+    }
+    $lines -join "`n"
+}
+
+function ConvertTo-HcContentJson {
+    param([object[]]$Blocks)
+    ConvertTo-Json -InputObject @($Blocks) -Depth 20 -Compress
+}
+
+<#
+    One AI conversation. Returns the answer (the give_answer input), plus
+    the reports and checks it ran, so the menu can offer the fixes.
+#>
+function Invoke-HcAiConversation {
+    param([string]$Problem)
+    $history = New-Object System.Collections.ArrayList
+    $first = @(@{ type = 'text'; text = "[$script:Lang]`n$Problem" })
+    [void]$history.Add(@{ role = 'user'; content_json = (ConvertTo-HcContentJson $first) })
+
+    $state = [pscustomobject]@{ Answer = $null; Text = $null; Reports = @{}; Checks = @{}; Error = $null; Refused = $false }
+    $checksRun = 0
+    for ($round = 0; $round -lt $script:AiMaxRounds; $round++) {
+        Write-Dim (T 'ai.thinking')
+        $r = Invoke-HcRelay @{ action = 'chat'; token = $script:HcToken; messages = @($history) }
+        if (-not $r.Ok) { $state.Error = $r.Error; return $state }
+        [void]$history.Add(@{ role = 'assistant'; content_json = [string]$r.Data.content_json })
+        if ($r.Data.stop_reason -eq 'refusal') { $state.Refused = $true; return $state }
+
+        $results = @()
+        foreach ($block in @($r.Data.content)) {
+            if ($block.type -eq 'text' -and $block.text) { $state.Text = $block.text }
+            if ($block.type -ne 'tool_use') { continue }
+            if ($block.name -eq 'give_answer') {
+                $state.Answer = $block.input
+                continue
+            }
+            $code = [string]$block.input.code
+            $check = $null
+            if ($checksRun -lt $script:AiMaxChecks) { $check = Get-HcAiCheck $code ([string]$block.input.input) }
+            if ($null -eq $check) {
+                $why = if ($checksRun -ge $script:AiMaxChecks) { 'The limit of checks for this conversation is reached; call give_answer now.' } else { "Check $code could not run with that input." }
+                $results += @{ type = 'tool_result'; tool_use_id = $block.id; content = $why; is_error = $true }
+                continue
+            }
+            $checksRun++
+            Write-Step (T 'ai.running' $code (T "problem.$code"))
+            $report = & $check
+            $state.Reports[$code] = $report
+            $state.Checks[$code] = $check
+            $results += @{ type = 'tool_result'; tool_use_id = $block.id; content = (Format-HcReportForAi $report) }
+        }
+        if ($state.Answer -or $results.Count -eq 0) { return $state }
+        [void]$history.Add(@{ role = 'user'; content_json = (ConvertTo-HcContentJson $results) })
+    }
+    $state
+}
+
+function Invoke-HcAi {
+    param([pscustomobject]$Environment, [string]$Text)
+    Clear-HcScreen
+    Write-Banner $Environment
+    Write-Host ('  ?  ' + (T 'ai.title')) -ForegroundColor Yellow
+    Write-Host ''
+    if (-not $Environment.Online) {
+        Write-Warn2 (T 'ai.offline')
+        Write-Host ''
+        [void](Read-HcLine (T 'pressEnter'))
+        return
+    }
+    if (-not (Unlock-HcRelay)) {
+        Write-Host ''
+        [void](Read-HcLine (T 'pressEnter'))
+        return
+    }
+    if ($Text) {
+        Write-Dim (T 'ai.youTyped' $Text)
+    } else {
+        $Text = "$(Read-HcLine (T 'ai.describe'))".Trim()
+        if (-not $Text -or $Text -eq 'Q') { return }
+    }
+    Write-Dim (T 'ai.privacy')
+    Write-Host ''
+
+    $state = Invoke-HcAiConversation $Text
+    Write-Host ''
+    if ($state.Error) {
+        Write-Warn2 (Get-HcRelayMessage $state.Error)
+    } elseif ($state.Refused) {
+        Write-Warn2 (T 'ai.refused')
+    } elseif (-not $state.Answer) {
+        if ($state.Text) { Write-HcLabelled (T 'ai.answer') $state.Text 'Yellow' } else { Write-Warn2 (T 'ai.noAnswer') }
+    } else {
+        $a = $state.Answer
+        Write-HcLabelled (T 'ai.answer') ([string]$a.summary) 'Yellow'
+        Write-Dim (T ('ai.confidence.' + $a.confidence))
+        $steps = @($a.steps | Where-Object { $_ })
+        if ($steps.Count) {
+            Write-Host ''
+            Write-Host ('  ' + (T 'ai.steps')) -ForegroundColor Cyan
+            for ($i = 0; $i -lt $steps.Count; $i++) { Write-HcLabelled "$($i + 1)." ([string]$steps[$i]) 'Cyan' }
+        }
+        $code = [string]$a.problem_code
+        if ($state.Reports.ContainsKey($code)) {
+            # The fixes the AI chose, from what that check offered, through the normal menu.
+            $script:HcCurrentCode = $code
+            Save-HcVisit $code $state.Reports[$code]
+            Write-Host ''
+            Write-HcReport $state.Reports[$code] -LinesOnly
+            Invoke-HcReportLoop $code $state.Checks[$code] $state.Reports[$code] -OnlyFixes @($a.fix_ids | ForEach-Object { [string]$_ })
+            return
+        }
+    }
+    Write-Host ''
+    [void](Read-HcLine (T 'pressEnter'))
 }
 '@
 
