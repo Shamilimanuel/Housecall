@@ -1071,7 +1071,9 @@ Describe 'The invoice' {
         $out = Start-Housecall -Lang nl -Answers @('A1', '', 'Q', '123456', 'Mevr. de Vries', '', '', '', '30', '', '3', '4', 'j') 6>&1 | Out-String
         $script:Sent['invoice_create'].payment | Should Be 'tikkie'
         $out | Should Match 'Betaling: \[1\] pin  \[2\] contant  \[4\] betaalverzoek'
-        $out | Should Match 'Betaald via betaalverzoek op 26 september 2026'
+        # Made when the request is sent, so it may not say paid yet.
+        $out | Should Match 'Te betalen via het betaalverzoek van 26 september 2026'
+        $out | Should Not Match 'Betaald via'
         $out | Should Not Match 'Btw'
     }
 
