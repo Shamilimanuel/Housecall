@@ -96,10 +96,13 @@ function Get-HcVisitBlocks {
         foreach ($v in $visits) { & $block 'text' (T "problem.$($v.Code)") }
     }
 
-    & $block 'heading' (T 'note.found')
-    foreach ($v in $visits | Where-Object { $_.FindingId }) {
-        $all = @('finding.' + $v.FindingId) + @($v.FindingArgs)
-        & $block 'text' (T @all)
+    $found = @($visits | Where-Object { $_.FindingId })
+    if ($found.Count) {
+        & $block 'heading' (T 'note.found')
+        foreach ($v in $found) {
+            $all = @('finding.' + $v.FindingId) + @($v.FindingArgs)
+            & $block 'text' (T @all)
+        }
     }
 
     & $block 'heading' (T 'note.done')

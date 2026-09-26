@@ -126,6 +126,9 @@ function Write-HcStatus {
         $(if ($Environment.Online) { T 'status.online' } else { T 'status.offline' })
     )
     Write-Host ('   ' + ($parts -join $dot)) -ForegroundColor DarkGray
+    # How long this visit has been going; yellow once the starting price is used up.
+    $clock = Get-HcClockLine
+    Write-Host ('   ' + $clock.Text) -ForegroundColor $(if ($clock.Over) { 'Yellow' } else { 'DarkGray' })
     if ($script:DryRun) {
         Write-Host ('   ' + (T 'status.dryRun')) -ForegroundColor Magenta
     }

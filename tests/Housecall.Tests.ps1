@@ -22,6 +22,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\note.ps1')
 . (Join-Path $root 'src\relay.ps1')
 . (Join-Path $root 'src\invoice.ps1')
+. (Join-Path $root 'src\invoice-page.ps1')
 . (Join-Path $root 'src\ai.ps1')
 
 # Housecall's own source, put together the way dev.ps1 does it.
@@ -1148,6 +1149,61 @@ Describe 'The invoice' {
         ($text -contains (T 'problem.A1')) | Should Be $false
         $script:HcAsked = ''
         $script:HcWork.Clear(); $script:HcVisit.Clear()
+    }
+
+    It 'the clock: minutes since the start, yellow once the starting price is used up' {
+        $script:Lang = 'nl'
+        $script:HcStartMinutes = 30
+        $start = $script:HcStartedAt
+        $script:HcStartedAt = [datetime]'2026-09-26 14:05'
+        $c = Get-HcClockLine ([datetime]'2026-09-26 14:40')
+        $c.Text | Should Be 'Bezig sinds 14:05, 35 min: het starttarief (30 min) is op, vraag de klant of u verder mag'
+        $c.Over | Should Be $true
+        $c = Get-HcClockLine ([datetime]'2026-09-26 14:20')
+        $c.Text | Should Be 'Bezig sinds 14:05, 15 min'
+        $c.Over | Should Be $false
+        # No starting price: never a warning.
+        $script:HcStartMinutes = 0
+        (Get-HcClockLine ([datetime]'2026-09-26 16:05')).Over | Should Be $false
+        $script:HcStartMinutes = 30
+        $script:HcStartedAt = $start
+    }
+
+    It 'the drawn invoice: layout B on A4, the work with ticks, more pages when it is long' {
+        $script:Lang = 'nl'
+        $script:HcVisit.Clear(); $script:HcChanges.Clear(); $script:HcWork.Clear()
+        [void]$script:HcVisit.Add([pscustomobject]@{ Code = 'C1'; FindingId = $null; FindingArgs = @() })
+        $script:HcAsked = 'Printer doet het niet sinds de verhuizing'
+        [void](Add-HcWorkItem 'Printer geinstalleerd' $true)
+        [void](Add-HcWorkItem 'Onderdeel moet besteld worden' $false)
+        $i = & $invoice @{ btw_mode = 'unset'; payment = 'tikkie' }
+        $pages = @(Get-HcInvoiceLayout $i)
+        $pages.Count | Should Be 1
+        $texts = @($pages[0] | Where-Object { $_.Kind -eq 'text' } | ForEach-Object { $_.Text })
+        ($texts -contains 'Factuur') | Should Be $true
+        ($texts -contains 'BETREFT') | Should Be $true
+        ($texts -contains 'Printer doet het niet sinds de verhuizing') | Should Be $true
+        ($texts -contains 'Computerhulp aan huis') | Should Be $true
+        ($texts -contains 'Onderdeel moet besteld worden (nog niet opgelost)') | Should Be $true
+        ($texts -contains "$euro 45,00") | Should Be $true
+        ($texts -contains 'Pagina 1 van 1') | Should Be $true
+        @($pages[0] | Where-Object { $_.Kind -eq 'check' }).Count | Should Be 1
+        @($pages[0] | Where-Object { $_.Kind -eq 'dash' }).Count | Should Be 1
+        # Everything stays on the page, left to right and top to bottom.
+        foreach ($s in @($pages[0] | Where-Object { $_.Kind -eq 'text' })) {
+            ($s.X + $s.W) | Should Not BeGreaterThan 730
+            $s.Y | Should BeLessThan 1123
+        }
+        # The text version (tests, no desktop) says the same.
+        $all = (@(Get-HcInvoiceBlocks $i) | ForEach-Object { $_.Text }) -join "`n"
+        $all | Should Match 'Printer doet het niet sinds de verhuizing'
+        $all | Should Match 'Computerhulp aan huis'
+
+        for ($n = 0; $n -lt 45; $n++) { [void](Add-HcWorkItem "Taak nummer $n" $true) }
+        $pages = @(Get-HcInvoiceLayout $i)
+        $pages.Count | Should Be 2
+        (@($pages[1] | Where-Object { $_.Kind -eq 'text' } | ForEach-Object { $_.Text }) -contains 'Pagina 2 van 2') | Should Be $true
+        $script:HcWork.Clear(); $script:HcVisit.Clear(); $script:HcAsked = ''
     }
 
     It 'Enter at the code: no invoice, no second question, the plain note' {

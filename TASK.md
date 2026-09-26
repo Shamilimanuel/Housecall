@@ -1,14 +1,14 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 94%** `███████████████████░` 51 of 54 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
+**Progress: 95%** `███████████████████░` 54 of 57 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
 | Next up | `░░░░░░░░░░` | 0% (0/3) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
-| Recently done | `██████████` | 100% (36/36) |
+| Recently done | `██████████` | 100% (39/39) |
 | Found in testing | `██████████` | 100% (10/10) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
@@ -225,6 +225,20 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Cleaner invoice and the clock** *(26 Sep)*
+- [x] **The invoice is a drawn A4 page** (layout B, chosen from three in a
+      preview): "Factuur", number and date, the seller on the right; the
+      client next to *Betreft* (the Hulpvraag); one table with "Computerhulp
+      aan huis" and its ticks, the costs, the total; how it was paid. The
+      window and the printer draw the same steps (`src/invoice-page.ps1`),
+      more pages when it is long. Tests and no desktop keep the text version
+- [x] **The clock** under the banner: "Bezig sinds 14:05, 35 min", yellow
+      with "vraag de klant of u verder mag" once the starting price's
+      minutes are used up (30 until the settings are read at Q)
+- [x] **Extra time per quarter begun** after the starting price, so the
+      amounts stay round (50 min = EUR 25), and the first line names the
+      total time. The empty "Wat er gevonden is" heading is gone
 
 **Pricing and the work list** *(26 Sep)*
 - [x] **Starting price.** Settings `start_fee` and `start_minutes` (Supabase

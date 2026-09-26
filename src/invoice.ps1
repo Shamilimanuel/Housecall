@@ -13,6 +13,19 @@
 #>
 
 $script:HcStartedAt = Get-Date
+# The minutes the starting price covers, for the clock under the banner. The
+# real value comes with the settings at Q; until then the usual 30.
+$script:HcStartMinutes = 30
+
+# "Working since 14:05, 35 min"; Over once the starting price's minutes are used up.
+function Get-HcClockLine {
+    param([datetime]$Now = (Get-Date))
+    $minutes = [int][Math]::Floor([Math]::Max(0, ($Now - $script:HcStartedAt).TotalMinutes))
+    $since = $script:HcStartedAt.ToString('HH:mm')
+    $over = $script:HcStartMinutes -gt 0 -and $minutes -ge $script:HcStartMinutes
+    $text = if ($over) { T 'status.clockOver' $since $minutes $script:HcStartMinutes } else { T 'status.clock' $since $minutes }
+    [pscustomobject]@{ Text = $text; Over = $over }
+}
 
 # 30,00 as "EUR 30,00" with the euro sign, in Dutch notation. The sign is
 # built from its char code, since source files stay plain ASCII.
@@ -467,6 +480,7 @@ function Invoke-HcInvoice {
     $s = Get-HcSettings
     if (-not $s.Ok) { Write-Warn2 (T 'inv.failed' (Get-HcRelayMessage $s.Error)); return $null }
     if (-not $s.Settings -or -not $s.Settings.business_name) { Write-Warn2 (T 'inv.noSettings'); return $null }
+    $script:HcStartMinutes = if ([decimal]$(if ($s.Settings.start_fee) { $s.Settings.start_fee } else { 0 }) -gt 0) { [int]$s.Settings.start_minutes } else { 0 }
 
     # The window when there is a desktop; the console form in tests and without one.
     $form = $null
@@ -538,9 +552,18 @@ function Get-HcInvoiceBlocks {
     $client = @($Invoice.client_name, $Invoice.client_address, $Invoice.client_postcode_city, $Invoice.client_email) | Where-Object { $_ }
     & $block 'text' ($client -join "`n")
 
-    foreach ($b in @(Get-HcVisitBlocks)) { $b }
+    $subject = Get-HcInvoiceSubject
+    if ($subject) {
+        & $block 'heading' (T 'doc.subjectCap')
+        & $block 'text' $subject
+    }
 
     & $block 'heading' (T 'doc.costs')
+    $work = @(Get-HcInvoiceWork)
+    if ($work.Count) {
+        & $block 'text' (T 'doc.workTitle')
+        foreach ($w in $work) { & $block 'text' ('  - ' + $w.Text) }
+    }
     foreach ($l in @($Invoice.lines)) { New-HcMoneyRow $l.description ([decimal]$l.amount) }
     & $block 'row' ('-' * 58)
     if ($Invoice.btw_mode -eq '21') {
@@ -564,7 +587,11 @@ function Get-HcInvoiceBlocks {
     & $block 'small' (T 'doc.thanks')
 }
 
+# The drawn A4 page in a window; the text version in tests and without a desktop.
 function Show-HcInvoice {
     param($Invoice)
+    if ($null -eq $script:HcInputQueue -and -not $script:NoConsole) {
+        try { Show-HcInvoicePages $Invoice; return } catch { }
+    }
     Show-HcDocument @(Get-HcInvoiceBlocks $Invoice) (T 'doc.windowTitle' $Invoice.number)
 }
