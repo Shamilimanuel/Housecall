@@ -35,7 +35,7 @@ $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
 |---|---|---|
 | A | Internet & Wi-Fi | A1 no internet, A2 slow or dropping, A3 one website: working. A4 email: planned |
 | B | Sound, screen & video calls | planned |
-| C | Printer & devices | planned |
+| C | Printer & devices | C1 printer won't print, C2 mouse, keyboard or USB stick, C3 Bluetooth: working |
 | D | Slow or freezing | planned |
 | E | Windows & updates | planned |
 | F | Safety & scams | F1 fake virus pop-up, F2 someone got into my PC (AnyDesk, TeamViewer, …), F3 full check: working |

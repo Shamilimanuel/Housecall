@@ -12,6 +12,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\checks\common.ps1')
 . (Join-Path $root 'src\checks\network.ps1')
 . (Join-Path $root 'src\checks\security.ps1')
+. (Join-Path $root 'src\checks\devices.ps1')
 . (Join-Path $root 'src\fixes.ps1')
 . (Join-Path $root 'src\note.ps1')
 
@@ -350,6 +351,116 @@ Describe 'F: reading the PC' {
     }
 }
 
+Describe 'C: printer and devices' {
+    $script:Lang = 'en'
+    $printer = { param($name, [hashtable]$c = @{})
+        $p = [pscustomobject]@{ Name = $name; Default = $false; Virtual = $false; Offline = $false; State = 0; HostAddress = $null; Reachable = $null }
+        foreach ($k in $c.Keys) { $p.$k = $c[$k] }
+        $p }
+    $pdf = & $printer 'Microsoft Print to PDF' @{ Virtual = $true }
+    $hp = & $printer 'HP DeskJet 2700' @{ Default = $true }
+    $facts = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{ Now = [datetime]'2026-09-26 10:00'; SpoolerRunning = $true; SpoolerDisabled = $false; Printers = @($pdf, $hp); Jobs = @() }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+
+    $cases = @(
+        @{ Name = 'a ready default printer';          Change = @{};                                                                   Finding = 'printerReady' }
+        @{ Name = 'the print service stopped';        Change = @{ SpoolerRunning = $false; Printers = @() };                           Finding = 'spoolerStopped' }
+        @{ Name = 'only Print to PDF';                Change = @{ Printers = @($pdf) };                                              Finding = 'noPrinter' }
+        @{ Name = 'Print to PDF is the default';      Change = @{ Printers = @((& $printer 'Microsoft Print to PDF' @{ Virtual = $true; Default = $true }), (& $printer 'HP DeskJet 2700')) }; Finding = 'defaultVirtual' }
+        @{ Name = 'no default printer at all';        Change = @{ Printers = @($pdf, (& $printer 'HP DeskJet 2700')) };               Finding = 'noDefault' }
+        @{ Name = 'the printer is offline';           Change = @{ Printers = @($pdf, (& $printer 'HP DeskJet 2700' @{ Default = $true; Offline = $true })) }; Finding = 'printerOffline' }
+        @{ Name = 'a network printer not answering';  Change = @{ Printers = @($pdf, (& $printer 'HP DeskJet 2700' @{ Default = $true; HostAddress = '192.168.1.40'; Reachable = $false })) }; Finding = 'printerUnreachable' }
+        @{ Name = 'out of paper';                     Change = @{ Printers = @($pdf, (& $printer 'HP DeskJet 2700' @{ Default = $true; State = 4 })) }; Finding = 'printerAttention' }
+        @{ Name = 'low on ink only';                  Change = @{ Printers = @($pdf, (& $printer 'HP DeskJet 2700' @{ Default = $true; State = 5 })) }; Finding = 'printerReady' }
+        @{ Name = 'documents stuck for an hour';      Change = @{ Jobs = @([pscustomobject]@{ Printer = 'HP DeskJet 2700'; Document = 'Brief.docx'; Submitted = [datetime]'2026-09-26 09:00'; Status = '' }) }; Finding = 'jobsStuck' }
+        @{ Name = 'a document sent a minute ago';     Change = @{ Jobs = @([pscustomobject]@{ Printer = 'HP DeskJet 2700'; Document = 'Brief.docx'; Submitted = [datetime]'2026-09-26 09:59'; Status = '' }) }; Finding = 'printerReady' }
+    )
+    foreach ($c in $cases) {
+        It "C1 finds '$($c.Finding)' when: $($c.Name)" {
+            (Test-HcPrinter (& $facts $c.Change)).FindingId | Should Be $c.Finding
+        }
+    }
+
+    It 'C1 offers the right fixes' {
+        @((Test-HcPrinter (& $facts @{ SpoolerRunning = $false; Printers = @() })).Actions)[0].FixId | Should Be 'startSpooler'
+        $r = Test-HcPrinter (& $facts @{ Printers = @((& $printer 'Microsoft Print to PDF' @{ Virtual = $true; Default = $true }), (& $printer 'HP DeskJet 2700')) })
+        $r.Actions[0].FixId | Should Be 'setDefault'
+        $r.Actions[0].Target.Name | Should Be 'HP DeskJet 2700'
+        $r.Actions[0].Target.Previous | Should Be 'Microsoft Print to PDF'
+        $stuck = Test-HcPrinter (& $facts @{ Jobs = @([pscustomobject]@{ Printer = 'x'; Document = 'd'; Submitted = [datetime]'2026-09-26 08:00'; Status = '' }) })
+        @($stuck.Actions | ForEach-Object { $_.FixId }) | Should Be @('clearJobs', 'restartSpooler')
+        @((Test-HcPrinter (& $facts)).Actions)[0].FixId | Should Be 'printTestPage'
+    }
+
+    $inputFacts = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{ Problems = @(); Keyboards = 1; Pointers = 1; UsbDrives = @() }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+    $device = { param($code) [pscustomobject]@{ Name = 'USB Receiver'; Class = 'HIDClass'; Code = $code; InstanceId = 'USB\VID_046D&PID_C52B\5&1' } }
+    $inputCases = @(
+        @{ Name = 'everything works';         Change = @{};                                                          Finding = 'devicesOk' }
+        @{ Name = 'a device switched off';    Change = @{ Problems = @(& $device 22) };                             Finding = 'deviceDisabled' }
+        @{ Name = 'a device without driver';  Change = @{ Problems = @(& $device 28) };                             Finding = 'deviceNoDriver' }
+        @{ Name = 'a device reporting 43';    Change = @{ Problems = @(& $device 43) };                             Finding = 'deviceError' }
+        @{ Name = 'no mouse';                 Change = @{ Pointers = 0 };                                            Finding = 'noPointer' }
+        @{ Name = 'a USB stick, no letter';   Change = @{ UsbDrives = @([pscustomobject]@{ Name = 'SanDisk Cruzer'; Letters = @() }) }; Finding = 'usbNoLetter' }
+        @{ Name = 'a USB stick as E:';        Change = @{ UsbDrives = @([pscustomobject]@{ Name = 'SanDisk Cruzer'; Letters = @('E:') }) }; Finding = 'devicesOk' }
+    )
+    foreach ($c in $inputCases) {
+        It "C2 finds '$($c.Finding)' when: $($c.Name)" {
+            (Test-HcInputDevices (& $inputFacts $c.Change)).FindingId | Should Be $c.Finding
+        }
+    }
+
+    It 'C2 offers to switch a device back on, or restart it, by its instance id' {
+        $off = Test-HcInputDevices (& $inputFacts @{ Problems = @(& $device 22) })
+        $off.Actions[0].FixId | Should Be 'enableDevice'
+        $off.Actions[0].Target.InstanceId | Should Be 'USB\VID_046D&PID_C52B\5&1'
+        (Test-HcInputDevices (& $inputFacts @{ Problems = @(& $device 43) })).Actions[0].FixId | Should Be 'restartDevice'
+        @((Test-HcInputDevices (& $inputFacts @{ Problems = @(& $device 28) })).Actions).Count | Should Be 0
+    }
+
+    $bt = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{
+            Adapters = @([pscustomobject]@{ Name = 'TP-Link Bluetooth USB Adapter'; Code = 0; InstanceId = 'USB\VID_2357&PID_0604\1' })
+            ServiceRunning = $true
+            Paired = @([pscustomobject]@{ Name = 'JBL Charge Essential'; Connected = $false })
+        }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+    It 'C3 finds a working adapter, a missing one, a stopped service and a switched-off adapter' {
+        (Test-HcBluetooth (& $bt)).FindingId | Should Be 'btOk'
+        (Test-HcBluetooth (& $bt @{ Adapters = @() })).FindingId | Should Be 'btNoAdapter'
+        $stopped = Test-HcBluetooth (& $bt @{ ServiceRunning = $false })
+        $stopped.FindingId | Should Be 'btServiceStopped'
+        $stopped.Actions[0].FixId | Should Be 'startBtService'
+        $off = Test-HcBluetooth (& $bt @{ Adapters = @([pscustomobject]@{ Name = 'TP-Link Bluetooth USB Adapter'; Code = 22; InstanceId = 'USB\x' }) })
+        $off.FindingId | Should Be 'deviceDisabled'
+        $off.FindingArgs[0] | Should Be 'TP-Link Bluetooth USB Adapter'
+    }
+
+    It 'C3 lists paired devices with their connection state' {
+        $r = Test-HcBluetooth (& $bt @{ Paired = @([pscustomobject]@{ Name = 'JBL Charge Essential'; Connected = $false }, [pscustomobject]@{ Name = 'Pro Controller'; Connected = $true }) })
+        ($r.Results | Where-Object { $_.Text -like 'Paired:*' }).Text | Should Be 'Paired: JBL Charge Essential (not connected), Pro Controller (connected)'
+    }
+
+    It 'never shows a missing-string marker, in either language' {
+        foreach ($lang in @('en', 'nl')) {
+            $script:Lang = $lang
+            $reports = @($cases | ForEach-Object { Test-HcPrinter (& $facts $_.Change) }) +
+                       @($inputCases | ForEach-Object { Test-HcInputDevices (& $inputFacts $_.Change) }) +
+                       @((Test-HcBluetooth (& $bt)), (Test-HcBluetooth (& $bt @{ ServiceRunning = $false })))
+            foreach ($r in $reports) {
+                @($r.Results | Where-Object { $_.Text -match '\[\w+(\.\w+)+\]' }).Count | Should Be 0
+                @($r.Actions | ForEach-Object { Get-HcFixLabel $_ } | Where-Object { $_ -match '\[\w+(\.\w+)+\]' }).Count | Should Be 0
+            }
+        }
+        $script:Lang = 'en'
+    }
+}
+
 Describe 'Fixes offered by the checks' {
     $script:Lang = 'en'
     $task = { param($name, $command, $level = 'weak', $disabled = $false)
@@ -587,6 +698,12 @@ Describe 'Findings' {
         $ids = @($code | ForEach-Object { [regex]::Matches($_, "(?:Set-HcFinding \`$r |\{ )'(\w+)'") | ForEach-Object { $_.Groups[1].Value } })
         $ids += $script:SecurityPriority
         $ids += @($script:SecurityChecks.Values | ForEach-Object { $_.Clean })
+        # Area C names its findings as $found['id'], Set-HcFinding $r 'id', or the clean id last on Select-HcFinding.
+        $ids += @(Get-Content (Join-Path $root 'src\checks\devices.ps1') | ForEach-Object {
+            [regex]::Matches($_, "\`$found\['(\w+)'\]|Set-HcFinding \`$r '(\w+)'|Select-HcFinding .* '(\w+)'\s*$") | ForEach-Object {
+                @($_.Groups[1].Value, $_.Groups[2].Value, $_.Groups[3].Value) | Where-Object { $_ }
+            }
+        })
         $ids = $ids | Sort-Object -Unique
         $ids.Count | Should BeGreaterThan 25
         foreach ($lang in @('en', 'nl')) {

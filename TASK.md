@@ -1,20 +1,20 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 48%** `██████████░░░░░░░░░░` 20 of 42 done · 0 in progress · 19 open · 0 blocked · 3 waiting on a decision
+**Progress: 50%** `██████████░░░░░░░░░░` 21 of 42 done · 0 in progress · 18 open · 0 blocked · 3 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/19) |
+| Next up | `░░░░░░░░░░` | 0% (0/18) |
 | Blocked on Shamil | `░░░░░░░░░░` | 0% (0/3) |
-| Recently done | `██████████` | 100% (15/15) |
+| Recently done | `██████████` | 100% (16/16) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
 
 Working notes, kept so a new chat can pick up without re-deriving anything.
-Last updated: **26 September 2026**, after areas A and F, fixes with undo and guides, the client note, and restarting as admin.
+Last updated: **26 September 2026**, after areas A, C and F, fixes with undo and guides, the client note, and restarting as admin.
 
 **How we work this list:** items are worked top to bottom. Pick one, say the
 name, and it gets built. When it is done it moves to *Recently done* and we go
@@ -56,9 +56,12 @@ menu undoes the session's fixes. Five fixes exist so far; see *Recently done*.
 Afdrukken / Sluiten, nothing saved), and an admin fix now offers to
 **restart Housecall as administrator** at the same problem, also offline.
 
-Next, recommended: **areas B–E** with the same pattern (checks → finding →
-fixes → steps), starting with **C** (printer: very common with older
-clients). Shamil still has to fill in `$script:Contact` in `src/note.ps1`.
+**Area C** (printer, devices, Bluetooth) is built too. **Decided 26 Sep:
+the AI chat comes last**, after everything else including 0.1.0.
+
+Next, recommended: **B** (sound, screen, video calls), then **D** and
+**E**, same pattern. Shamil still has to fill in `$script:Contact` in
+`src/note.ps1`.
 
 **Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
 name and **95%** signal correctly. The drop-out count in A2 has not been
@@ -181,21 +184,13 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 **Phase 1: checks (offline, read-only)**
 - [ ] **A4** email: which mail program or webmail, then reach its servers (IMAP/SMTP ports). Needs a question first, like A3
-- [ ] **B** audio default device, mute, audio service; camera/mic privacy per app; display scale
-- [ ] **C** spooler, stuck jobs, default printer; USB devices with errors; Bluetooth radio
+- [ ] **B** ← recommended, next: audio default device, mute, audio service; camera/mic privacy per app; display scale
 - [ ] **D** disk space, memory and CPU hogs, startup programs, recent crashes, uptime
 - [ ] **E** Windows Update service, last success, pending reboot
 
 **Phase 2: fixes, proof and the note**
-- [ ] More fixes. Done: disable task, close remote tool, proxy off, flush DNS, renew IP. Still to do: reset Winsock, restart adapter; set default audio; restart spooler + clear queue; restart audio service; uninstall a remote-access tool (through its own uninstaller); block a notification site (the browser must be closed first, or it overwrites the change)
+- [ ] More fixes. Done: disable task, close remote tool, proxy off, flush DNS, renew IP, and for C: start/restart the print service, clear the queue, set the default printer, test page, switch a device on, restart a device, start the Bluetooth service. Still to do: reset Winsock, restart adapter; set default audio; restart audio service; uninstall a remote-access tool (through its own uninstaller); block a notification site (the browser must be closed first, or it overwrites the change)
 - [ ] Restore point before any admin fix, where Windows allows one
-
-**Phase 3: the AI chat (`?`)**
-- [ ] Relay: small serverless function holding the key, with its own token (see decisions)
-- [ ] Send the problem text; the model calls checks as tools and reads the results
-- [ ] The model answers in a fixed shape: finding, confidence, fix id from the approved list *or* manual steps
-- [ ] Cap the loop (max tool calls), with a clear "couldn't find it" ending
-- [ ] With no internet, `?` says so and points to the menu
 
 **Phase 4: visit memory**
 - [ ] A PC fingerprint that is not personal (e.g. a hash of the BIOS serial)
@@ -207,6 +202,13 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - [ ] Options via the `[scriptblock]::Create((irm $s))` form: `-DryRun`, `-NoAI`, `-Lang nl`
 - [ ] Break a test PC or VM on purpose (adapter off, bad DNS, stopped spooler, AnyDesk installed) and check each one is found, fixed and proven
 - [ ] Use it at one real client visit
+
+**Last: the AI chat (`?`)** *(decided 26 Sep: after everything else, including 0.1.0)*
+- [ ] Relay: small serverless function holding the key, with its own token (see decisions)
+- [ ] Send the problem text; the model calls checks as tools and reads the results
+- [ ] The model answers in a fixed shape: finding, confidence, fix id from the approved list *or* manual steps
+- [ ] Cap the loop (max tool calls), with a clear "couldn't find it" ending
+- [ ] With no internet, `?` says so and points to the menu
 
 ## Blocked on Shamil
 
@@ -221,6 +223,26 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Phase 1, area C: Printer & devices** *(26 Sep)*
+- [x] **C1, C2, C3** (`src/checks/devices.ps1`), no admin needed to check,
+      under a second each on Shamil's PC. *C1*: print service; real printers
+      apart from Print to PDF / XPS / OneNote / Fax; offline; network
+      printers pinged on their IP port; the printer's own state (paper, ink,
+      cover, jam); the default printer (Print to PDF as default is the
+      classic "my printer does nothing"); documents stuck 10+ minutes.
+      Fixes: start the print service, clear the queue (own documents, no
+      admin) or clear it and restart the service (admin), make the real
+      printer the default (also stops "let Windows manage my default
+      printer", undoable), print a test page. *C2*: keyboard and mouse
+      found, USB drives with their letter or without one, and every device
+      Device Manager flags, with the reason (switched off, no driver, could
+      not start, reported a problem). Fixes: switch it back on, restart it
+      (both admin). *C3*: the Bluetooth adapter, the Bluetooth service, and
+      paired devices with connected / not connected. Live on Shamil's PC:
+      "no printer, only Microsoft Print to PDF" (correct), all devices OK,
+      the TP-Link adapter with the JBL speaker and Pro Controller paired.
+      17 new guides, 9 new fixes, 23 new tests
 
 **Phase 2, part 2: the client note and restarting as admin** *(26 Sep)*
 - [x] **Client note** (`src/note.ps1`): opens by itself when Housecall is
@@ -386,6 +408,12 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
   found in the first window isn't carried over (only the problem code is).
 - **No source line may start with `'@`**: it would end the `$HcSource`
   here-string. `build.ps1` refuses it.
+- **Printers on a WSD port can't be pinged** (no IP address in the port).
+  Only printers on a standard TCP/IP port get the "does not answer on the
+  network" check; for the rest, Windows' own offline flag is all there is.
+- **Bluetooth switched off in Settings isn't detected.** The radio's on/off
+  state needs a Windows API PowerShell 5.1 can't easily reach. The C3 guide
+  starts with "check that Bluetooth is On" for that reason.
 - **Undo only covers the current session.** Once Housecall is closed, a
   disabled task has to be switched back on in Task Scheduler. The step-by-step
   guide says where.
@@ -417,6 +445,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Guides | `steps.<finding id>` in `src/strings.ps1`, steps separated by `\|` |
 | Note | `src/note.ps1`: `$script:Contact` (fill in!), the visit record, `Get-HcNoteBlocks` (content), the window and printing |
 | Admin restart | `Start-HcElevated` in `src/fixes.ps1`; `$HcSource` in `dev.ps1` and `setup.ps1` |
+| Area C | `src/checks/devices.ps1`: `Test-HcPrinter` (C1), `Test-HcInputDevices` (C2), `Test-HcBluetooth` (C3), `Add-HcDeviceProblem` (shared by C2 and C3) |
 | Area F | `src/checks/security.ps1`: the remote-tool list, known notification sites, `Test-HcSecurity` (F1–F3 share it; `$script:SecurityChecks` says which parts each runs) |
 | Next areas | `src/checks/<area>.ps1`, one file per letter, registering its own handlers |
 | Fixes | `fixes/` *(planned)*: the approved list, each with its undo |

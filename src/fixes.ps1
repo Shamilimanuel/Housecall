@@ -8,7 +8,8 @@
       Label    fix.<id> in strings.ps1, filled from the target, and
                fix.<id>.done for the note and undo ("Disabled task X")
       Note     undo = can be undone, safe = harmless and needs no undo,
-               restart = closes a program, which can simply be started again
+               restart = closes a program, which can simply be started again,
+               reprint = removes stuck print jobs, which need printing again
       Admin    needs an administrator PowerShell
       Apply    does it; throws when it fails
       Undo     puts it back ($null when there is nothing to put back)
@@ -61,6 +62,92 @@ $script:Fixes = @{
             & ipconfig.exe /release | Out-Null
             & ipconfig.exe /renew | Out-Null
             if ($LASTEXITCODE -ne 0) { throw "ipconfig /renew: $LASTEXITCODE" }
+        }
+        Undo = $null
+    }
+
+    # ---- C: printer and devices
+    startSpooler = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            if ([string](Get-Service Spooler).StartType -eq 'Disabled') { Set-Service Spooler -StartupType Automatic -ErrorAction Stop }
+            Start-Service Spooler -ErrorAction Stop
+        }
+        Undo = $null
+    }
+    # Stuck documents are gone afterwards; the note on this fix says so.
+    restartSpooler = @{
+        Note = 'reprint'; Admin = $true
+        Apply = {
+            param($t)
+            Stop-Service Spooler -Force -ErrorAction Stop
+            Get-ChildItem (Join-Path $env:SystemRoot 'System32\spool\PRINTERS') -File -ErrorAction SilentlyContinue |
+                Remove-Item -Force -ErrorAction SilentlyContinue
+            Start-Service Spooler -ErrorAction Stop
+        }
+        Undo = $null
+    }
+    # Without admin, Windows lets people cancel their own documents.
+    clearJobs = @{
+        Note = 'reprint'; Admin = $false
+        Apply = { param($t) Get-CimInstance Win32_PrintJob | Remove-CimInstance -ErrorAction Stop }
+        Undo  = $null
+    }
+    # Also stops "let Windows manage my default printer", which would
+    # otherwise switch it back to whatever was used last.
+    setDefault = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            $key = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows'
+            $t.SavedMode = (Get-ItemProperty $key -ErrorAction SilentlyContinue).LegacyDefaultPrinterMode
+            Set-ItemProperty $key -Name LegacyDefaultPrinterMode -Value 1 -Type DWord -ErrorAction Stop
+            $printer = Get-CimInstance Win32_Printer -Filter ("Name='{0}'" -f ($t.Name -replace "'", "''"))
+            $result = Invoke-CimMethod -InputObject $printer -MethodName SetDefaultPrinter -ErrorAction Stop
+            if ($result.ReturnValue -ne 0) { throw "SetDefaultPrinter: $($result.ReturnValue)" }
+        }
+        Undo = {
+            param($t)
+            $key = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows'
+            if ($t.Previous) {
+                $printer = Get-CimInstance Win32_Printer -Filter ("Name='{0}'" -f ($t.Previous -replace "'", "''"))
+                if ($printer) { [void](Invoke-CimMethod -InputObject $printer -MethodName SetDefaultPrinter -ErrorAction Stop) }
+            }
+            if ($null -eq $t.SavedMode) { Remove-ItemProperty $key -Name LegacyDefaultPrinterMode -ErrorAction SilentlyContinue }
+            else { Set-ItemProperty $key -Name LegacyDefaultPrinterMode -Value $t.SavedMode -Type DWord }
+        }
+    }
+    printTestPage = @{
+        Note = 'safe'; Admin = $false
+        Apply = {
+            param($t)
+            $printer = Get-CimInstance Win32_Printer -Filter ("Name='{0}'" -f ($t.Name -replace "'", "''"))
+            $result = Invoke-CimMethod -InputObject $printer -MethodName PrintTestPage -ErrorAction Stop
+            if ($result.ReturnValue -ne 0) { throw "PrintTestPage: $($result.ReturnValue)" }
+        }
+        Undo = $null
+    }
+    enableDevice = @{
+        Note = 'undo'; Admin = $true
+        Apply = { param($t) Enable-PnpDevice -InstanceId $t.InstanceId -Confirm:$false -ErrorAction Stop }
+        Undo  = { param($t) Disable-PnpDevice -InstanceId $t.InstanceId -Confirm:$false -ErrorAction Stop }
+    }
+    restartDevice = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            & pnputil.exe /restart-device $t.InstanceId | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "pnputil /restart-device: $LASTEXITCODE" }
+        }
+        Undo = $null
+    }
+    startBtService = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            if ([string](Get-Service bthserv).StartType -eq 'Disabled') { Set-Service bthserv -StartupType Manual -ErrorAction Stop }
+            Start-Service bthserv -ErrorAction Stop
         }
         Undo = $null
     }

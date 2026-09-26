@@ -365,6 +365,126 @@ $script:Strings = @{
         'fix.elevateAsk'      = 'This needs admin. Restart Housecall as administrator now? Windows will ask for permission. (Y/N)'
         'fix.elevated'        = 'Housecall carries on in the new administrator window. This window can be closed.'
         'fix.elevateFailed'   = 'Windows did not start the administrator window ({0}).'
+
+        # ---- C: check lines
+        'dev.spoolerStopped'     = 'The print service (Print Spooler) is not running'
+        'dev.spoolerOk'          = 'The print service is running'
+        'dev.noPrinter'          = 'No printer installed, only: {0}'
+        'dev.printerReady'       = '{0} is ready'
+        'dev.printerReadyDefault' = '{0} is ready, and is the default printer'
+        'dev.printerOffline'     = '{0} is offline'
+        'dev.printerUnreachable' = '{0} does not answer on the network ({1})'
+        'dev.printerState'       = '{0}: {1}'
+        'dev.state.3'            = 'paper is running low'
+        'dev.state.4'            = 'out of paper'
+        'dev.state.5'            = 'ink or toner is running low'
+        'dev.state.6'            = 'out of ink or toner'
+        'dev.state.7'            = 'a door or cover is open'
+        'dev.state.8'            = 'paper jam'
+        'dev.state.10'           = 'needs service'
+        'dev.state.11'           = 'the output tray is full'
+        'dev.defaultVirtual'     = '{0} is the default printer, so documents go there instead of to paper'
+        'dev.noDefault'          = 'No default printer is set'
+        'dev.jobsStuck'          = '{0} document(s) stuck in the queue, the oldest since {1}'
+        'dev.jobsOk'             = 'The print queue is empty'
+        'dev.keyboardOk'         = 'Keyboard found'
+        'dev.noKeyboard'         = 'No keyboard found'
+        'dev.pointerOk'          = 'Mouse or touchpad found'
+        'dev.noPointer'          = 'No mouse or touchpad found'
+        'dev.usbDrive'           = 'USB drive "{0}" is connected as {1}'
+        'dev.usbNoLetter'        = 'USB drive "{0}" is connected but has no drive letter'
+        'dev.noDeviceErrors'     = 'No devices with problems'
+        'dev.deviceProblem'      = '{0}: {1}'
+        'dev.code.10'            = 'could not start'
+        'dev.code.22'            = 'switched off'
+        'dev.code.28'            = 'no driver installed'
+        'dev.code.43'            = 'reported a problem'
+        'dev.codeOther'          = 'error code {0}'
+        'dev.btAdapter'          = 'Bluetooth adapter "{0}" works'
+        'dev.btNoAdapter'        = 'No Bluetooth adapter found'
+        'dev.btServiceOk'        = 'The Bluetooth service is running'
+        'dev.btServiceStopped'   = 'The Bluetooth service is not running'
+        'dev.btPaired'           = 'Paired: {0}'
+        'dev.btConnected'        = '{0} (connected)'
+        'dev.btNotConnected'     = '{0} (not connected)'
+        'dev.btNonePaired'       = 'No devices paired'
+
+        # ---- C: findings, and what to do about each
+        'finding.spoolerStopped'     = 'The print service is not running, so nothing can print.'
+        'advice.spoolerStopped'      = 'Housecall can start it below (needs admin).'
+        'finding.noPrinter'          = 'No printer is installed on this PC.'
+        'advice.noPrinter'           = 'Add the printer: Settings > Bluetooth & devices > Printers & scanners > Add device. The steps below go through it.'
+        'finding.printerUnreachable' = 'The printer {0} cannot be reached over the network.'
+        'advice.printerUnreachable'  = 'Check that the printer is on and connected to the same Wi-Fi as this PC. Restarting the printer often helps.'
+        'finding.printerOffline'     = 'Windows sees the printer {0} as offline.'
+        'advice.printerOffline'      = 'Switch the printer off and on again and check the cable or Wi-Fi. Then choose C1 again.'
+        'finding.printerAttention'   = 'The printer {0} reports: {1}.'
+        'advice.printerAttention'    = 'Sort it out at the printer itself (paper, ink, cover, jam), then choose C1 again.'
+        'finding.jobsStuck'          = 'Documents are stuck in the print queue and block everything behind them.'
+        'advice.jobsStuck'           = 'Housecall can clear the queue below. The stuck documents then need printing again.'
+        'finding.defaultVirtual'     = 'Documents go to {0} instead of to the printer.'
+        'advice.defaultVirtual'      = 'Housecall can make the real printer the default below (it can be undone).'
+        'finding.noDefault'          = 'No default printer is set, so programs do not know where to print.'
+        'advice.noDefault'           = 'Housecall can set the printer as the default below (it can be undone).'
+        'finding.printerReady'       = 'The printer looks ready.'
+        'advice.printerReady'        = 'Housecall can print a test page below. If it comes out, the problem is in the program: check which printer it prints to.'
+        'finding.deviceDisabled'     = '{0} is switched off in Windows.'
+        'advice.deviceDisabled'      = 'Housecall can switch it back on below (needs admin, can be undone).'
+        'finding.deviceNoDriver'     = 'Windows has no driver for {0}.'
+        'advice.deviceNoDriver'      = 'Let Windows look for the driver, or get it from the maker''s website. The steps below go through it.'
+        'finding.deviceError'        = '{0} has a problem: {1}.'
+        'advice.deviceError'         = 'Unplug it, wait 10 seconds, and plug it into another USB port. Or Housecall can restart it below (needs admin).'
+        'finding.usbNoLetter'        = '{0} is connected but has no drive letter, so it does not show in File Explorer.'
+        'advice.usbNoLetter'         = 'Give it a letter in Disk Management. The steps below go through it.'
+        'finding.noPointer'          = 'Windows finds no mouse or touchpad.'
+        'advice.noPointer'           = 'Plug the mouse into another USB port. For a wireless mouse: new battery, and check the small receiver.'
+        'finding.devicesOk'          = 'All connected devices work without errors.'
+        'advice.devicesOk'           = 'Try another USB port. If a device still does nothing, try it on another PC to see whether the device itself is broken.'
+        'finding.btNoAdapter'        = 'This PC has no working Bluetooth adapter.'
+        'advice.btNoAdapter'         = 'Many desktop PCs have no Bluetooth. A small USB Bluetooth adapter solves that.'
+        'finding.btServiceStopped'   = 'The Bluetooth service is not running.'
+        'advice.btServiceStopped'    = 'Housecall can start it below (needs admin).'
+        'finding.btOk'               = 'Bluetooth works on this PC.'
+        'advice.btOk'                = 'If a device will not connect: remove it in Settings and pair it again. The steps below go through it.'
+
+        # ---- C: fixes
+        'fix.note.reprint'          = '(the stuck documents need printing again)'
+        'fix.startSpooler'          = 'Start the print service'
+        'fix.startSpooler.done'     = 'Started the print service'
+        'fix.restartSpooler'        = 'Clear the print queue and restart the print service'
+        'fix.restartSpooler.done'   = 'Cleared the print queue and restarted the print service'
+        'fix.clearJobs'             = 'Remove the stuck documents from the queue'
+        'fix.clearJobs.done'        = 'Removed the stuck documents from the queue'
+        'fix.setDefault'            = 'Make {0} the default printer'
+        'fix.setDefault.done'       = 'Made {0} the default printer'
+        'fix.printTestPage'         = 'Print a test page on {0}'
+        'fix.printTestPage.done'    = 'Printed a test page on {0}'
+        'fix.enableDevice'          = 'Switch {0} back on'
+        'fix.enableDevice.done'     = 'Switched {0} back on'
+        'fix.restartDevice'         = 'Restart {0}'
+        'fix.restartDevice.done'    = 'Restarted {0}'
+        'fix.startBtService'        = 'Start the Bluetooth service'
+        'fix.startBtService.done'   = 'Started the Bluetooth service'
+
+        # ---- C: step-by-step guides
+        'steps.spoolerStopped'     = 'Choose the fix above to start it (needs admin), or do it by hand. | Type Services in Start and open it. | Find Print Spooler and double-click it. | Set Startup type to Automatic, click Start, then OK. | Choose C1 again to check.'
+        'steps.noPrinter'          = 'Switch the printer on and connect it: a USB cable, or the same Wi-Fi as this PC. | Open Settings (Windows key + I) > Bluetooth & devices > Printers & scanners. | Click Add device and wait until the printer appears, then click Add device next to it. | Not in the list? Click "Add manually", or install the software from the printer maker''s website. | Choose C1 again to check.'
+        'steps.printerUnreachable' = 'Check that the printer is on and shows no error on its screen. | Check that it is on the same Wi-Fi as this PC (the printer''s menu, often under Network or Wi-Fi). | Switch the printer off, wait 10 seconds, and switch it on. Wait until it is ready. | Still no answer? Restart the router too. | Choose C1 again to check.'
+        'steps.printerOffline'     = 'Switch the printer off and on again, and check the USB cable or Wi-Fi. | Open Settings > Bluetooth & devices > Printers & scanners and click the printer. | Click Open print queue. In the Printer menu, make sure "Use Printer Offline" is not ticked. | Choose C1 again to check.'
+        'steps.printerAttention'   = 'Look at the printer''s screen or lights: they say what is wrong. | Add paper, replace the ink or toner, close every cover, or pull jammed paper out gently. | Switch the printer off and on again. | Choose C1 again to check.'
+        'steps.jobsStuck'          = 'Choose a fix above to clear the queue, or do it by hand. | Open Settings > Bluetooth & devices > Printers & scanners, click the printer, then Open print queue. | In the Printer menu, click Cancel All Documents. | They will not go away? Restart the PC. | Print the document again.'
+        'steps.defaultVirtual'     = 'Choose the fix above to make the real printer the default (it can be undone), or do it by hand. | Open Settings > Bluetooth & devices > Printers & scanners. | Switch off "Let Windows manage my default printer". | Click the real printer, then Set as default. | Print again.'
+        'steps.noDefault'          = 'Choose the fix above to set a default printer (it can be undone), or do it by hand. | Open Settings > Bluetooth & devices > Printers & scanners. | Switch off "Let Windows manage my default printer". | Click the printer, then Set as default. | Print again.'
+        'steps.printerReady'       = 'Choose the fix above to print a test page. | It comes out? Then the printer works: in the program, check which printer is chosen in the Print window. | Nothing comes out? Switch the printer off and on, and choose C1 again. | Still nothing? Remove the printer in Settings > Printers & scanners and add it again.'
+        'steps.deviceDisabled'     = 'Choose the fix above to switch it back on (needs admin), or do it by hand. | Right-click the Start button and choose Device Manager. | Find the device (it has a small arrow pointing down), right-click it and choose Enable device. | Choose the same problem again to check.'
+        'steps.deviceNoDriver'     = 'Right-click the Start button and choose Device Manager. | Right-click the device with the yellow warning sign and choose Update driver > Search automatically for drivers. | Not found? Download the driver from the maker''s website. | Restart the PC and choose the same problem again.'
+        'steps.deviceError'        = 'Unplug the device, wait 10 seconds, and plug it into another USB port (on a desktop: one at the back). | Or choose the fix above to restart it (needs admin). | Still wrong? Right-click Start > Device Manager, right-click the device, choose Uninstall device, and restart the PC: Windows installs it again. | Choose the same problem again to check.'
+        'steps.usbNoLetter'        = 'Right-click the Start button and choose Disk Management. | Find the USB drive in the lower half (it says Removable). | Right-click its partition, choose Change Drive Letter and Paths > Add, pick a letter and click OK. | Open File Explorer: the drive now shows. | Does it say Unallocated or RAW? Then the stick may be empty or damaged: do not format it before checking whether the files are needed.'
+        'steps.noPointer'          = 'Plug the mouse into another USB port. | Wireless mouse: put in a new battery, and check that the small receiver is plugged in. | Laptop: press the touchpad key (often Fn plus a key with a touchpad picture). | Meanwhile, use the keyboard: Tab and the arrow keys move around, Enter clicks.'
+        'steps.devicesOk'          = 'Unplug the device and plug it into another USB port. | Restart the PC with the device plugged in. | Try the device on another PC: if it fails there too, the device itself is broken. | Choose C2 again.'
+        'steps.btNoAdapter'        = 'Check whether this PC has Bluetooth at all: many desktop PCs do not. | Laptop: make sure airplane mode is off (network icon at the bottom right). | No Bluetooth? A small USB Bluetooth adapter solves it: plug it in and choose C3 again.'
+        'steps.btServiceStopped'   = 'Choose the fix above to start it (needs admin), or do it by hand. | Type Services in Start and open it. | Find Bluetooth Support Service and double-click it. | Set Startup type to Manual, click Start, then OK. | Choose C3 again to check.'
+        'steps.btOk'               = 'Open Settings (Windows key + I) > Bluetooth & devices and check that Bluetooth is On. | Switch the device (headphones, speaker, mouse) off and on, and put it in pairing mode: often, hold its Bluetooth button until a light blinks. | In Settings, click the three dots next to the device and choose Remove device. | Click Add device > Bluetooth and choose the device from the list. | Choose C3 again to check.'
     }
 
     nl = @{
@@ -676,6 +796,126 @@ $script:Strings = @{
         'fix.elevateAsk'      = 'Hiervoor is beheerder nodig. Housecall nu opnieuw starten als beheerder? Windows vraagt om toestemming. (J/N)'
         'fix.elevated'        = 'Housecall gaat verder in het nieuwe beheerdersvenster. Dit venster mag dicht.'
         'fix.elevateFailed'   = 'Windows heeft het beheerdersvenster niet gestart ({0}).'
+
+        # ---- C: check lines
+        'dev.spoolerStopped'     = 'De afdrukservice (Afdrukspooler) draait niet'
+        'dev.spoolerOk'          = 'De afdrukservice draait'
+        'dev.noPrinter'          = 'Geen printer aanwezig, alleen: {0}'
+        'dev.printerReady'       = '{0} is klaar voor gebruik'
+        'dev.printerReadyDefault' = '{0} is klaar voor gebruik en is de standaardprinter'
+        'dev.printerOffline'     = '{0} staat offline'
+        'dev.printerUnreachable' = '{0} antwoordt niet op het netwerk ({1})'
+        'dev.printerState'       = '{0}: {1}'
+        'dev.state.3'            = 'het papier raakt op'
+        'dev.state.4'            = 'het papier is op'
+        'dev.state.5'            = 'de inkt of toner raakt op'
+        'dev.state.6'            = 'de inkt of toner is op'
+        'dev.state.7'            = 'er staat een klep of deur open'
+        'dev.state.8'            = 'papier vastgelopen'
+        'dev.state.10'           = 'heeft onderhoud nodig'
+        'dev.state.11'           = 'de uitvoerlade is vol'
+        'dev.defaultVirtual'     = '{0} is de standaardprinter, dus documenten gaan daarheen in plaats van op papier'
+        'dev.noDefault'          = 'Er is geen standaardprinter ingesteld'
+        'dev.jobsStuck'          = '{0} document(en) vastgelopen in de wachtrij, het oudste sinds {1}'
+        'dev.jobsOk'             = 'De afdrukwachtrij is leeg'
+        'dev.keyboardOk'         = 'Toetsenbord gevonden'
+        'dev.noKeyboard'         = 'Geen toetsenbord gevonden'
+        'dev.pointerOk'          = 'Muis of touchpad gevonden'
+        'dev.noPointer'          = 'Geen muis of touchpad gevonden'
+        'dev.usbDrive'           = 'USB-schijf "{0}" is aangesloten als {1}'
+        'dev.usbNoLetter'        = 'USB-schijf "{0}" is aangesloten maar heeft geen stationsletter'
+        'dev.noDeviceErrors'     = 'Geen apparaten met problemen'
+        'dev.deviceProblem'      = '{0}: {1}'
+        'dev.code.10'            = 'kon niet starten'
+        'dev.code.22'            = 'uitgeschakeld'
+        'dev.code.28'            = 'geen stuurprogramma'
+        'dev.code.43'            = 'heeft een probleem gemeld'
+        'dev.codeOther'          = 'foutcode {0}'
+        'dev.btAdapter'          = 'Bluetooth-adapter "{0}" werkt'
+        'dev.btNoAdapter'        = 'Geen Bluetooth-adapter gevonden'
+        'dev.btServiceOk'        = 'De Bluetooth-service draait'
+        'dev.btServiceStopped'   = 'De Bluetooth-service draait niet'
+        'dev.btPaired'           = 'Gekoppeld: {0}'
+        'dev.btConnected'        = '{0} (verbonden)'
+        'dev.btNotConnected'     = '{0} (niet verbonden)'
+        'dev.btNonePaired'       = 'Geen apparaten gekoppeld'
+
+        # ---- C: findings, and what to do about each
+        'finding.spoolerStopped'     = 'De afdrukservice draait niet, dus er kan niets worden afgedrukt.'
+        'advice.spoolerStopped'      = 'Housecall kan hem hieronder starten (beheerder nodig).'
+        'finding.noPrinter'          = 'Er is geen printer aanwezig op deze pc.'
+        'advice.noPrinter'           = 'Voeg de printer toe: Instellingen > Bluetooth en apparaten > Printers en scanners > Apparaat toevoegen. De stappen hieronder lopen het door.'
+        'finding.printerUnreachable' = 'De printer {0} is niet bereikbaar via het netwerk.'
+        'advice.printerUnreachable'  = 'Controleer of de printer aan staat en op dezelfde wifi zit als deze pc. De printer herstarten helpt vaak.'
+        'finding.printerOffline'     = 'Windows ziet de printer {0} als offline.'
+        'advice.printerOffline'      = 'Zet de printer uit en weer aan en controleer de kabel of wifi. Kies daarna opnieuw C1.'
+        'finding.printerAttention'   = 'De printer {0} meldt: {1}.'
+        'advice.printerAttention'    = 'Los het op bij de printer zelf (papier, inkt, klep, vastgelopen papier) en kies daarna opnieuw C1.'
+        'finding.jobsStuck'          = 'Er zitten documenten vast in de afdrukwachtrij, en die houden alles erachter tegen.'
+        'advice.jobsStuck'           = 'Housecall kan de wachtrij hieronder legen. De vastgelopen documenten moeten daarna opnieuw worden afgedrukt.'
+        'finding.defaultVirtual'     = 'Documenten gaan naar {0} in plaats van naar de printer.'
+        'advice.defaultVirtual'      = 'Housecall kan de echte printer hieronder standaard maken (kan worden teruggedraaid).'
+        'finding.noDefault'          = 'Er is geen standaardprinter, dus programma''s weten niet waar ze moeten afdrukken.'
+        'advice.noDefault'           = 'Housecall kan de printer hieronder standaard maken (kan worden teruggedraaid).'
+        'finding.printerReady'       = 'De printer lijkt klaar voor gebruik.'
+        'advice.printerReady'        = 'Housecall kan hieronder een testpagina afdrukken. Komt die eruit, dan zit het probleem in het programma: kijk naar welke printer het afdrukt.'
+        'finding.deviceDisabled'     = '{0} is uitgeschakeld in Windows.'
+        'advice.deviceDisabled'      = 'Housecall kan het hieronder weer inschakelen (beheerder nodig, kan worden teruggedraaid).'
+        'finding.deviceNoDriver'     = 'Windows heeft geen stuurprogramma voor {0}.'
+        'advice.deviceNoDriver'      = 'Laat Windows het stuurprogramma zoeken, of haal het van de site van de fabrikant. De stappen hieronder lopen het door.'
+        'finding.deviceError'        = '{0} heeft een probleem: {1}.'
+        'advice.deviceError'         = 'Haal het eruit, wacht 10 seconden, en steek het in een andere USB-poort. Of laat Housecall het hieronder herstarten (beheerder nodig).'
+        'finding.usbNoLetter'        = '{0} is aangesloten maar heeft geen stationsletter, dus hij staat niet in Verkenner.'
+        'advice.usbNoLetter'         = 'Geef hem een letter in Schijfbeheer. De stappen hieronder lopen het door.'
+        'finding.noPointer'          = 'Windows vindt geen muis of touchpad.'
+        'advice.noPointer'           = 'Steek de muis in een andere USB-poort. Bij een draadloze muis: nieuwe batterij, en controleer het kleine ontvangertje.'
+        'finding.devicesOk'          = 'Alle aangesloten apparaten werken zonder fouten.'
+        'advice.devicesOk'           = 'Probeer een andere USB-poort. Doet een apparaat nog steeds niets, probeer het dan op een andere pc om te zien of het apparaat zelf kapot is.'
+        'finding.btNoAdapter'        = 'Deze pc heeft geen werkende Bluetooth-adapter.'
+        'advice.btNoAdapter'         = 'Veel desktop-pc''s hebben geen Bluetooth. Een kleine USB Bluetooth-adapter lost dat op.'
+        'finding.btServiceStopped'   = 'De Bluetooth-service draait niet.'
+        'advice.btServiceStopped'    = 'Housecall kan hem hieronder starten (beheerder nodig).'
+        'finding.btOk'               = 'Bluetooth werkt op deze pc.'
+        'advice.btOk'                = 'Wil een apparaat niet verbinden: verwijder het in Instellingen en koppel het opnieuw. De stappen hieronder lopen het door.'
+
+        # ---- C: fixes
+        'fix.note.reprint'          = '(de vastgelopen documenten moeten opnieuw worden afgedrukt)'
+        'fix.startSpooler'          = 'De afdrukservice starten'
+        'fix.startSpooler.done'     = 'Afdrukservice gestart'
+        'fix.restartSpooler'        = 'De wachtrij legen en de afdrukservice herstarten'
+        'fix.restartSpooler.done'   = 'Wachtrij geleegd en afdrukservice herstart'
+        'fix.clearJobs'             = 'De vastgelopen documenten uit de wachtrij halen'
+        'fix.clearJobs.done'        = 'Vastgelopen documenten uit de wachtrij gehaald'
+        'fix.setDefault'            = '{0} de standaardprinter maken'
+        'fix.setDefault.done'       = '{0} is de standaardprinter gemaakt'
+        'fix.printTestPage'         = 'Een testpagina afdrukken op {0}'
+        'fix.printTestPage.done'    = 'Testpagina afgedrukt op {0}'
+        'fix.enableDevice'          = '{0} weer inschakelen'
+        'fix.enableDevice.done'     = '{0} weer ingeschakeld'
+        'fix.restartDevice'         = '{0} herstarten'
+        'fix.restartDevice.done'    = '{0} herstart'
+        'fix.startBtService'        = 'De Bluetooth-service starten'
+        'fix.startBtService.done'   = 'Bluetooth-service gestart'
+
+        # ---- C: step-by-step guides
+        'steps.spoolerStopped'     = 'Kies hierboven de oplossing om hem te starten (beheerder nodig), of doe het met de hand. | Typ Services in Start en open het. | Zoek Afdrukspooler en dubbelklik erop. | Zet Opstarttype op Automatisch, klik op Starten en daarna op OK. | Kies opnieuw C1 om te controleren.'
+        'steps.noPrinter'          = 'Zet de printer aan en sluit hem aan: een USB-kabel, of dezelfde wifi als deze pc. | Open Instellingen (Windows-toets + I) > Bluetooth en apparaten > Printers en scanners. | Klik op Apparaat toevoegen en wacht tot de printer verschijnt, klik dan ernaast op Apparaat toevoegen. | Staat hij er niet bij? Klik op "Handmatig toevoegen", of installeer de software van de site van de printerfabrikant. | Kies opnieuw C1 om te controleren.'
+        'steps.printerUnreachable' = 'Controleer of de printer aan staat en geen foutmelding op zijn scherm heeft. | Controleer of hij op dezelfde wifi zit als deze pc (in het menu van de printer, vaak onder Netwerk of Wi-Fi). | Zet de printer uit, wacht 10 seconden, en zet hem weer aan. Wacht tot hij klaar is. | Antwoordt hij nog steeds niet? Herstart dan ook de router. | Kies opnieuw C1 om te controleren.'
+        'steps.printerOffline'     = 'Zet de printer uit en weer aan, en controleer de USB-kabel of wifi. | Open Instellingen > Bluetooth en apparaten > Printers en scanners en klik op de printer. | Klik op Afdrukwachtrij openen. Controleer in het menu Printer dat "Printer offline gebruiken" niet is aangevinkt. | Kies opnieuw C1 om te controleren.'
+        'steps.printerAttention'   = 'Kijk naar het scherm of de lampjes van de printer: die zeggen wat er mis is. | Doe er papier in, vervang de inkt of toner, sluit alle kleppen, of trek vastgelopen papier er voorzichtig uit. | Zet de printer uit en weer aan. | Kies opnieuw C1 om te controleren.'
+        'steps.jobsStuck'          = 'Kies hierboven een oplossing om de wachtrij te legen, of doe het met de hand. | Open Instellingen > Bluetooth en apparaten > Printers en scanners, klik op de printer en dan op Afdrukwachtrij openen. | Klik in het menu Printer op Alle documenten annuleren. | Gaan ze niet weg? Herstart de pc. | Druk het document opnieuw af.'
+        'steps.defaultVirtual'     = 'Kies hierboven de oplossing om de echte printer standaard te maken (kan worden teruggedraaid), of doe het met de hand. | Open Instellingen > Bluetooth en apparaten > Printers en scanners. | Zet "Windows mijn standaardprinter laten beheren" uit. | Klik op de echte printer en dan op Als standaard instellen. | Druk opnieuw af.'
+        'steps.noDefault'          = 'Kies hierboven de oplossing om een standaardprinter in te stellen (kan worden teruggedraaid), of doe het met de hand. | Open Instellingen > Bluetooth en apparaten > Printers en scanners. | Zet "Windows mijn standaardprinter laten beheren" uit. | Klik op de printer en dan op Als standaard instellen. | Druk opnieuw af.'
+        'steps.printerReady'       = 'Kies hierboven de oplossing om een testpagina af te drukken. | Komt hij eruit? Dan werkt de printer: kijk in het programma welke printer er in het venster Afdrukken is gekozen. | Komt er niets uit? Zet de printer uit en weer aan, en kies opnieuw C1. | Nog steeds niets? Verwijder de printer in Instellingen > Printers en scanners en voeg hem opnieuw toe.'
+        'steps.deviceDisabled'     = 'Kies hierboven de oplossing om het weer in te schakelen (beheerder nodig), of doe het met de hand. | Klik met rechts op de Startknop en kies Apparaatbeheer. | Zoek het apparaat (het heeft een klein pijltje naar beneden), klik er met rechts op en kies Apparaat inschakelen. | Kies hetzelfde probleem opnieuw om te controleren.'
+        'steps.deviceNoDriver'     = 'Klik met rechts op de Startknop en kies Apparaatbeheer. | Klik met rechts op het apparaat met het gele waarschuwingsteken en kies Stuurprogramma bijwerken > Automatisch naar stuurprogramma''s zoeken. | Niet gevonden? Download het stuurprogramma van de site van de fabrikant. | Herstart de pc en kies hetzelfde probleem opnieuw.'
+        'steps.deviceError'        = 'Haal het apparaat eruit, wacht 10 seconden, en steek het in een andere USB-poort (bij een desktop: een aan de achterkant). | Of kies hierboven de oplossing om het te herstarten (beheerder nodig). | Nog steeds mis? Klik met rechts op Start > Apparaatbeheer, klik met rechts op het apparaat, kies Apparaat verwijderen en herstart de pc: Windows installeert het opnieuw. | Kies hetzelfde probleem opnieuw om te controleren.'
+        'steps.usbNoLetter'        = 'Klik met rechts op de Startknop en kies Schijfbeheer. | Zoek de USB-schijf in de onderste helft (er staat Verwisselbaar bij). | Klik met rechts op de partitie, kies Stationsletter en paden wijzigen > Toevoegen, kies een letter en klik op OK. | Open Verkenner: de schijf staat er nu bij. | Staat er Niet-toegewezen of RAW? Dan is de stick misschien leeg of beschadigd: formatteer hem niet voordat duidelijk is of de bestanden nodig zijn.'
+        'steps.noPointer'          = 'Steek de muis in een andere USB-poort. | Draadloze muis: doe er een nieuwe batterij in, en controleer of het kleine ontvangertje erin zit. | Laptop: druk op de touchpadtoets (vaak Fn plus een toets met een touchpad-plaatje). | Gebruik intussen het toetsenbord: Tab en de pijltjestoetsen verplaatsen, Enter klikt.'
+        'steps.devicesOk'          = 'Haal het apparaat eruit en steek het in een andere USB-poort. | Herstart de pc met het apparaat aangesloten. | Probeer het apparaat op een andere pc: lukt het daar ook niet, dan is het apparaat zelf kapot. | Kies opnieuw C2.'
+        'steps.btNoAdapter'        = 'Kijk of deze pc wel Bluetooth heeft: veel desktop-pc''s niet. | Laptop: controleer of de vliegtuigstand uit staat (netwerk-icoon rechtsonder). | Geen Bluetooth? Een kleine USB Bluetooth-adapter lost het op: steek hem erin en kies opnieuw C3.'
+        'steps.btServiceStopped'   = 'Kies hierboven de oplossing om hem te starten (beheerder nodig), of doe het met de hand. | Typ Services in Start en open het. | Zoek Bluetooth-ondersteuningsservice en dubbelklik erop. | Zet Opstarttype op Handmatig, klik op Starten en daarna op OK. | Kies opnieuw C3 om te controleren.'
+        'steps.btOk'               = 'Open Instellingen (Windows-toets + I) > Bluetooth en apparaten en controleer of Bluetooth op Aan staat. | Zet het apparaat (koptelefoon, speaker, muis) uit en aan, en zet het in koppelstand: vaak de Bluetooth-knop ingedrukt houden tot een lampje knippert. | Klik in Instellingen op de drie puntjes naast het apparaat en kies Apparaat verwijderen. | Klik op Apparaat toevoegen > Bluetooth en kies het apparaat uit de lijst. | Kies opnieuw C3 om te controleren.'
     }
 }
 
@@ -2202,6 +2442,291 @@ $script:ProblemHandlers['F1'] = 'Invoke-HcF1'
 $script:ProblemHandlers['F2'] = 'Invoke-HcF2'
 $script:ProblemHandlers['F3'] = 'Invoke-HcF3'
 
+# ==================================================== src\checks\devices.ps1 ==
+<#
+    Area C: Printer & devices.
+
+      C1  printer will not print        print service, printers, default printer, queue
+      C2  mouse, keyboard or USB stick  devices with errors, keyboard and mouse, USB drives
+      C3  Bluetooth                     adapter, Bluetooth service, paired devices
+
+    Same shape as A and F: Get-...Facts reads the PC, Test-... decides, and
+    the fixes it offers live in src\fixes.ps1. Everything here reads
+    through CIM and PnP objects, which Windows does not translate.
+#>
+
+# Printers that only exist on the PC: PDF, XPS, OneNote, fax. Documents
+# sent there never reach paper -- a common "my printer does nothing".
+$script:VirtualPrinter = 'Print to PDF|XPS|OneNote|Fax|Send To'
+$script:VirtualPort = '^(PORTPROMPT:|nul:|SHRFAX:|XPSPort:|FILE:)'
+
+# How old a waiting print job must be before it counts as stuck.
+$script:StuckMinutes = 10
+
+# DetectedErrorState values Windows reports for a printer, and whether each
+# stops printing (problem) or is only a warning.
+$script:PrinterStates = @{ 3 = 'warn'; 4 = 'problem'; 5 = 'warn'; 6 = 'problem'; 7 = 'problem'; 8 = 'problem'; 10 = 'problem'; 11 = 'problem' }
+
+# ------------------------------------------------------------------- facts --
+
+function Get-HcPrinterFacts {
+    $f = [pscustomobject]@{ Now = Get-Date; SpoolerRunning = $false; SpoolerDisabled = $false; Printers = @(); Jobs = @() }
+    $spooler = Get-Service -Name Spooler -ErrorAction SilentlyContinue
+    if ($spooler) {
+        $f.SpoolerRunning = ($spooler.Status -eq 'Running')
+        $f.SpoolerDisabled = ([string]$spooler.StartType -eq 'Disabled')
+    }
+    if (-not $f.SpoolerRunning) { return $f }
+
+    $ports = @{}
+    Get-CimInstance Win32_TCPIPPrinterPort -ErrorAction SilentlyContinue | ForEach-Object { $ports[$_.Name] = $_.HostAddress }
+
+    $f.Printers = @(Get-CimInstance Win32_Printer -ErrorAction SilentlyContinue | ForEach-Object {
+        $virtual = ($_.Name -match $script:VirtualPrinter) -or ([string]$_.DriverName -match $script:VirtualPrinter) -or ([string]$_.PortName -match $script:VirtualPort)
+        $hostAddress = $ports[[string]$_.PortName]
+        $reachable = $null
+        if ($hostAddress -and -not $virtual) {
+            $reachable = (Get-HcPingMs $hostAddress) -ge 0
+            if (-not $reachable) { $reachable = (Get-HcPingMs $hostAddress) -ge 0 }
+        }
+        [pscustomobject]@{
+            Name = $_.Name; Default = [bool]$_.Default; Virtual = $virtual
+            Offline = ([bool]$_.WorkOffline -or $_.PrinterStatus -eq 7 -or $_.DetectedErrorState -eq 9)
+            State = [int]$_.DetectedErrorState; HostAddress = $hostAddress; Reachable = $reachable
+        }
+    })
+    $f.Jobs = @(Get-CimInstance Win32_PrintJob -ErrorAction SilentlyContinue | ForEach-Object {
+        [pscustomobject]@{ Printer = ($_.Name -split ',')[0]; Document = $_.Document; Submitted = $_.TimeSubmitted; Status = [string]$_.JobStatus }
+    })
+    $f
+}
+
+# Devices Windows reports a problem for, from Device Manager's own list.
+function Get-HcProblemDevices {
+    param([string]$Class)
+    $all = if ($Class) { Get-PnpDevice -Class $Class -PresentOnly -ErrorAction SilentlyContinue } else { Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue }
+    @($all | Where-Object { $_.ConfigManagerErrorCode -ne 0 } | ForEach-Object {
+        [pscustomobject]@{ Name = $_.FriendlyName; Class = $_.Class; Code = [int]$_.ConfigManagerErrorCode; InstanceId = $_.InstanceId }
+    })
+}
+
+function Get-HcUsbDrives {
+    foreach ($disk in @(Get-CimInstance Win32_DiskDrive -ErrorAction SilentlyContinue | Where-Object { $_.InterfaceType -eq 'USB' })) {
+        $letters = @(Get-CimAssociatedInstance -InputObject $disk -ResultClassName Win32_DiskPartition -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-CimAssociatedInstance -InputObject $_ -ResultClassName Win32_LogicalDisk -ErrorAction SilentlyContinue } |
+            ForEach-Object { $_.DeviceID })
+        [pscustomobject]@{ Name = ($disk.Model -replace '\s+USB Device$', ''); Letters = $letters }
+    }
+}
+
+function Get-HcInputFacts {
+    [pscustomobject]@{
+        Problems  = @(Get-HcProblemDevices)
+        Keyboards = @(Get-CimInstance Win32_Keyboard -ErrorAction SilentlyContinue).Count
+        Pointers  = @(Get-CimInstance Win32_PointingDevice -ErrorAction SilentlyContinue).Count
+        UsbDrives = @(Get-HcUsbDrives)
+    }
+}
+
+<#
+    Bluetooth devices in Device Manager come in three kinds, told apart by
+    their instance id: the adapter (USB\ or PCI\), paired devices
+    (BTHENUM\DEV_ or BTHLE\DEV_) and Windows' own helpers (everything else).
+    A paired device is "present" while it is connected.
+#>
+function Get-HcBluetoothFacts {
+    $devices = @(Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue)
+    $service = Get-Service -Name bthserv -ErrorAction SilentlyContinue
+    [pscustomobject]@{
+        Adapters = @($devices | Where-Object { $_.InstanceId -match '^(USB|PCI|ACPI)\\' -and $_.Present } | ForEach-Object {
+            [pscustomobject]@{ Name = $_.FriendlyName; Code = [int]$_.ConfigManagerErrorCode; InstanceId = $_.InstanceId }
+        })
+        ServiceRunning = ($service -and $service.Status -eq 'Running')
+        Paired = @($devices | Where-Object { $_.InstanceId -match '^BTH(ENUM|LE)\\DEV_' } | ForEach-Object {
+            [pscustomobject]@{ Name = $_.FriendlyName; Connected = [bool]$_.Present }
+        } | Sort-Object Name -Unique)
+    }
+}
+
+# ------------------------------------------------------------------ verdict --
+
+# "switched off", "no driver installed", ... for a Device Manager error code.
+function Get-HcDeviceReason {
+    param([int]$Code)
+    if ($script:Strings['en'].ContainsKey("dev.code.$Code")) { return (T "dev.code.$Code") }
+    T 'dev.codeOther' $Code
+}
+
+# Lines, a finding and a fix for one device with a problem. Shared by C2 and C3.
+function Add-HcDeviceProblem {
+    param([pscustomobject]$Report, [hashtable]$Found, [pscustomobject]$Device)
+    Add-HcLine $Report problem (T 'dev.deviceProblem' $Device.Name (Get-HcDeviceReason $Device.Code))
+    $target = @{ Label = $Device.Name; InstanceId = $Device.InstanceId }
+    switch ($Device.Code) {
+        22      { Add-HcAction $Report 'enableDevice' $target; if (-not $Found['deviceDisabled']) { $Found['deviceDisabled'] = @($Device.Name) } }
+        28      { if (-not $Found['deviceNoDriver']) { $Found['deviceNoDriver'] = @($Device.Name) } }
+        default { Add-HcAction $Report 'restartDevice' $target; if (-not $Found['deviceError']) { $Found['deviceError'] = @($Device.Name, (Get-HcDeviceReason $Device.Code)) } }
+    }
+}
+
+function Select-HcFinding {
+    param([pscustomobject]$Report, [hashtable]$Found, [string[]]$Priority, [string]$Clean)
+    foreach ($id in $Priority) {
+        if ($Found.ContainsKey($id)) { Set-HcFinding $Report $id $Found[$id]; break }
+    }
+    Set-HcFinding $Report $Clean
+}
+
+# C1.
+function Test-HcPrinter {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if (-not $Facts.SpoolerRunning) {
+        Add-HcLine $r problem (T 'dev.spoolerStopped')
+        Add-HcAction $r 'startSpooler'
+        Set-HcFinding $r 'spoolerStopped'
+        Add-HcLine $r skipped (T 'net.skipped')
+        return $r
+    }
+    Add-HcLine $r ok (T 'dev.spoolerOk')
+
+    $real = @($Facts.Printers | Where-Object { -not $_.Virtual })
+    if ($real.Count -eq 0) {
+        $virtualNames = @($Facts.Printers | ForEach-Object { $_.Name })
+        $shown = if ($virtualNames.Count) { $virtualNames -join ', ' } else { T 'net.none' }
+        Add-HcLine $r problem (T 'dev.noPrinter' $shown)
+        Set-HcFinding $r 'noPrinter'
+        return $r
+    }
+
+    foreach ($p in $real) {
+        if ($p.Reachable -eq $false) {
+            Add-HcLine $r problem (T 'dev.printerUnreachable' $p.Name $p.HostAddress)
+            if (-not $found['printerUnreachable']) { $found['printerUnreachable'] = @($p.Name) }
+        } elseif ($p.Offline) {
+            Add-HcLine $r problem (T 'dev.printerOffline' $p.Name)
+            if (-not $found['printerOffline']) { $found['printerOffline'] = @($p.Name) }
+        } elseif ($script:PrinterStates.ContainsKey($p.State)) {
+            $what = T "dev.state.$($p.State)"
+            Add-HcLine $r $script:PrinterStates[$p.State] (T 'dev.printerState' $p.Name $what)
+            if ($script:PrinterStates[$p.State] -eq 'problem' -and -not $found['printerAttention']) { $found['printerAttention'] = @($p.Name, $what) }
+        } elseif ($p.Default) {
+            Add-HcLine $r ok (T 'dev.printerReadyDefault' $p.Name)
+        } else {
+            Add-HcLine $r ok (T 'dev.printerReady' $p.Name)
+        }
+    }
+
+    # The default printer: a real one, or documents never reach paper.
+    $default = @($Facts.Printers | Where-Object { $_.Default }) | Select-Object -First 1
+    $best = @($real | Where-Object { -not $_.Offline -and $_.Reachable -ne $false }) + $real | Select-Object -First 1
+    if ($null -eq $default) {
+        Add-HcLine $r problem (T 'dev.noDefault')
+        Add-HcAction $r 'setDefault' @{ Label = $best.Name; Name = $best.Name }
+        $found['noDefault'] = @()
+    } elseif ($default.Virtual) {
+        Add-HcLine $r problem (T 'dev.defaultVirtual' $default.Name)
+        Add-HcAction $r 'setDefault' @{ Label = $best.Name; Name = $best.Name; Previous = $default.Name }
+        $found['defaultVirtual'] = @($default.Name)
+    }
+
+    # The queue: documents waiting longer than a few minutes block the rest.
+    $stuck = @($Facts.Jobs | Where-Object { $_.Status -match 'Error|Fout' -or ($_.Submitted -and $_.Submitted -lt $Facts.Now.AddMinutes(-$script:StuckMinutes)) })
+    if ($stuck.Count) {
+        $oldest = ($stuck | Sort-Object Submitted | Select-Object -First 1).Submitted
+        $when = if ($oldest) { $oldest.ToString('HH:mm') } else { '?' }
+        Add-HcLine $r problem (T 'dev.jobsStuck' $stuck.Count $when)
+        Add-HcAction $r 'clearJobs'
+        Add-HcAction $r 'restartSpooler'
+        $found['jobsStuck'] = @()
+    } else {
+        Add-HcLine $r ok (T 'dev.jobsOk')
+    }
+
+    Select-HcFinding $r $found @('printerUnreachable', 'printerOffline', 'printerAttention', 'jobsStuck', 'defaultVirtual', 'noDefault') 'printerReady'
+    if ($r.FindingId -eq 'printerReady') {
+        $target = if ($default -and -not $default.Virtual) { $default } else { $best }
+        Add-HcAction $r 'printTestPage' @{ Label = $target.Name; Name = $target.Name }
+    }
+    $r
+}
+
+# C2.
+function Test-HcInputDevices {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if ($Facts.Keyboards -gt 0) { Add-HcLine $r ok (T 'dev.keyboardOk') } else { Add-HcLine $r warn (T 'dev.noKeyboard') }
+    if ($Facts.Pointers -gt 0) {
+        Add-HcLine $r ok (T 'dev.pointerOk')
+    } else {
+        Add-HcLine $r problem (T 'dev.noPointer')
+        $found['noPointer'] = @()
+    }
+    foreach ($d in @($Facts.UsbDrives)) {
+        if (@($d.Letters).Count) {
+            Add-HcLine $r ok (T 'dev.usbDrive' $d.Name (@($d.Letters) -join ', '))
+        } else {
+            Add-HcLine $r problem (T 'dev.usbNoLetter' $d.Name)
+            if (-not $found['usbNoLetter']) { $found['usbNoLetter'] = @($d.Name) }
+        }
+    }
+    $problems = @($Facts.Problems)
+    if ($problems.Count -eq 0) {
+        Add-HcLine $r ok (T 'dev.noDeviceErrors')
+    } else {
+        foreach ($d in $problems) { Add-HcDeviceProblem $r $found $d }
+    }
+    Select-HcFinding $r $found @('noPointer', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'usbNoLetter') 'devicesOk'
+    $r
+}
+
+# C3.
+function Test-HcBluetooth {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    $adapters = @($Facts.Adapters)
+    if ($adapters.Count -eq 0) {
+        Add-HcLine $r problem (T 'dev.btNoAdapter')
+        Set-HcFinding $r 'btNoAdapter'
+        return $r
+    }
+    foreach ($a in $adapters) {
+        if ($a.Code -eq 0) { Add-HcLine $r ok (T 'dev.btAdapter' $a.Name) } else { Add-HcDeviceProblem $r $found $a }
+    }
+    if ($Facts.ServiceRunning) {
+        Add-HcLine $r ok (T 'dev.btServiceOk')
+    } else {
+        Add-HcLine $r problem (T 'dev.btServiceStopped')
+        Add-HcAction $r 'startBtService'
+        $found['btServiceStopped'] = @()
+    }
+    $paired = @($Facts.Paired)
+    if ($paired.Count) {
+        $names = @($paired | ForEach-Object { if ($_.Connected) { T 'dev.btConnected' $_.Name } else { T 'dev.btNotConnected' $_.Name } }) -join ', '
+        Add-HcLine $r ok (T 'dev.btPaired' $names)
+    } else {
+        Add-HcLine $r ok (T 'dev.btNonePaired')
+    }
+    Select-HcFinding $r $found @('deviceDisabled', 'btServiceStopped', 'deviceError', 'deviceNoDriver') 'btOk'
+    $r
+}
+
+# ---------------------------------------------------------------- handlers --
+
+function Invoke-HcC1 { { Test-HcPrinter (Get-HcPrinterFacts) } }
+function Invoke-HcC2 { { Test-HcInputDevices (Get-HcInputFacts) } }
+function Invoke-HcC3 { { Test-HcBluetooth (Get-HcBluetoothFacts) } }
+
+$script:ProblemHandlers['C1'] = 'Invoke-HcC1'
+$script:ProblemHandlers['C2'] = 'Invoke-HcC2'
+$script:ProblemHandlers['C3'] = 'Invoke-HcC3'
+
 # ==================================================== src\fixes.ps1 ==
 <#
     Fixes: the only code in Housecall that changes the PC.
@@ -2213,7 +2738,8 @@ $script:ProblemHandlers['F3'] = 'Invoke-HcF3'
       Label    fix.<id> in strings.ps1, filled from the target, and
                fix.<id>.done for the note and undo ("Disabled task X")
       Note     undo = can be undone, safe = harmless and needs no undo,
-               restart = closes a program, which can simply be started again
+               restart = closes a program, which can simply be started again,
+               reprint = removes stuck print jobs, which need printing again
       Admin    needs an administrator PowerShell
       Apply    does it; throws when it fails
       Undo     puts it back ($null when there is nothing to put back)
@@ -2266,6 +2792,92 @@ $script:Fixes = @{
             & ipconfig.exe /release | Out-Null
             & ipconfig.exe /renew | Out-Null
             if ($LASTEXITCODE -ne 0) { throw "ipconfig /renew: $LASTEXITCODE" }
+        }
+        Undo = $null
+    }
+
+    # ---- C: printer and devices
+    startSpooler = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            if ([string](Get-Service Spooler).StartType -eq 'Disabled') { Set-Service Spooler -StartupType Automatic -ErrorAction Stop }
+            Start-Service Spooler -ErrorAction Stop
+        }
+        Undo = $null
+    }
+    # Stuck documents are gone afterwards; the note on this fix says so.
+    restartSpooler = @{
+        Note = 'reprint'; Admin = $true
+        Apply = {
+            param($t)
+            Stop-Service Spooler -Force -ErrorAction Stop
+            Get-ChildItem (Join-Path $env:SystemRoot 'System32\spool\PRINTERS') -File -ErrorAction SilentlyContinue |
+                Remove-Item -Force -ErrorAction SilentlyContinue
+            Start-Service Spooler -ErrorAction Stop
+        }
+        Undo = $null
+    }
+    # Without admin, Windows lets people cancel their own documents.
+    clearJobs = @{
+        Note = 'reprint'; Admin = $false
+        Apply = { param($t) Get-CimInstance Win32_PrintJob | Remove-CimInstance -ErrorAction Stop }
+        Undo  = $null
+    }
+    # Also stops "let Windows manage my default printer", which would
+    # otherwise switch it back to whatever was used last.
+    setDefault = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            $key = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows'
+            $t.SavedMode = (Get-ItemProperty $key -ErrorAction SilentlyContinue).LegacyDefaultPrinterMode
+            Set-ItemProperty $key -Name LegacyDefaultPrinterMode -Value 1 -Type DWord -ErrorAction Stop
+            $printer = Get-CimInstance Win32_Printer -Filter ("Name='{0}'" -f ($t.Name -replace "'", "''"))
+            $result = Invoke-CimMethod -InputObject $printer -MethodName SetDefaultPrinter -ErrorAction Stop
+            if ($result.ReturnValue -ne 0) { throw "SetDefaultPrinter: $($result.ReturnValue)" }
+        }
+        Undo = {
+            param($t)
+            $key = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows'
+            if ($t.Previous) {
+                $printer = Get-CimInstance Win32_Printer -Filter ("Name='{0}'" -f ($t.Previous -replace "'", "''"))
+                if ($printer) { [void](Invoke-CimMethod -InputObject $printer -MethodName SetDefaultPrinter -ErrorAction Stop) }
+            }
+            if ($null -eq $t.SavedMode) { Remove-ItemProperty $key -Name LegacyDefaultPrinterMode -ErrorAction SilentlyContinue }
+            else { Set-ItemProperty $key -Name LegacyDefaultPrinterMode -Value $t.SavedMode -Type DWord }
+        }
+    }
+    printTestPage = @{
+        Note = 'safe'; Admin = $false
+        Apply = {
+            param($t)
+            $printer = Get-CimInstance Win32_Printer -Filter ("Name='{0}'" -f ($t.Name -replace "'", "''"))
+            $result = Invoke-CimMethod -InputObject $printer -MethodName PrintTestPage -ErrorAction Stop
+            if ($result.ReturnValue -ne 0) { throw "PrintTestPage: $($result.ReturnValue)" }
+        }
+        Undo = $null
+    }
+    enableDevice = @{
+        Note = 'undo'; Admin = $true
+        Apply = { param($t) Enable-PnpDevice -InstanceId $t.InstanceId -Confirm:$false -ErrorAction Stop }
+        Undo  = { param($t) Disable-PnpDevice -InstanceId $t.InstanceId -Confirm:$false -ErrorAction Stop }
+    }
+    restartDevice = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            & pnputil.exe /restart-device $t.InstanceId | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "pnputil /restart-device: $LASTEXITCODE" }
+        }
+        Undo = $null
+    }
+    startBtService = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            if ([string](Get-Service bthserv).StartType -eq 'Disabled') { Set-Service bthserv -StartupType Manual -ErrorAction Stop }
+            Start-Service bthserv -ErrorAction Stop
         }
         Undo = $null
     }
