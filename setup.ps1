@@ -872,9 +872,9 @@ $script:Strings = @{
         'inv.minutes'     = 'Time worked in minutes [{0}]'
         'inv.minutesBad'  = 'Type a number of minutes, e.g. 45.'
         'inv.labour'      = 'Labour: {0} min at {1} per hour'
-        'inv.startLine'       = 'Starting price (first {0} min)'
-        'inv.extraTime'       = 'Extra time: {0} min at {1} per hour'
-        'inv.win.rateStart'   = '{0} for the first {1} min, then {2} per hour'
+        'inv.startLine'       = 'Labour {0} min: starting price ({1} min)'
+        'inv.extraTime'       = '+ {0} x 15 min extra, {1} each'
+        'inv.win.rateStart'   = '{0} for the first {1} min, then {2} per quarter of an hour begun'
         'inv.win.done'        = 'What was done (choose or type)'
         'inv.win.asked'       = 'Asked for help with'
         'inv.win.fixed'       = 'Fixed'
@@ -1753,9 +1753,9 @@ $script:Strings = @{
         'inv.minutes'     = 'Gewerkte tijd in minuten [{0}]'
         'inv.minutesBad'  = 'Typ een aantal minuten, bijv. 45.'
         'inv.labour'      = 'Arbeid: {0} min, {1} per uur'
-        'inv.startLine'       = 'Starttarief (eerste {0} min)'
-        'inv.extraTime'       = 'Extra tijd: {0} min, {1} per uur'
-        'inv.win.rateStart'   = '{0} voor de eerste {1} min, daarna {2} per uur'
+        'inv.startLine'       = 'Arbeid {0} min: starttarief (tot {1} min)'
+        'inv.extraTime'       = '+ {0} x 15 min extra, {1} per kwartier'
+        'inv.win.rateStart'   = '{0} voor de eerste {1} min, daarna {2} per begonnen kwartier'
         'inv.win.done'        = 'Wat er is gedaan (kies of typ zelf)'
         'inv.win.asked'       = 'Hulpvraag'
         'inv.win.fixed'       = 'Opgelost'
@@ -6028,10 +6028,15 @@ function Get-HcLabourLines {
     $start = [decimal]$(if ($Settings.start_fee) { $Settings.start_fee } else { 0 })
     $included = [int]$(if ($Settings.start_minutes) { $Settings.start_minutes } else { 0 })
     if ($start -gt 0 -and $included -gt 0) {
-        [pscustomobject]@{ Description = (T 'inv.startLine' $included); Amount = $start }
+        # The first line names the whole time worked, so the client sees how long it took.
+        [pscustomobject]@{ Description = (T 'inv.startLine' $Minutes $included); Amount = $start }
+        # After the starting price: per quarter of an hour, every one begun,
+        # so the amounts stay round (50 min = 2 quarters extra, not 20 min).
         $extra = $Minutes - $included
         if ($extra -gt 0 -and $rate -gt 0) {
-            [pscustomobject]@{ Description = (T 'inv.extraTime' $extra (Format-HcMoney $rate)); Amount = [Math]::Round($rate * $extra / 60, 2) }
+            $quarters = [int][Math]::Ceiling($extra / 15)
+            $perQuarter = [Math]::Round($rate / 4, 2)
+            [pscustomobject]@{ Description = (T 'inv.extraTime' $quarters (Format-HcMoney $perQuarter)); Amount = $quarters * $perQuarter }
         }
         return
     }
@@ -6047,7 +6052,8 @@ function Get-HcRateText {
     # The relay sends amounts as text ("0.00"), so compare them as numbers.
     $start = [decimal]$(if ($Settings.start_fee) { $Settings.start_fee } else { 0 })
     if ($start -gt 0 -and [int]$Settings.start_minutes -gt 0) {
-        return (T 'inv.win.rateStart' (Format-HcMoney ([decimal]$Settings.start_fee)) $Settings.start_minutes $rate)
+        $perQuarter = Format-HcMoney ([Math]::Round([decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 }) / 4, 2))
+        return (T 'inv.win.rateStart' (Format-HcMoney $start) $Settings.start_minutes $perQuarter)
     }
     T 'inv.win.rate' $rate
 }

@@ -1103,18 +1103,25 @@ Describe 'The invoice' {
         $settings = [pscustomobject]@{ hourly_rate = 20; start_fee = 15; start_minutes = 30 }
         $short = @(Get-HcLabourLines 30 $settings)
         $short.Count | Should Be 1
-        $short[0].Description | Should Be 'Starttarief (eerste 30 min)'
+        $short[0].Description | Should Be 'Arbeid 30 min: starttarief (tot 30 min)'
         $short[0].Amount | Should Be 15
         $long = @(Get-HcLabourLines 75 $settings)
         $long.Count | Should Be 2
-        $long[1].Description | Should Be "Extra tijd: 45 min, $euro 20,00 per uur"
+        $long[0].Description | Should Be 'Arbeid 75 min: starttarief (tot 30 min)'
+        $long[1].Description | Should Be "+ 3 x 15 min extra, $euro 5,00 per kwartier"
+        # Both fit the invoice's description column (44 characters), also at 3-digit minutes.
+        foreach ($l in @(Get-HcLabourLines 240 $settings)) { $l.Description.Length | Should BeLessThan 45 }
         $long[1].Amount | Should Be 15
         @(Get-HcLabourLines 0 $settings).Count | Should Be 0
         # Without a starting price: all of it by the hour, as before.
         $plain = @(Get-HcLabourLines 45 ([pscustomobject]@{ hourly_rate = 20 }))
         $plain[0].Description | Should Be "Arbeid: 45 min, $euro 20,00 per uur"
         $plain[0].Amount | Should Be 15
-        Get-HcRateText $settings | Should Be "$euro 15,00 voor de eerste 30 min, daarna $euro 20,00 per uur"
+        # Every quarter begun counts: 50 min is 2 quarters after the first 30, EUR 25 in all.
+        $fifty = @(Get-HcLabourLines 50 $settings)
+        $fifty[1].Description | Should Be "+ 2 x 15 min extra, $euro 5,00 per kwartier"
+        $fifty[1].Amount | Should Be 10
+        Get-HcRateText $settings | Should Be "$euro 15,00 voor de eerste 30 min, daarna $euro 5,00 per begonnen kwartier"
     }
 
     It 'what was done by hand: on the note under done or not fixed, and in the history' {

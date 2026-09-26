@@ -61,10 +61,15 @@ function Get-HcLabourLines {
     $start = [decimal]$(if ($Settings.start_fee) { $Settings.start_fee } else { 0 })
     $included = [int]$(if ($Settings.start_minutes) { $Settings.start_minutes } else { 0 })
     if ($start -gt 0 -and $included -gt 0) {
-        [pscustomobject]@{ Description = (T 'inv.startLine' $included); Amount = $start }
+        # The first line names the whole time worked, so the client sees how long it took.
+        [pscustomobject]@{ Description = (T 'inv.startLine' $Minutes $included); Amount = $start }
+        # After the starting price: per quarter of an hour, every one begun,
+        # so the amounts stay round (50 min = 2 quarters extra, not 20 min).
         $extra = $Minutes - $included
         if ($extra -gt 0 -and $rate -gt 0) {
-            [pscustomobject]@{ Description = (T 'inv.extraTime' $extra (Format-HcMoney $rate)); Amount = [Math]::Round($rate * $extra / 60, 2) }
+            $quarters = [int][Math]::Ceiling($extra / 15)
+            $perQuarter = [Math]::Round($rate / 4, 2)
+            [pscustomobject]@{ Description = (T 'inv.extraTime' $quarters (Format-HcMoney $perQuarter)); Amount = $quarters * $perQuarter }
         }
         return
     }
@@ -80,7 +85,8 @@ function Get-HcRateText {
     # The relay sends amounts as text ("0.00"), so compare them as numbers.
     $start = [decimal]$(if ($Settings.start_fee) { $Settings.start_fee } else { 0 })
     if ($start -gt 0 -and [int]$Settings.start_minutes -gt 0) {
-        return (T 'inv.win.rateStart' (Format-HcMoney ([decimal]$Settings.start_fee)) $Settings.start_minutes $rate)
+        $perQuarter = Format-HcMoney ([Math]::Round([decimal]$(if ($Settings.hourly_rate) { $Settings.hourly_rate } else { 0 }) / 4, 2))
+        return (T 'inv.win.rateStart' (Format-HcMoney $start) $Settings.start_minutes $perQuarter)
     }
     T 'inv.win.rate' $rate
 }
