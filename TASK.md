@@ -1,14 +1,14 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 29%** `██████░░░░░░░░░░░░░░` 12 of 41 done · 0 in progress · 25 open · 0 blocked · 4 waiting on a decision
+**Progress: 32%** `██████░░░░░░░░░░░░░░` 13 of 41 done · 0 in progress · 25 open · 0 blocked · 3 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
 | Next up | `░░░░░░░░░░` | 0% (0/25) |
-| Blocked on Shamil | `░░░░░░░░░░` | 0% (0/4) |
-| Recently done | `██████████` | 100% (7/7) |
+| Blocked on Shamil | `░░░░░░░░░░` | 0% (0/3) |
+| Recently done | `██████████` | 100% (8/8) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
@@ -33,7 +33,7 @@ what it found, fixes it after a **yes** (or gives the steps), proves the fix
 worked, and leaves a short note for the client.
 
 ```powershell
-irm <host>/housecall.ps1 | iex
+irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex
 ```
 
 **Clickable preview + competitor deep dive:**
@@ -52,14 +52,20 @@ recommended next area, because it's the standout feature. The open decisions
 adapter, so the Wi-Fi paths (SSID, signal, drop-outs) are covered only by
 tests with fake facts. Run A1 and A2 once on a laptop on Wi-Fi.
 
-Try it: `powershell -ExecutionPolicy Bypass -File .\housecall.ps1` (add
-`-DryRun` or `-Lang nl`).
+Try it: the one-liner above in any PowerShell, or from source:
+`powershell -ExecutionPolicy Bypass -File .\dev.ps1` (add `-DryRun` or `-Lang nl`).
+
+**Releasing:** `setup.ps1` is what clients download, and it only changes when
+`build.ps1` rebuilds it. Run the tests (they rebuild it), commit `setup.ps1`
+with the source change, and push. The one-liner serves the new version
+within a few minutes (GitHub's raw cache). Repo:
+<https://github.com/Shamilimanuel/Housecall> (public).
 
 ### Running the checks
 
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "Invoke-Pester .\tests"   # 75 tests, Pester 3.4 ships with Windows
-powershell -ExecutionPolicy Bypass -File .\build.ps1                  # writes dist\housecall.ps1
+powershell -ExecutionPolicy Bypass -File .\build.ps1                  # writes setup.ps1
 ```
 
 The tests also build the bundle and run it under a real `Get-Content | iex`,
@@ -189,7 +195,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - [ ] On start: "Known PC: last visit 3 Mar, C1 printer spooler"
 
 **Phase 5: the one-liner and 0.1.0**
-- [ ] Host `housecall.ps1`, test `irm | iex` on a clean Windows 11 with Defender on
+- [ ] Test the one-liner on a clean Windows 11 with Defender on (hosting itself is done, see *Recently done*)
 - [ ] Options via the `[scriptblock]::Create((irm $s))` form: `-DryRun`, `-NoAI`, `-Lang nl`
 - [ ] Break a test PC or VM on purpose (adapter off, bad DNS, stopped spooler, AnyDesk installed) and check each one is found, fixed and proven
 - [ ] Use it at one real client visit
@@ -201,14 +207,20 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - [?] **Where does the relay live?** Supabase (already used in Leeromgeving) or
       Cloudflare Workers, both with a free tier. It also stores visit memory in
       Phase 4.
-- [?] **Where is the script hosted?** A GitHub repo (like Reveille) or your own
-      short domain, which is easier to type at a client's desk.
 - [?] **Your contact line for the client note.** Name, phone, and the business
       name if there is one yet.
 
 ---
 
 ## Recently done
+
+**Hosting** *(26 Sep)*
+- [x] **Decided: GitHub**, public repo `Shamilimanuel/Housecall`, file
+      `setup.ps1` (Shamil's choice of name, matching Reveille). The one-liner
+      `irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex` was
+      run from GitHub in a fresh PowerShell and worked. The dev entry point was
+      renamed `housecall.ps1` → `dev.ps1`, and the build writes `setup.ps1` to
+      the root (no more `dist\`). Added `README.md` and `.gitignore`
 
 **Phase 1, area A: Internet & Wi-Fi** *(26 Sep)*
 - [x] **The shape of a check** (`src/checks/common.ps1`): *facts* (reads the
@@ -239,7 +251,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
       two drift apart
 - [x] `-DryRun` shows a magenta PROEFDRAAI / DRY RUN line; it has nothing to
       skip yet, and the fixes in Phase 2 must check `$script:DryRun`
-- [x] `build.ps1` bundles everything into `dist\housecall.ps1` (24 KB),
+- [x] `build.ps1` bundles everything into one file (renamed `setup.ps1` later that day),
       refusing non-ASCII or a parse error. 32 Pester tests, including the
       bundle run under a real `iex`
 
@@ -298,12 +310,13 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 | | |
 |---|---|
-| Entry point | `housecall.ps1`: options and the list of source files; the dev version loads `src\` |
+| Entry point | `dev.ps1`: options and the list of source files; runs straight from `src\` |
+| What clients get | `setup.ps1`: built, never edited by hand |
 | Strings | `src/strings.ps1`: every sentence in `en` and `nl`, plus `T` and the language pick |
 | Console output | `src/ui.ps1`: `Write-Step` and friends, `Write-Option`, the banner and status line, `Read-HcLine` |
 | PC facts | `src/environment.ps1`: Windows edition, admin, online (TCP to 1.1.1.1 / 8.8.8.8, no DNS needed) |
 | Menu | `src/menu.ps1`: area and problem codes, `Resolve-HcChoice` (input to decision), the screens, `Start-Housecall` |
-| Build | `build.ps1` → `dist\housecall.ps1`, the only file that gets hosted |
+| Build | `build.ps1` → `setup.ps1` |
 | Tests | `tests/Housecall.Tests.ps1` |
 | Check shape | `src/checks/common.ps1`: reports, findings, `Write-HcReport`, the handler list |
 | Area A | `src/checks/network.ps1`: facts, `Test-HcInternet` (A1), `Test-HcConnectionQuality` (A2), `Test-HcSite` (A3) |
@@ -314,6 +327,6 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Reference | `../Reveile/setup.ps1` for the one-line install pattern |
 
 **Adding a source file:** add its dot-source line between the `>>> sources`
-and `<<< sources` markers in `housecall.ps1`, and add it to the test file's
+and `<<< sources` markers in `dev.ps1`, and add it to the test file's
 dot-sources at the top. `build.ps1` reads the marker block, so nothing else
 needs to change.
