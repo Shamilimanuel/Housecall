@@ -35,6 +35,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Which build this is: build.ps1 puts a fingerprint of the code here, and
+# writes the same one to version.txt. A copy run from a USB stick compares
+# the two and says when it is out of date. 'dev' = straight from src\.
+$HcBuild = 'dev'
+
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
     That way it can hand itself to a new administrator window (see
@@ -66,6 +71,14 @@ $HcSource = @(
 $HcSource = $HcSource -join "`r`n"
 # <<< sources
 
+# The options, saved before the code loads: run as a file (a USB stick),
+# this script's scope is Housecall's script: scope, and loading the code
+# resets $script:Lang -- which is this same $Lang.
+$HcOptions = @{ DryRun = [bool]$DryRun; Lang = $Lang; Start = $Start; NoAI = [bool]$NoAI }
+
 . ([scriptblock]::Create($HcSource))
 $script:HcSource = $HcSource
-Start-Housecall -DryRun:$DryRun -Lang $Lang -Start $Start -NoAI:$NoAI
+$script:HcBuild = $HcBuild
+# Run from a file (a USB stick) rather than through irm | iex.
+$script:HcFromFile = [bool]$PSCommandPath
+Start-Housecall -DryRun:$HcOptions.DryRun -Lang $HcOptions.Lang -Start $HcOptions.Start -NoAI:$HcOptions.NoAI

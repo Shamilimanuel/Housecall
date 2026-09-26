@@ -16,8 +16,9 @@ says what it found in plain English or Dutch, and says what to do about it.
   afterwards, and can be undone with `U`. Or press `S` for step-by-step
   instructions to do it by hand.
 - **Nothing is installed.** Close the window and it's gone.
-- **Works offline.** The menu and the checks don't need internet, which matters
-  when the internet is the problem.
+- **Works offline, from a USB stick.** The one-liner needs internet to download
+  Housecall, but once running, the menu and the checks don't. For a PC with no
+  internet, bring it on a USB stick (below).
 
 ## Options
 
@@ -29,6 +30,23 @@ $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
 & ([scriptblock]::Create((irm $s))) -Lang nl    # Dutch or English (default: the Windows language)
 & ([scriptblock]::Create((irm $s))) -NoAI       # leave the AI chat (?) out of the menu
 ```
+
+## On a USB stick (for a PC without internet)
+
+On your own PC, with the stick plugged in:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\make-usb.ps1
+```
+
+It rebuilds `setup.ps1` and writes `Housecall\setup.ps1` and
+`Housecall\Housecall.cmd` to the stick. At the client's PC, double-click
+`Housecall.cmd` (right-click > *Als administrator uitvoeren* when a fix needs
+it). Options work too: `Housecall.cmd -Lang nl`.
+
+The copy doesn't update itself. When it runs on a PC with internet, it
+compares its build with `version.txt` on GitHub and says so when it is out of
+date; run `make-usb.ps1` again then.
 
 ## What's built
 

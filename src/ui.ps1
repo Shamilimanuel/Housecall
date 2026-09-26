@@ -59,7 +59,9 @@ function Read-HcLine {
         $script:NoConsole = $true
         return 'Q'
     }
-    if ($null -eq $line) { return '' }
+    # $null is the end of the input (it was redirected from a file or NUL):
+    # nobody will type anything more, so stop instead of asking forever.
+    if ($null -eq $line) { $script:NoConsole = $true; return 'Q' }
     $line
 }
 

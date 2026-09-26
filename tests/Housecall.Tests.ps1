@@ -1511,10 +1511,58 @@ Describe 'The client note' {
     }
 }
 
+Describe 'A copy on a USB stick' {
+    $online = [pscustomobject]@{ Online = $true }
+    It 'warns when GitHub has a newer build, and stays quiet otherwise' {
+        $script:Lang = 'nl'
+        $script:HcFromFile = $true; $script:HcBuild = 'aaaaaaaaaaaa'
+        Mock Invoke-WebRequest { [pscustomobject]@{ Content = "bbbbbbbbbbbb`n" } }
+        Get-HcOutdatedWarning $online | Should Match 'verouderd'
+        Mock Invoke-WebRequest { [pscustomobject]@{ Content = "aaaaaaaaaaaa`n" } }
+        Get-HcOutdatedWarning $online | Should Be $null
+        # Through irm | iex it is always the newest: no check at all.
+        $script:HcFromFile = $false
+        Mock Invoke-WebRequest { throw 'should not be called' }
+        Get-HcOutdatedWarning $online | Should Be $null
+        # Offline, or no answer: it cannot tell, so it says nothing.
+        $script:HcFromFile = $true
+        Get-HcOutdatedWarning ([pscustomobject]@{ Online = $false }) | Should Be $null
+        Get-HcOutdatedWarning $online | Should Be $null
+        $script:HcFromFile = $false; $script:HcBuild = 'dev'
+    }
+}
+
+Describe 'Offline at the start, internet fixed during the visit' {
+    Mock Get-HcEnvironment {
+        [pscustomobject]@{ IsWindows = $true; PSVersion = [version]'5.1'; Os = 'Windows 11 Home'; IsAdmin = $true; Online = $false }
+    }
+    Mock Get-HcNetworkFacts {
+        $script:FactsCalls++
+        if ($script:FactsCalls -eq 1) { New-FakeFacts @{ IPv4 = '169.254.12.40'; Gateway = $null; InternetMs = -1; DnsOk = $false; Web = 'failed' } }
+        else { New-FakeFacts }
+    }
+    Mock New-HcRestorePoint { }
+    Mock Test-HcOnline { $true }
+
+    It 'measures again after the fix, so Q still asks the code for the invoice' {
+        $script:FactsCalls = 0
+        $renew = $script:Fixes.renewIp.Apply
+        $script:Fixes.renewIp.Apply = { param($t) }
+        try {
+            $out = Start-Housecall -Lang nl -Answers @('A1', '1', 'j', '', 'Q', '') 6>&1 | Out-String
+        } finally { $script:Fixes.renewIp.Apply = $renew }
+        $out | Should Match 'Internet bereikbaar'
+        Assert-MockCalled Test-HcOnline -Times 1
+        # Enter at the code: the plain note, but the code was asked, so the invoice was on offer.
+        $out | Should Match 'Code uit Google Authenticator voor de factuur'
+    }
+}
+
 Describe 'Restarting as administrator' {
     Mock Get-HcEnvironment {
         [pscustomobject]@{ IsWindows = $true; PSVersion = [version]'5.1'; Os = 'Windows 11 Home'; IsAdmin = $false; Online = $false }
     }
+    Mock Test-HcOnline { $false }
     Mock Get-HcNetworkFacts { New-FakeFacts @{ IPv4 = '169.254.1.1'; InternetMs = $null } }
     $newTemp = { @(Get-ChildItem $env:TEMP -Filter 'housecall-*.txt' -ErrorAction SilentlyContinue) }
 
@@ -1621,6 +1669,7 @@ Describe 'Start-Housecall (scripted run)' {
             IsAdmin = $false; Online = $false
         }
     }
+    Mock Test-HcOnline { $false }
 
     Mock Get-HcNetworkFacts { New-FakeFacts }
     Mock Get-HcConnectionQuality { [pscustomobject]@{ Sent = 10; Lost = 0; AverageMs = 4 } }
@@ -1688,5 +1737,12 @@ Describe 'setup.ps1 (the file clients fetch)' {
     It 'takes options through the scriptblock form' {
         $out = & powershell.exe -NoProfile -NonInteractive -Command "& ([scriptblock]::Create((Get-Content -LiteralPath '$bundle' -Raw))) -Lang nl -DryRun" 2>&1 | Out-String
         $out | Should Match 'PROEFDRAAI'
+    }
+
+    It 'takes options when run as a file, as from the USB stick' {
+        # Nothing to read from the keyboard: Housecall shows the menu and stops.
+        $out = cmd.exe /c "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$bundle`" -Lang nl -DryRun < NUL" 2>&1 | Out-String
+        $out | Should Match 'PROEFDRAAI'
+        $out | Should Match 'Waar gaat het probleem over'
     }
 }

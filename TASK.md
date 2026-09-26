@@ -1,14 +1,14 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 95%** `███████████████████░` 54 of 57 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
+**Progress: 95%** `███████████████████░` 58 of 61 done · 0 in progress · 3 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
 | Next up | `░░░░░░░░░░` | 0% (0/3) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
-| Recently done | `██████████` | 100% (39/39) |
+| Recently done | `██████████` | 100% (43/43) |
 | Found in testing | `██████████` | 100% (10/10) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
@@ -225,6 +225,20 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**Offline visits and the USB stick** *(26 Sep)*
+- [x] **Online is measured again** before Q, H and the AI, and after a fix,
+      when the PC was offline at the start. Before, an A1 visit that fixed
+      the internet still skipped the invoice and the history
+- [x] **USB stick:** `tools/make-usb.ps1` rebuilds and writes
+      `Housecall\setup.ps1` + `Housecall.cmd` to the stick. Each build has a
+      fingerprint (`$HcBuild`, also in `version.txt`); a copy run from a file
+      warns when GitHub has a different one. Waiting for Shamil to buy a stick
+- [x] **`-Lang` never worked when run as a file** (and so from the stick):
+      loading `strings.ps1` reset `$script:Lang`, the same variable as the
+      option. The options are now saved before the code loads. Test added
+- [x] **End of input no longer loops forever** (stdin redirected): it quits
+      like a run without a console
 
 **GitHub two-factor authentication is on** *(26 Sep)*. Every push is live
 on clients' PCs at once, so the GitHub account is the key to all of them.

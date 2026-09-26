@@ -218,6 +218,7 @@ function Start-Housecall {
 
     $area = ''          # '' = home menu, otherwise the letter on screen
     $message = $null    # one-off warning shown under the menu
+    if (-not $Start) { $message = Get-HcOutdatedWarning $environment }
 
     $first = Resolve-HcChoice $Start
     if ($first.Kind -eq 'problem') {
@@ -233,9 +234,15 @@ function Start-Housecall {
         if ($script:NoAI -and $choice.Kind -in @('ai', 'freetext')) {
             $choice = [pscustomobject]@{ Kind = 'unknown'; Value = $(if ($choice.Value) { $choice.Value } else { '?' }) }
         }
+        if ($choice.Kind -in @('ai', 'freetext', 'history', 'quit')) { Update-HcOnline $environment }
         switch ($choice.Kind) {
             'area'     { $area = $choice.Value }
-            'problem'  { $area = $choice.Value.Substring(0, 1); Invoke-HcProblem $environment $choice.Value }
+            'problem'  {
+                $area = $choice.Value.Substring(0, 1)
+                $before = $script:HcChanges.Count
+                Invoke-HcProblem $environment $choice.Value
+                if ($script:HcChanges.Count -ne $before) { Update-HcOnline $environment }
+            }
             'ai'       { Invoke-HcAi $environment }
             'freetext' { Invoke-HcAi $environment $choice.Value }
             'back'     { $area = '' }

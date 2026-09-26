@@ -60,6 +60,34 @@ function Get-HcInternetMs {
 
 function Test-HcOnline { (Get-HcInternetMs) -ge 0 }
 
+<#
+    Online is measured at the start, but a visit often fixes the internet
+    (A1). Before anything that needs the relay, and after a fix, an offline
+    PC is measured again, so the invoice and history still work once the
+    internet is back. Costs up to 3 seconds, and only while offline.
+#>
+<#
+    A copy on a USB stick does not update itself. When it runs from a file
+    and the PC is online, it compares its build with version.txt on GitHub
+    and returns a warning when they differ; $null when all is well, or when
+    it cannot tell (offline, no answer, the dev version).
+#>
+function Get-HcOutdatedWarning {
+    param([pscustomobject]$Environment)
+    if (-not $script:HcFromFile -or "$script:HcBuild" -notmatch '^[0-9a-f]{12}$' -or -not $Environment.Online) { return $null }
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        $latest = "$((Invoke-WebRequest -Uri 'https://github.com/Shamilimanuel/Housecall/raw/main/version.txt' -UseBasicParsing -TimeoutSec 5).Content)".Trim()
+    } catch { return $null }
+    if ($latest -notmatch '^[0-9a-f]{12}$' -or $latest -eq $script:HcBuild) { return $null }
+    T 'env.outdated'
+}
+
+function Update-HcOnline {
+    param([pscustomobject]$Environment)
+    if (-not $Environment.Online) { $Environment.Online = Test-HcOnline }
+}
+
 # "Windows 11 Home" rather than "Microsoft Windows 11 Home".
 function Get-HcOsName {
     try {

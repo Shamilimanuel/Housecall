@@ -23,6 +23,7 @@ $script:Strings = @{
         'status.offline'   = 'offline'
         'status.dryRun'    = 'DRY RUN: checks only, nothing gets fixed'
         'status.clock'     = 'Working since {0}, {1} min'
+        'env.outdated'     = 'This copy of Housecall is out of date. Put the new one on the USB stick: on your own PC, run tools\make-usb.ps1.'
         'status.clockOver' = 'Working since {0}, {1} min: the starting price ({2} min) is used up, ask the client before you go on'
 
         'menu.question'    = 'What is the problem about?'
@@ -916,6 +917,7 @@ $script:Strings = @{
         'status.offline'   = 'offline'
         'status.dryRun'    = 'PROEFDRAAI: alleen controleren, er wordt niets hersteld'
         'status.clock'     = 'Bezig sinds {0}, {1} min'
+        'env.outdated'     = 'Deze Housecall-kopie is verouderd. Zet de nieuwe op de USB-stick: draai tools\make-usb.ps1 op uw eigen pc.'
         'status.clockOver' = 'Bezig sinds {0}, {1} min: het starttarief ({2} min) is op, vraag de klant of u verder mag'
 
         'menu.question'    = 'Waar gaat het probleem over?'

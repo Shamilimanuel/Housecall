@@ -30,8 +30,19 @@ if ($start -lt 0 -or $end -lt $start) {
     throw 'dev.ps1 has no ">>> sources" / "<<< sources" block.'
 }
 
+# The fingerprint: the first 12 hex digits of the SHA-256 of every source
+# file, so it changes exactly when the code does.
+$sha = [Security.Cryptography.SHA256]::Create()
+$texts = foreach ($l in $lines[($start + 1)..($end - 1)]) {
+    if ($l -match "^\s+'([^']+\.ps1)'\s*$") { [IO.File]::ReadAllText((Join-Path (Join-Path $root 'src') $Matches[1])) }
+}
+$all = (@($lines) + @($texts)) -join "`n"
+$build = (($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($all)) | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0, 12)
+
 $bundle = New-Object System.Collections.Generic.List[string]
-$lines[0..($start - 1)] | ForEach-Object { $bundle.Add($_) }
+$marker = "`$HcBuild = 'dev'"
+if (@($lines[0..($start - 1)] | Where-Object { $_ -eq $marker }).Count -ne 1) { throw "dev.ps1 needs exactly one line: $marker" }
+$lines[0..($start - 1)] | ForEach-Object { if ($_ -eq $marker) { $bundle.Add("`$HcBuild = '$build'") } else { $bundle.Add($_) } }
 
 $bundle.Add("`$HcSource = @'")
 foreach ($line in $lines[($start + 1)..($end - 1)]) {
@@ -61,4 +72,5 @@ if ($errors.Count -gt 0) {
 }
 
 [System.IO.File]::WriteAllText($out, $text, (New-Object System.Text.ASCIIEncoding))
-Write-Host "  Built $out ($([math]::Round($text.Length / 1KB, 1)) KB)" -ForegroundColor Green
+[System.IO.File]::WriteAllText((Join-Path $root 'version.txt'), $build + "`n", (New-Object System.Text.ASCIIEncoding))
+Write-Host "  Built $out ($([math]::Round($text.Length / 1KB, 1)) KB), build $build" -ForegroundColor Green

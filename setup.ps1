@@ -35,6 +35,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Which build this is: build.ps1 puts a fingerprint of the code here, and
+# writes the same one to version.txt. A copy run from a USB stick compares
+# the two and says when it is out of date. 'dev' = straight from src\.
+$HcBuild = 'de840318bcb8'
+
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
     That way it can hand itself to a new administrator window (see
@@ -69,6 +74,7 @@ $script:Strings = @{
         'status.offline'   = 'offline'
         'status.dryRun'    = 'DRY RUN: checks only, nothing gets fixed'
         'status.clock'     = 'Working since {0}, {1} min'
+        'env.outdated'     = 'This copy of Housecall is out of date. Put the new one on the USB stick: on your own PC, run tools\make-usb.ps1.'
         'status.clockOver' = 'Working since {0}, {1} min: the starting price ({2} min) is used up, ask the client before you go on'
 
         'menu.question'    = 'What is the problem about?'
@@ -962,6 +968,7 @@ $script:Strings = @{
         'status.offline'   = 'offline'
         'status.dryRun'    = 'PROEFDRAAI: alleen controleren, er wordt niets hersteld'
         'status.clock'     = 'Bezig sinds {0}, {1} min'
+        'env.outdated'     = 'Deze Housecall-kopie is verouderd. Zet de nieuwe op de USB-stick: draai tools\make-usb.ps1 op uw eigen pc.'
         'status.clockOver' = 'Bezig sinds {0}, {1} min: het starttarief ({2} min) is op, vraag de klant of u verder mag'
 
         'menu.question'    = 'Waar gaat het probleem over?'
@@ -1932,7 +1939,9 @@ function Read-HcLine {
         $script:NoConsole = $true
         return 'Q'
     }
-    if ($null -eq $line) { return '' }
+    # $null is the end of the input (it was redirected from a file or NUL):
+    # nobody will type anything more, so stop instead of asking forever.
+    if ($null -eq $line) { $script:NoConsole = $true; return 'Q' }
     $line
 }
 
@@ -2069,6 +2078,34 @@ function Get-HcInternetMs {
 }
 
 function Test-HcOnline { (Get-HcInternetMs) -ge 0 }
+
+<#
+    Online is measured at the start, but a visit often fixes the internet
+    (A1). Before anything that needs the relay, and after a fix, an offline
+    PC is measured again, so the invoice and history still work once the
+    internet is back. Costs up to 3 seconds, and only while offline.
+#>
+<#
+    A copy on a USB stick does not update itself. When it runs from a file
+    and the PC is online, it compares its build with version.txt on GitHub
+    and returns a warning when they differ; $null when all is well, or when
+    it cannot tell (offline, no answer, the dev version).
+#>
+function Get-HcOutdatedWarning {
+    param([pscustomobject]$Environment)
+    if (-not $script:HcFromFile -or "$script:HcBuild" -notmatch '^[0-9a-f]{12}$' -or -not $Environment.Online) { return $null }
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        $latest = "$((Invoke-WebRequest -Uri 'https://github.com/Shamilimanuel/Housecall/raw/main/version.txt' -UseBasicParsing -TimeoutSec 5).Content)".Trim()
+    } catch { return $null }
+    if ($latest -notmatch '^[0-9a-f]{12}$' -or $latest -eq $script:HcBuild) { return $null }
+    T 'env.outdated'
+}
+
+function Update-HcOnline {
+    param([pscustomobject]$Environment)
+    if (-not $Environment.Online) { $Environment.Online = Test-HcOnline }
+}
 
 # "Windows 11 Home" rather than "Microsoft Windows 11 Home".
 function Get-HcOsName {
@@ -2311,6 +2348,7 @@ function Start-Housecall {
 
     $area = ''          # '' = home menu, otherwise the letter on screen
     $message = $null    # one-off warning shown under the menu
+    if (-not $Start) { $message = Get-HcOutdatedWarning $environment }
 
     $first = Resolve-HcChoice $Start
     if ($first.Kind -eq 'problem') {
@@ -2326,9 +2364,15 @@ function Start-Housecall {
         if ($script:NoAI -and $choice.Kind -in @('ai', 'freetext')) {
             $choice = [pscustomobject]@{ Kind = 'unknown'; Value = $(if ($choice.Value) { $choice.Value } else { '?' }) }
         }
+        if ($choice.Kind -in @('ai', 'freetext', 'history', 'quit')) { Update-HcOnline $environment }
         switch ($choice.Kind) {
             'area'     { $area = $choice.Value }
-            'problem'  { $area = $choice.Value.Substring(0, 1); Invoke-HcProblem $environment $choice.Value }
+            'problem'  {
+                $area = $choice.Value.Substring(0, 1)
+                $before = $script:HcChanges.Count
+                Invoke-HcProblem $environment $choice.Value
+                if ($script:HcChanges.Count -ne $before) { Update-HcOnline $environment }
+            }
             'ai'       { Invoke-HcAi $environment }
             'freetext' { Invoke-HcAi $environment $choice.Value }
             'back'     { $area = '' }
@@ -7098,6 +7142,14 @@ function Invoke-HcAi {
 '@
 
 
+# The options, saved before the code loads: run as a file (a USB stick),
+# this script's scope is Housecall's script: scope, and loading the code
+# resets $script:Lang -- which is this same $Lang.
+$HcOptions = @{ DryRun = [bool]$DryRun; Lang = $Lang; Start = $Start; NoAI = [bool]$NoAI }
+
 . ([scriptblock]::Create($HcSource))
 $script:HcSource = $HcSource
-Start-Housecall -DryRun:$DryRun -Lang $Lang -Start $Start -NoAI:$NoAI
+$script:HcBuild = $HcBuild
+# Run from a file (a USB stick) rather than through irm | iex.
+$script:HcFromFile = [bool]$PSCommandPath
+Start-Housecall -DryRun:$HcOptions.DryRun -Lang $HcOptions.Lang -Start $HcOptions.Start -NoAI:$HcOptions.NoAI
