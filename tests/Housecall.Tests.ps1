@@ -625,15 +625,25 @@ Describe 'The client note' {
     }
 
     It 'says nothing changed, and shows the contact line only when one is set' {
+        $saved = $script:Contact
         $script:HcVisit.Clear(); $script:HcChanges.Clear()
         $r = New-HcReport; Set-HcFinding $r 'allGood'
         Save-HcVisit 'A1' $r
+        $script:Contact = @()
         $texts = @(Get-HcNoteBlocks | ForEach-Object { $_.Text })
         $texts -contains 'Er is niets veranderd aan deze pc.' | Should Be $true
         $texts -contains 'Vragen?' | Should Be $false
-        $script:Contact = 'Shamil, 06-12345678'
-        @(Get-HcNoteBlocks | ForEach-Object { $_.Text }) -contains 'Shamil, 06-12345678' | Should Be $true
-        $script:Contact = ''
+        $script:Contact = @('Shamil: +31 6 00000000', 'test@example.com')
+        $texts = @(Get-HcNoteBlocks | ForEach-Object { $_.Text })
+        $texts -contains 'Vragen?' | Should Be $true
+        $texts -contains 'Shamil: +31 6 00000000' | Should Be $true
+        $texts -contains 'test@example.com' | Should Be $true
+        $script:Contact = $saved
+    }
+
+    It 'carries Shamil''s email, and no phone number (the repo is public)' {
+        @($script:Contact) | Should Be @('Shamil: shamilimanuel@outlook.com')
+        (@($script:Contact) -join ' ') | Should Not Match '\+?\d[\d ]{7,}'
     }
 }
 

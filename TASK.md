@@ -1,14 +1,14 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 50%** `██████████░░░░░░░░░░` 21 of 42 done · 0 in progress · 18 open · 0 blocked · 3 waiting on a decision
+**Progress: 52%** `██████████░░░░░░░░░░` 22 of 42 done · 0 in progress · 18 open · 0 blocked · 2 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
 | Next up | `░░░░░░░░░░` | 0% (0/18) |
-| Blocked on Shamil | `░░░░░░░░░░` | 0% (0/3) |
-| Recently done | `██████████` | 100% (16/16) |
+| Blocked on Shamil | `░░░░░░░░░░` | 0% (0/2) |
+| Recently done | `██████████` | 100% (17/17) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
@@ -60,8 +60,7 @@ Afdrukken / Sluiten, nothing saved), and an admin fix now offers to
 the AI chat comes last**, after everything else including 0.1.0.
 
 Next, recommended: **B** (sound, screen, video calls), then **D** and
-**E**, same pattern. Shamil still has to fill in `$script:Contact` in
-`src/note.ps1`.
+**E**, same pattern.
 
 **Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
 name and **95%** signal correctly. The drop-out count in A2 has not been
@@ -213,16 +212,21 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ## Blocked on Shamil
 
 - [?] **Which AI, and who pays?** Claude API is the natural choice. It needs a
-      key and a monthly spending cap. Only blocks Phase 3.
+      key and a monthly spending cap. Only blocks the AI chat, which comes last.
 - [?] **Where does the relay live?** Supabase (already used in Leeromgeving) or
       Cloudflare Workers, both with a free tier. It also stores visit memory in
       Phase 4.
-- [?] **Your contact line for the client note.** Name, phone, and the business
-      name if there is one yet.
 
 ---
 
 ## Recently done
+
+**Contact line on the note** *(26 Sep)*
+- [x] **Decided: the email only** (`Shamil: shamilimanuel@outlook.com`),
+      because the repo is public. The phone number stays off GitHub on
+      purpose, and a test checks that no phone number sneaks into
+      `$script:Contact`. A test mail to the address was drafted for Shamil to
+      send and confirm
 
 **Phase 1, area C: Printer & devices** *(26 Sep)*
 - [x] **C1, C2, C3** (`src/checks/devices.ps1`), no admin needed to check,

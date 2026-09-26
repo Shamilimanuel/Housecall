@@ -8,9 +8,13 @@
     a PDF, for email).
 #>
 
-# Your contact line for the bottom of the note, e.g. 'Shamil, 06-12345678'.
-# Left empty, the "Questions?" part is simply not shown.
-$script:Contact = ''
+# Your contact details for the bottom of the note, one line each. Left
+# empty, the "Questions?" part is simply not shown. This file is public on
+# GitHub, so only details that may be public go here: decided 26 Sep, the
+# email yes, the phone number no.
+$script:Contact = @(
+    'Shamil: shamilimanuel@outlook.com'
+)
 
 # The problems opened in this session, each with its latest finding (the
 # one after any fixes). Filled by Invoke-HcProblem.
@@ -60,7 +64,7 @@ function Get-HcNoteBlocks {
 
     if ($script:Contact) {
         & $block 'heading' (T 'note.contact')
-        & $block 'text' $script:Contact
+        foreach ($line in @($script:Contact)) { & $block 'text' $line }
     }
     & $block 'small' (T 'note.footer')
 }
