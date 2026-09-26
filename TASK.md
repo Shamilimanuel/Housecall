@@ -595,6 +595,10 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 - **Invoice numbers never go back.** A number is used the moment the relay
   makes the invoice, even if the window is then closed. A wrong invoice is
   corrected with a credit invoice, not by deleting it (not built yet).
+- **No business registration yet (26 Sep).** Shamil works on his own, without
+  a KvK number or BTW-id for now, and will say when that changes. The invoice
+  handles it: empty fields are left off. Don't ask about it again until he
+  brings it up.
 - **BTW is "not set" until Shamil decides.** Check with the Belastingdienst
   (KOR or not) and set it in `setup-invoice.ps1` before the first real
   invoice.
