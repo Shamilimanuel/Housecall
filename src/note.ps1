@@ -20,6 +20,10 @@ $script:Contact = @(
 # one after any fixes). Filled by Invoke-HcProblem.
 $script:HcVisit = New-Object System.Collections.ArrayList
 
+# What the client asked for help with, typed by Shamil in the invoice
+# window. Empty: every problem opened this visit is listed instead.
+$script:HcAsked = ''
+
 # What Shamil did by hand, from the invoice window: Text, and Done ($true
 # for fixed, $false for not fixed).
 $script:HcWork = New-Object System.Collections.ArrayList
@@ -86,7 +90,11 @@ function Get-HcVisitBlocks {
     $visits = @($script:HcVisit)
     $block = { param($style, $text) [pscustomobject]@{ Style = $style; Text = $text } }
     & $block 'heading' (T 'note.asked')
-    foreach ($v in $visits) { & $block 'text' (T "problem.$($v.Code)") }
+    if ("$script:HcAsked".Trim()) {
+        & $block 'text' "$script:HcAsked".Trim()
+    } else {
+        foreach ($v in $visits) { & $block 'text' (T "problem.$($v.Code)") }
+    }
 
     & $block 'heading' (T 'note.found')
     foreach ($v in $visits | Where-Object { $_.FindingId }) {

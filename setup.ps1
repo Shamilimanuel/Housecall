@@ -876,6 +876,7 @@ $script:Strings = @{
         'inv.extraTime'       = 'Extra time: {0} min at {1} per hour'
         'inv.win.rateStart'   = '{0} for the first {1} min, then {2} per hour'
         'inv.win.done'        = 'What was done (choose or type)'
+        'inv.win.asked'       = 'Asked for help with'
         'inv.win.fixed'       = 'Fixed'
         'inv.win.notFixed'    = 'Not fixed'
         'inv.win.remove'      = 'Remove selected'
@@ -1756,6 +1757,7 @@ $script:Strings = @{
         'inv.extraTime'       = 'Extra tijd: {0} min, {1} per uur'
         'inv.win.rateStart'   = '{0} voor de eerste {1} min, daarna {2} per uur'
         'inv.win.done'        = 'Wat er is gedaan (kies of typ zelf)'
+        'inv.win.asked'       = 'Hulpvraag'
         'inv.win.fixed'       = 'Opgelost'
         'inv.win.notFixed'    = 'Niet opgelost'
         'inv.win.remove'      = 'Geselecteerde verwijderen'
@@ -2259,6 +2261,7 @@ function Start-Housecall {
     $script:HcChanges.Clear()
     $script:HcVisit.Clear()
     $script:HcWork.Clear()
+    $script:HcAsked = ''
     $script:HandedOff = $false
     $script:HcToken = $null
     $script:HcKnownLabel = $null
@@ -5496,6 +5499,10 @@ $script:Contact = @(
 # one after any fixes). Filled by Invoke-HcProblem.
 $script:HcVisit = New-Object System.Collections.ArrayList
 
+# What the client asked for help with, typed by Shamil in the invoice
+# window. Empty: every problem opened this visit is listed instead.
+$script:HcAsked = ''
+
 # What Shamil did by hand, from the invoice window: Text, and Done ($true
 # for fixed, $false for not fixed).
 $script:HcWork = New-Object System.Collections.ArrayList
@@ -5562,7 +5569,11 @@ function Get-HcVisitBlocks {
     $visits = @($script:HcVisit)
     $block = { param($style, $text) [pscustomobject]@{ Style = $style; Text = $text } }
     & $block 'heading' (T 'note.asked')
-    foreach ($v in $visits) { & $block 'text' (T "problem.$($v.Code)") }
+    if ("$script:HcAsked".Trim()) {
+        & $block 'text' "$script:HcAsked".Trim()
+    } else {
+        foreach ($v in $visits) { & $block 'text' (T "problem.$($v.Code)") }
+    }
 
     & $block 'heading' (T 'note.found')
     foreach ($v in $visits | Where-Object { $_.FindingId }) {
@@ -6224,6 +6235,15 @@ function Show-HcInvoiceWindow {
     $address = & $field (T 'inv.address') ''
     $postcode = & $field (T 'inv.postcode') ''
     $email = & $field (T 'inv.email') ''
+    # The client's question in Shamil's words; the problems checked this
+    # visit are offered, since he may have checked more than was asked.
+    $l = New-Object Windows.Forms.Label
+    $l.Text = T 'inv.win.asked'; $l.AutoSize = $true; $l.Anchor = 'Left'; $l.Margin = New-Object Windows.Forms.Padding(0, 6, 8, 0)
+    $asked = New-Object Windows.Forms.ComboBox
+    $asked.DropDownStyle = 'DropDown'; $asked.Dock = 'Fill'; $asked.FlatStyle = 'Flat'; $asked.MaxLength = 150; & $paint $asked
+    foreach ($v in @($script:HcVisit)) { [void]$asked.Items.Add((T "problem.$($v.Code)")) }
+    $asked.Text = "$script:HcAsked"
+    $layout.Controls.Add($l); $layout.Controls.Add($asked)
 
     & $heading (T 'inv.win.work')
     $l = New-Object Windows.Forms.Label
@@ -6359,9 +6379,10 @@ function Show-HcInvoiceWindow {
         $check = & $read
         if ($check.Error) { $problem.Text = $check.Error; return }
         $script:HcInvoiceResult = $check.Form
+        $script:HcAsked = $asked.Text.Trim()
         $this.FindForm().Close()
     })
-    $none.Add_Click({ $script:HcInvoiceResult = $null; $this.FindForm().Close() })
+    $none.Add_Click({ $script:HcInvoiceResult = $null; $script:HcAsked = $asked.Text.Trim(); $this.FindForm().Close() })
     $buttons.Controls.Add($make); $buttons.Controls.Add($none)
 
     # Live total: labour + call-out + valid extra lines, whatever the payment.

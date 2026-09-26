@@ -1133,6 +1133,13 @@ Describe 'The invoice' {
         ($text -contains 'Onderdeel moet besteld worden') | Should Be $true
         ($text -contains 'Er is niets veranderd aan deze pc.') | Should Be $false
         (@(Get-HcVisitChanges) -contains 'Niet opgelost: Onderdeel moet besteld worden') | Should Be $true
+        # The question typed in the window replaces the list of problems checked.
+        ($text -contains (T 'problem.A1')) | Should Be $true
+        $script:HcAsked = 'Printer doet het niet sinds de verhuizing'
+        $text = @(Get-HcVisitBlocks | ForEach-Object { $_.Text })
+        ($text -contains 'Printer doet het niet sinds de verhuizing') | Should Be $true
+        ($text -contains (T 'problem.A1')) | Should Be $false
+        $script:HcAsked = ''
         $script:HcWork.Clear(); $script:HcVisit.Clear()
     }
 

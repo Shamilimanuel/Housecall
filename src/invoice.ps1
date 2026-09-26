@@ -268,6 +268,15 @@ function Show-HcInvoiceWindow {
     $address = & $field (T 'inv.address') ''
     $postcode = & $field (T 'inv.postcode') ''
     $email = & $field (T 'inv.email') ''
+    # The client's question in Shamil's words; the problems checked this
+    # visit are offered, since he may have checked more than was asked.
+    $l = New-Object Windows.Forms.Label
+    $l.Text = T 'inv.win.asked'; $l.AutoSize = $true; $l.Anchor = 'Left'; $l.Margin = New-Object Windows.Forms.Padding(0, 6, 8, 0)
+    $asked = New-Object Windows.Forms.ComboBox
+    $asked.DropDownStyle = 'DropDown'; $asked.Dock = 'Fill'; $asked.FlatStyle = 'Flat'; $asked.MaxLength = 150; & $paint $asked
+    foreach ($v in @($script:HcVisit)) { [void]$asked.Items.Add((T "problem.$($v.Code)")) }
+    $asked.Text = "$script:HcAsked"
+    $layout.Controls.Add($l); $layout.Controls.Add($asked)
 
     & $heading (T 'inv.win.work')
     $l = New-Object Windows.Forms.Label
@@ -403,9 +412,10 @@ function Show-HcInvoiceWindow {
         $check = & $read
         if ($check.Error) { $problem.Text = $check.Error; return }
         $script:HcInvoiceResult = $check.Form
+        $script:HcAsked = $asked.Text.Trim()
         $this.FindForm().Close()
     })
-    $none.Add_Click({ $script:HcInvoiceResult = $null; $this.FindForm().Close() })
+    $none.Add_Click({ $script:HcInvoiceResult = $null; $script:HcAsked = $asked.Text.Trim(); $this.FindForm().Close() })
     $buttons.Controls.Add($make); $buttons.Controls.Add($none)
 
     # Live total: labour + call-out + valid extra lines, whatever the payment.
