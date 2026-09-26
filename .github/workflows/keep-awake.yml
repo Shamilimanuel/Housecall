@@ -1,0 +1,38 @@
+# Keeps the relay's Supabase project awake. The free plan pauses a project
+# after 7 days without activity; then invoices, visit history and the AI
+# chat stop working until it is restored by hand. Every 3 days this asks
+# the relay's health check, which also touches the database. When it fails,
+# GitHub emails the repository owner.
+#
+# Nothing secret here: the relay URL is public in setup.ps1 already, and
+# health only answers true/false.
+
+name: Keep the relay awake
+
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ask the relay for its health
+        run: |
+          response=$(curl --silent --show-error --fail-with-body --max-time 60 --retry 2 --retry-delay 20 \
+            -X POST 'https://btwbtxjawubtgeizcrir.supabase.co/functions/v1/housecall' \
+            -H 'Content-Type: application/json' \
+            -d '{"action":"health"}')
+          echo "Relay answered: $response"
+          if [ "$(echo "$response" | jq -r '.database')" != "true" ]; then
+            echo "::error::The relay is up but cannot reach its database. Check the Supabase project 'housecall'."
+            exit 1
+          fi
+          if [ "$(echo "$response" | jq -r '.totp_secret')" != "true" ]; then
+            echo "::error::HOUSECALL_TOTP_SECRET is missing in the Supabase Edge Function secrets."
+            exit 1
+          fi
