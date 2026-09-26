@@ -36,7 +36,8 @@ $sha = [Security.Cryptography.SHA256]::Create()
 $texts = foreach ($l in $lines[($start + 1)..($end - 1)]) {
     if ($l -match "^\s+'([^']+\.ps1)'\s*$") { [IO.File]::ReadAllText((Join-Path (Join-Path $root 'src') $Matches[1])) }
 }
-$all = (@($lines) + @($texts)) -join "`n"
+# Without carriage returns, so Git's line-ending conversion does not change it.
+$all = ((@($lines) + @($texts)) -join "`n") -replace "`r", ''
 $build = (($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($all)) | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0, 12)
 
 $bundle = New-Object System.Collections.Generic.List[string]
