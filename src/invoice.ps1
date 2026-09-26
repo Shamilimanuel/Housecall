@@ -280,7 +280,9 @@ function Show-HcInvoiceWindow {
     $rateLabel = New-Object Windows.Forms.Label
     $rateLabel.AutoSize = $true; $rateLabel.Margin = New-Object Windows.Forms.Padding(8, 6, 0, 0)
     $rateLabel.MaximumSize = New-Object Drawing.Size(290, 0)
-    $rateLabel.Text = Get-HcRateText $Settings
+    # A non-breaking space after the euro sign: the label wraps, but never
+    # between the sign and its amount.
+    $rateLabel.Text = (Get-HcRateText $Settings) -replace ([string][char]0x20AC + ' '), ([string][char]0x20AC + [char]0xA0)
     $minutesRow.Controls.Add($minutes); $minutesRow.Controls.Add($rateLabel)
     $layout.Controls.Add($l); $layout.Controls.Add($minutesRow)
 
