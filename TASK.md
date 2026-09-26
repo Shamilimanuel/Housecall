@@ -191,10 +191,6 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Next up
 
-**Phase 1: checks (offline, read-only)**
-
-**Phase 2: fixes, proof and the note**
-
 **Phase 4: visit memory** *(waits on "where does the relay live")*
 - [ ] A PC fingerprint that is not personal (e.g. a hash of the BIOS serial)
 - [ ] After each visit, send a short record to Shamil's side (the relay, or a file he keeps). Never stored on the client's PC
