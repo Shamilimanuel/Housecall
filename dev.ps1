@@ -27,7 +27,10 @@ param(
     [string]$Lang,
     # Open this problem straight away, e.g. A1. Used when Housecall restarts
     # itself as administrator, so it carries on where it was.
-    [string]$Start
+    [string]$Start,
+    # Leave the AI chat (?) out of the menu, e.g. when the client does not
+    # want anything sent over the internet.
+    [switch]$NoAI
 )
 
 $ErrorActionPreference = 'Stop'
@@ -46,6 +49,7 @@ $HcSource = @(
     'menu.ps1'
     'checks\common.ps1'
     'checks\network.ps1'
+    'checks\email.ps1'
     'checks\security.ps1'
     'checks\devices.ps1'
     'checks\audio-interop.ps1'
@@ -60,4 +64,4 @@ $HcSource = $HcSource -join "`r`n"
 
 . ([scriptblock]::Create($HcSource))
 $script:HcSource = $HcSource
-Start-Housecall -DryRun:$DryRun -Lang $Lang -Start $Start
+Start-Housecall -DryRun:$DryRun -Lang $Lang -Start $Start -NoAI:$NoAI

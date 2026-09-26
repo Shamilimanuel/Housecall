@@ -27,13 +27,14 @@ says what it found in plain English or Dutch, and says what to do about it.
 $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
 & ([scriptblock]::Create((irm $s))) -DryRun     # check only, never fix
 & ([scriptblock]::Create((irm $s))) -Lang nl    # Dutch or English (default: the Windows language)
+& ([scriptblock]::Create((irm $s))) -NoAI       # leave the AI chat (?) out of the menu
 ```
 
 ## What's built
 
 | | Area | Status |
 |---|---|---|
-| A | Internet & Wi-Fi | A1 no internet, A2 slow or dropping, A3 one website: working. A4 email: planned |
+| A | Internet & Wi-Fi | A1 no internet, A2 slow or dropping, A3 one website, A4 email: working |
 | B | Sound, screen & video calls | B1 no sound, B2 microphone or camera, B3 screen: working |
 | C | Printer & devices | C1 printer won't print, C2 mouse, keyboard or USB stick, C3 Bluetooth: working |
 | D | Slow or freezing | D1 slow, D2 slow start, D3 crashes, D4 disk full: working |

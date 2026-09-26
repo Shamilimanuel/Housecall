@@ -71,8 +71,7 @@ function Show-HcHome {
         Write-Option $letter (T "area.$letter")
     }
     Write-Host ''
-    Write-Option '?' (T 'menu.ai')
-    Write-Host ''
+    if (-not $script:NoAI) { Write-Option '?' (T 'menu.ai'); Write-Host '' }
     Write-OptionRow (Get-HcFooter)
     Write-Host ''
     if ($Message) { Write-Warn2 $Message } else { Write-Dim (T 'menu.hintHome') }
@@ -88,8 +87,7 @@ function Show-HcArea {
         Write-Option $code (T "problem.$code")
     }
     Write-Host ''
-    Write-Option '?' (T 'area.ai')
-    Write-Host ''
+    if (-not $script:NoAI) { Write-Option '?' (T 'area.ai'); Write-Host '' }
     Write-OptionRow (@(, @('0', (T 'menu.back'))) + (Get-HcFooter))
     Write-Host ''
     if ($Message) { Write-Warn2 $Message } else { Write-Dim (T 'area.hint') }
@@ -178,11 +176,15 @@ function Start-Housecall {
         [string]$Lang,
         # A problem code to open straight away, e.g. after restarting as admin.
         [string]$Start,
+        # Leave the AI chat out of the menu.
+        [switch]$NoAI,
         # For tests: answers to feed in instead of reading the keyboard.
         [string[]]$Answers
     )
 
     $script:DryRun = [bool]$DryRun
+    $script:NoAI = [bool]$NoAI
+    $script:RestorePointDone = $false
     $script:HcChanges.Clear()
     $script:HcVisit.Clear()
     $script:HandedOff = $false
@@ -215,6 +217,9 @@ function Start-Housecall {
         $message = $null
 
         $choice = Resolve-HcChoice (Read-HcLine (T 'menu.prompt')) -CurrentArea $area
+        if ($script:NoAI -and $choice.Kind -in @('ai', 'freetext')) {
+            $choice = [pscustomobject]@{ Kind = 'unknown'; Value = $(if ($choice.Value) { $choice.Value } else { '?' }) }
+        }
         switch ($choice.Kind) {
             'area'     { $area = $choice.Value }
             'problem'  { $area = $choice.Value.Substring(0, 1); Invoke-HcProblem $environment $choice.Value }

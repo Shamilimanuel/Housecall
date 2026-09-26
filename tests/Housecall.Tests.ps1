@@ -11,6 +11,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\menu.ps1')
 . (Join-Path $root 'src\checks\common.ps1')
 . (Join-Path $root 'src\checks\network.ps1')
+. (Join-Path $root 'src\checks\email.ps1')
 . (Join-Path $root 'src\checks\security.ps1')
 . (Join-Path $root 'src\checks\devices.ps1')
 . (Join-Path $root 'src\checks\audio-interop.ps1')
@@ -783,6 +784,97 @@ Describe 'E: Windows and updates' {
     }
 }
 
+Describe 'A4: email' {
+    $script:Lang = 'en'
+    It 'reads the domain from an address, or takes the domain itself' {
+        ConvertTo-HcMailDomain ' Jan.Jansen@Ziggo.NL ' | Should Be 'ziggo.nl'
+        ConvertTo-HcMailDomain 'kpnmail.nl' | Should Be 'kpnmail.nl'
+        ConvertTo-HcMailDomain 'geen adres' | Should Be $null
+    }
+    It 'spots a typo of a known provider, but not the provider itself or a stranger' {
+        Get-HcMailTypo 'zigo.nl' | Should Be 'ziggo.nl'
+        Get-HcMailTypo 'hotmial.com' | Should Be 'hotmail.com'
+        Get-HcMailTypo 'gmial.com' | Should Be 'gmail.com'
+        Get-HcMailTypo 'ziggo.nl' | Should Be $null
+        Get-HcMailTypo 'bakkerij-devries.nl' | Should Be $null
+    }
+
+    $mail = { param([hashtable]$c = @{})
+        $f = [pscustomobject]@{ Domain = 'ziggo.nl'; Provider = 'Ziggo'; Web = $null; Typo = $null; ReceivesMail = $true
+            ImapHost = 'imap.ziggo.nl'; ImapMs = 30; SmtpHost = 'smtp.ziggo.nl'; SmtpMs = 20
+            Apps = [pscustomobject]@{ Apps = @('Outlook'); RetiredMail = $false } }
+        foreach ($k in $c.Keys) { $f.$k = $c[$k] }
+        $f }
+    It 'finds typos, dead domains, unreachable servers and the retired Mail app' {
+        $ok = Test-HcMail (& $mail)
+        $ok.FindingId | Should Be 'mailOk'
+        $ok.FindingArgs | Should Be @('Ziggo')
+        (Test-HcMail (& $mail @{ Domain = 'zigo.nl'; Provider = $null; Typo = 'ziggo.nl' })).FindingId | Should Be 'mailTypo'
+        (Test-HcMail (& $mail @{ Domain = 'hetnt.nl'; Provider = $null; ReceivesMail = $false })).FindingId | Should Be 'mailNoDomain'
+        (Test-HcMail (& $mail @{ SmtpMs = -1 })).FindingId | Should Be 'mailServerDown'
+        (Test-HcMail (& $mail @{ Apps = [pscustomobject]@{ Apps = @(); RetiredMail = $true } })).FindingId | Should Be 'mailAppRetired'
+    }
+    It 'offers webmail only where the address is known' {
+        @((Test-HcMail (& $mail @{ Web = 'https://mail.google.com/'; Provider = 'Gmail' })).Actions)[0].FixId | Should Be 'openWebmail'
+        @((Test-HcMail (& $mail)).Actions).Count | Should Be 0
+    }
+    It 'runs from the menu, asking for the address' {
+        Mock Get-HcNetworkFacts { New-FakeFacts }
+        Mock Get-HcMailFacts { & $mail }
+        { Start-Housecall -Lang nl -Answers @('A4', 'jan@ziggo.nl', '', 'Q') } | Should Not Throw
+        Assert-MockCalled Get-HcMailFacts -Times 1 -Exactly -Scope It -ParameterFilter { $Domain -eq 'ziggo.nl' }
+    }
+}
+
+Describe 'More fixes, the restore point and -NoAI' {
+    $script:Lang = 'en'
+    It 'offers an adapter restart and a network reset where they help' {
+        $noAddr = Test-HcInternet (New-FakeFacts @{ IPv4 = '169.254.1.1'; InternetMs = $null })
+        @($noAddr.Actions | ForEach-Object { $_.FixId }) | Should Be @('renewIp', 'restartAdapter')
+        $noAddr.Actions[1].Target.Name | Should Be 'Wi-Fi'
+        @((Test-HcInternet (New-FakeFacts @{ DnsOk = $false; Web = $null })).Actions | ForEach-Object { $_.FixId }) | Should Be @('flushDns', 'resetWinsock')
+    }
+    It 'offers to uninstall a remote tool through its own uninstaller, and the browser''s notification page' {
+        $tool = New-FakeTool -InstallDate ([datetime]'2026-09-24')
+        $tool | Add-Member Processes @('AnyDesk')
+        $tool | Add-Member Uninstall '"C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --uninstall'
+        $sites = @([pscustomobject]@{ Browser = 'Chrome'; Site = 'https://virus-alert.example'; Since = $null })
+        $r = Test-HcSecurity (New-FakeSecurity @{ RemoteTools = @($tool); Notifications = $sites }) @('remote', 'notifications') 'cleanAll'
+        @($r.Actions | ForEach-Object { $_.FixId }) | Should Be @('uninstallProgram', 'openNotifySettings')
+        $r.Actions[0].Target.Command | Should Match '--uninstall'
+        $r.Actions[1].Target.Browser | Should Be 'Chrome'
+    }
+    It 'runs an uninstall command with quotes and arguments correctly' {
+        Mock Start-Process { }
+        & $script:Fixes.uninstallProgram.Apply @{ Command = '"C:\Program Files (x86)\AnyDesk\AnyDesk.exe" --uninstall' }
+        Assert-MockCalled Start-Process -Times 1 -Exactly -Scope It -ParameterFilter { $FilePath -eq 'C:\Program Files (x86)\AnyDesk\AnyDesk.exe' -and $ArgumentList -eq '--uninstall' }
+        & $script:Fixes.uninstallProgram.Apply @{ Command = 'MsiExec.exe /X{1234-ABCD}' }
+        Assert-MockCalled Start-Process -Times 1 -Exactly -Scope It -ParameterFilter { $FilePath -eq 'MsiExec.exe' -and $ArgumentList -eq '/X{1234-ABCD}' }
+    }
+    It 'makes a restore point once, before the first admin fix only' {
+        Mock Checkpoint-Computer { }
+        $script:IsAdmin = $true; $script:RestorePointDone = $false
+        New-HcRestorePoint; New-HcRestorePoint
+        Assert-MockCalled Checkpoint-Computer -Times 1 -Exactly -Scope It
+        $script:IsAdmin = $false; $script:RestorePointDone = $false
+        New-HcRestorePoint
+        Assert-MockCalled Checkpoint-Computer -Times 1 -Exactly -Scope It
+    }
+    It 'carries on when Windows cannot make a restore point' {
+        Mock Checkpoint-Computer { throw 'System restore is disabled' }
+        $script:IsAdmin = $true; $script:RestorePointDone = $false
+        { New-HcRestorePoint } | Should Not Throw
+        $script:IsAdmin = $false
+    }
+    It '-NoAI hides the chat and treats ? and sentences as unknown' {
+        Mock Get-HcEnvironment { [pscustomobject]@{ IsWindows = $true; PSVersion = [version]'5.1'; Os = 'Windows 11 Home'; IsAdmin = $false; Online = $true } }
+        Mock Invoke-HcAi { }
+        $out = Start-Housecall -Lang en -NoAI -Answers @('?', 'my printer is broken', 'Q') 6>&1 | Out-String
+        Assert-MockCalled Invoke-HcAi -Times 0 -Exactly -Scope It
+        $out | Should Not Match 'AI chat'
+    }
+}
+
 Describe 'Fixes offered by the checks' {
     $script:Lang = 'en'
     $task = { param($name, $command, $level = 'weak', $disabled = $false)
@@ -1032,7 +1124,7 @@ Describe 'Findings' {
         $ids += @($script:SecurityChecks.Values | ForEach-Object { $_.Clean })
         # Area C names its findings as $found['id'], Set-HcFinding $r 'id', or the clean id last on Select-HcFinding.
         $ids += @('spaceFull', 'spaceLow')      # D4 renames diskFull / diskLow
-        $ids += @(Get-Content (Join-Path $root 'src\checks\devices.ps1'), (Join-Path $root 'src\checks\sound.ps1'), (Join-Path $root 'src\checks\performance.ps1'), (Join-Path $root 'src\checks\updates.ps1') | ForEach-Object {
+        $ids += @(Get-Content (Join-Path $root 'src\checks\devices.ps1'), (Join-Path $root 'src\checks\sound.ps1'), (Join-Path $root 'src\checks\performance.ps1'), (Join-Path $root 'src\checks\updates.ps1'), (Join-Path $root 'src\checks\email.ps1') | ForEach-Object {
             [regex]::Matches($_, "\`$found\['(\w+)'\]|Set-HcFinding \`$r '(\w+)'|Select-HcFinding .* '(\w+)'\s*$") | ForEach-Object {
                 @($_.Groups[1].Value, $_.Groups[2].Value, $_.Groups[3].Value) | Where-Object { $_ }
             }
@@ -1044,6 +1136,13 @@ Describe 'Findings' {
                 $script:Strings[$lang]["finding.$id"] | Should Not BeNullOrEmpty
                 $script:Strings[$lang]["advice.$id"] | Should Not BeNullOrEmpty
             }
+        }
+    }
+
+    It 'has no {0} placeholders in advice, which is shown without values' {
+        foreach ($lang in @('en', 'nl')) {
+            $bad = @($script:Strings[$lang].Keys | Where-Object { $_ -like 'advice.*' -and $script:Strings[$lang][$_] -match '\{\d\}' })
+            ($bad -join ', ') | Should Be ''
         }
     }
 

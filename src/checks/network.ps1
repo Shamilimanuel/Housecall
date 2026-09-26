@@ -197,6 +197,7 @@ function Test-HcInternet {
         Add-HcLine $r problem (T 'net.noAddress' $shown)
         Set-HcFinding $r 'noAddress'
         Add-HcAction $r 'renewIp'
+        Add-HcAction $r 'restartAdapter' @{ Label = $f.Active.Name; Name = $f.Active.Name }
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -222,6 +223,7 @@ function Test-HcInternet {
     } else {
         Add-HcLine $r problem (T 'net.gatewayDown' $f.Gateway)
         Set-HcFinding $r 'gatewayDown'
+        Add-HcAction $r 'restartAdapter' @{ Label = $f.Active.Name; Name = $f.Active.Name }
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -241,6 +243,7 @@ function Test-HcInternet {
         Add-HcLine $r problem (T 'net.dnsDown' $servers)
         Set-HcFinding $r 'dnsDown'
         Add-HcAction $r 'flushDns'
+        Add-HcAction $r 'resetWinsock'
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -250,7 +253,7 @@ function Test-HcInternet {
     switch ($f.Web) {
         'ok'          { Add-HcLine $r ok (T 'net.webOk') }
         'intercepted' { Add-HcLine $r problem (T 'net.webIntercepted'); Set-HcFinding $r $(if ($f.Proxy) { 'proxy' } else { 'webIntercepted' }) }
-        'failed'      { Add-HcLine $r problem (T 'net.webFailed'); Set-HcFinding $r $(if ($f.Proxy) { 'proxy' } else { 'webIntercepted' }) }
+        'failed'      { Add-HcLine $r problem (T 'net.webFailed'); Set-HcFinding $r $(if ($f.Proxy) { 'proxy' } else { 'webIntercepted' }); Add-HcAction $r 'resetWinsock' }
     }
 
     # Nothing broken: the smaller things, then all good.

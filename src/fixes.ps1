@@ -12,7 +12,9 @@
                reprint = removes stuck print jobs, which need printing again,
                temp = only temporary files, noundo = cannot be undone,
                unsaved = closes a program, and its unsaved work,
-               redownload = Windows downloads again, long = takes a while
+               redownload = Windows downloads again, long = takes a while,
+               restartNeeded = works after a restart, uninstaller = opens the
+               program's own uninstaller
       Admin    needs an administrator PowerShell
       Apply    does it; throws when it fails
       Undo     puts it back ($null when there is nothing to put back)
@@ -67,6 +69,61 @@ $script:Fixes = @{
             if ($LASTEXITCODE -ne 0) { throw "ipconfig /renew: $LASTEXITCODE" }
         }
         Undo = $null
+    }
+
+    # Clears Windows' network settings back to how they were installed.
+    # Only takes effect after a restart; the note on the fix says so.
+    resetWinsock = @{
+        Note = 'restartNeeded'; Admin = $true
+        Apply = {
+            param($t)
+            & netsh.exe winsock reset | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "netsh winsock reset: $LASTEXITCODE" }
+            & netsh.exe int ip reset | Out-Null
+        }
+        Undo = $null
+    }
+    restartAdapter = @{
+        Note = 'safe'; Admin = $true
+        Apply = { param($t) Restart-NetAdapter -Name $t.Name -Confirm:$false -ErrorAction Stop }
+        Undo  = $null
+    }
+
+    # ---- F: remote tools and notification sites
+    # Runs the program's own uninstaller (it may ask for permission itself).
+    uninstallProgram = @{
+        Note = 'uninstaller'; Admin = $false
+        Apply = {
+            param($t)
+            $command = [string]$t.Command
+            if ($command -match '^\s*"([^"]+)"\s*(.*)$') { $exe = $Matches[1]; $arguments = $Matches[2] }
+            elseif ($command -match '^\s*(\S+\.exe)\s*(.*)$') { $exe = $Matches[1]; $arguments = $Matches[2] }
+            else { throw "Unknown uninstall command: $command" }
+            if ($arguments) { Start-Process -FilePath $exe -ArgumentList $arguments -Wait -ErrorAction Stop }
+            else { Start-Process -FilePath $exe -Wait -ErrorAction Stop }
+        }
+        Undo = $null
+    }
+    # Opens the browser straight at its notification settings, where a site
+    # is blocked in two clicks. Housecall does not edit the browser's own
+    # settings file: a browser that is open overwrites it, and a damaged one
+    # can reset the client's whole profile.
+    openNotifySettings = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = {
+            param($t)
+            $exe = $script:BrowserExe[$t.Browser]
+            $scheme = $script:BrowserScheme[$t.Browser]
+            Start-Process -FilePath $exe -ArgumentList "$($scheme)://settings/content/notifications" -ErrorAction Stop
+        }
+        Undo = $null
+    }
+
+    # Opens the provider's webmail in the browser: a check more than a change.
+    openWebmail = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = { param($t) Start-Process $t.Url }
+        Undo  = $null
     }
 
     # ---- C: printer and devices
@@ -441,6 +498,7 @@ function Invoke-HcActionMenu {
         return 'none'
     }
 
+    if ($fix.Admin) { New-HcRestorePoint }
     try {
         & $fix.Apply $action.Target
     } catch {
@@ -472,6 +530,7 @@ function Start-HcElevated {
 
     $options = "-Start '$Code' -Lang '$script:Lang'"
     if ($script:DryRun) { $options += ' -DryRun' }
+    if ($script:NoAI) { $options += ' -NoAI' }
     $quoted = $file.Replace("'", "''")
     $boot = "`$f = '$quoted'; `$s = [IO.File]::ReadAllText(`$f); Remove-Item -LiteralPath `$f -Force; " +
             "`$ErrorActionPreference = 'Stop'; . ([scriptblock]::Create(`$s)); `$script:HcSource = `$s; Start-Housecall $options"
@@ -486,6 +545,28 @@ function Start-HcElevated {
         return $false
     }
     $true
+}
+
+<#
+    A Windows restore point before the first admin fix of a session: the
+    safety net under Housecall's own undo. Windows allows one per 24 hours
+    and only when System Protection is on; both cases are reported and
+    Housecall carries on, because the fix itself still asks and undoes.
+#>
+$script:RestorePointDone = $false
+
+function New-HcRestorePoint {
+    if ($script:RestorePointDone -or -not $script:IsAdmin) { return }
+    $script:RestorePointDone = $true
+    Write-Dim (T 'fix.restorePoint')
+    $warnings = $null
+    try {
+        Checkpoint-Computer -Description ('Housecall ' + (Get-Date -Format 'yyyy-MM-dd HH:mm')) -RestorePointType MODIFY_SETTINGS `
+            -ErrorAction Stop -WarningAction SilentlyContinue -WarningVariable warnings
+        if ($warnings) { Write-Dim (T 'fix.restorePointRecent') } else { Write-Ok (T 'fix.restorePointOk') }
+    } catch {
+        Write-Warn2 (T 'fix.restorePointNone')
+    }
 }
 
 # U on the menu: undo this session's changes, newest first.

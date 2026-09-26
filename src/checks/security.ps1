@@ -64,6 +64,17 @@ $script:BrowserRoots = @(
     @{ Name = 'Opera GX'; Path = '%APPDATA%\Opera Software\Opera GX Stable' }
 )
 
+# How to open each browser at its notification settings (fix openNotifySettings).
+# chrome.exe, msedge.exe and brave.exe are found through Windows' App Paths.
+$script:BrowserExe = @{
+    'Chrome'   = 'chrome.exe'
+    'Edge'     = 'msedge.exe'
+    'Brave'    = 'brave.exe'
+    'Opera'    = [Environment]::ExpandEnvironmentVariables('%LOCALAPPDATA%\Programs\Opera\launcher.exe')
+    'Opera GX' = [Environment]::ExpandEnvironmentVariables('%LOCALAPPDATA%\Programs\Opera GX\launcher.exe')
+}
+$script:BrowserScheme = @{ 'Chrome' = 'chrome'; 'Edge' = 'edge'; 'Brave' = 'brave'; 'Opera' = 'opera'; 'Opera GX' = 'opera' }
+
 # Sites that people really do allow to send notifications. They are listed
 # as fine; everything else is flagged, because that is where fake virus
 # warnings come from. Matched on the host name, subdomains included.
@@ -134,6 +145,7 @@ function Get-HcRemoteTools {
         $found = [pscustomobject]@{
             Name = $tool.Name; Installed = $false; InstallDate = $null; Running = $false
             AutoStart = $false; Downloaded = $null; LastUsed = $null; Processes = $tool.Processes
+            Uninstall = $null
         }
         $p = $tool.Pattern
         if ($p) {
@@ -141,6 +153,7 @@ function Get-HcRemoteTools {
             if ($entry) {
                 $found.Installed = $true
                 $found.InstallDate = ConvertFrom-HcInstallDate $entry.InstallDate
+                $found.Uninstall = [string]$entry.UninstallString
             }
             $found.AutoStart = [bool](@($services + $runValues) -match $p)
             $file = $downloads | Where-Object { $_.Name -match $p } | Sort-Object CreationTime -Descending | Select-Object -First 1
@@ -346,6 +359,7 @@ function Test-HcSecurity {
                     Add-HcLine $r $status ('{0}: {1}' -f $t.Name, ($bits -join ', '))
 
                     if ($t.Running) { Add-HcAction $r 'stopRemote' @{ Label = $t.Name; Processes = $t.Processes } }
+                    if ($t.Uninstall) { Add-HcAction $r 'uninstallProgram' @{ Label = $t.Name; Command = $t.Uninstall } }
                     if ($t.Running -and -not $found['remoteActive']) { $found['remoteActive'] = @($t.Name) }
                     elseif ($isRecent -and -not $found['remoteRecent']) { $found['remoteRecent'] = @($t.Name, (Format-HcDate $newest)) }
                     elseif (-not $found['remoteOld']) { $found['remoteOld'] = @($t.Name) }
@@ -397,6 +411,9 @@ function Test-HcSecurity {
                 foreach ($s in $unknown) {
                     $text = if ($s.Since) { T 'sec.notifySite' $s.Site $s.Browser (Format-HcDate $s.Since) } else { T 'sec.notifySiteNoDate' $s.Site $s.Browser }
                     Add-HcLine $r warn $text
+                }
+                foreach ($b in @($unknown | ForEach-Object { $_.Browser } | Sort-Object -Unique)) {
+                    if ($script:BrowserExe.ContainsKey($b)) { Add-HcAction $r 'openNotifySettings' @{ Label = $b; Browser = $b } }
                 }
                 $found['notifySites'] = @($unknown.Count)
             }

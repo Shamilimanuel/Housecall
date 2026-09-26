@@ -27,7 +27,10 @@ param(
     [string]$Lang,
     # Open this problem straight away, e.g. A1. Used when Housecall restarts
     # itself as administrator, so it carries on where it was.
-    [string]$Start
+    [string]$Start,
+    # Leave the AI chat (?) out of the menu, e.g. when the client does not
+    # want anything sent over the internet.
+    [switch]$NoAI
 )
 
 $ErrorActionPreference = 'Stop'
@@ -771,6 +774,54 @@ $script:Strings = @{
         'steps.errorsOk'              = 'Next time the message appears: take a photo of it, including any code. | Search for the exact text or code online, or show it to your technician. | Choose the fix above to check and repair Windows'' own files (needs admin, takes 15 to 30 minutes).'
         'steps.fastStartup'           = 'Choose the fix above to switch it off (needs admin), or do it by hand. | Type Control Panel in Start > Power Options > Choose what the power buttons do. | Click "Change settings that are currently unavailable" and untick "Turn on fast startup". Click Save changes.'
         'steps.shutdownOk'            = 'Save work and close all programs first. | Click Start > Power > Shut down (or Restart). | Hangs for more than 10 minutes on "Shutting down"? Hold the power button for 10 seconds. | Keeps happening? Choose E1: waiting updates are the most common cause.'
+
+        # ---- A4: email
+        'mail.ask'            = 'Which email address? Only the part after the @ is used, e.g. ziggo.nl'
+        'mail.invalid'        = '"{0}" does not look like an email address. Type it like this: name@ziggo.nl'
+        'mail.typo'           = '"{0}" looks like a typo: did you mean {1}?'
+        'mail.receives'       = '{0} receives email'
+        'mail.noMx'           = '{0} cannot receive email'
+        'mail.in'             = 'Receiving'
+        'mail.out'            = 'Sending'
+        'mail.serverOk'       = '{0}: {1} answers, {2} ms'
+        'mail.serverDown'     = '{0}: {1} does not answer'
+        'mail.unknownProvider' = 'Mail servers of {0} not known to Housecall: not checked'
+        'mail.apps'           = 'Mail programs: {0}'
+        'mail.noApps'         = 'No mail program installed (webmail only)'
+        'mail.retired'        = 'The old Windows Mail app is installed; it stopped working at the end of 2024'
+        'finding.mailTypo'       = '"{0}" is probably a typo of {1}. Mail to or from the wrong address goes nowhere.'
+        'advice.mailTypo'        = 'Check the address in the mail program''s account settings, and choose A4 again with the right one.'
+        'finding.mailNoDomain'   = '{0} cannot receive email: the address is probably misspelled, or no longer exists.'
+        'advice.mailNoDomain'    = 'Check the spelling with the client. An old provider address (for example after moving) may have been closed.'
+        'finding.mailServerDown' = 'The mail server of {0} does not answer this PC.'
+        'advice.mailServerDown'  = 'Check for an outage at the provider on a phone (for example allestoringen.nl). If there is none, security software on this PC may be blocking mail.'
+        'finding.mailAppRetired' = 'The old Windows Mail app is still installed. Microsoft switched it off at the end of 2024: mail no longer arrives in it.'
+        'advice.mailAppRetired'  = 'Switch the client to the new Outlook (free, in the Microsoft Store) or to webmail. The steps below go through it.'
+        'finding.mailOk'         = 'The mail servers of {0} can be reached. The problem is probably the password, a full mailbox, or the mail program''s settings.'
+        'advice.mailOk'          = 'Try signing in to webmail first: if that works, the mail program''s settings are the problem. The steps below go through it.'
+        'steps.mailTypo'         = 'Open the mail program''s account settings and look at the address. | Correct the part after the @, or remove the account and add it again with the right address. | Choose A4 again with the right address.'
+        'steps.mailNoDomain'     = 'Check the spelling of the address with the client, letter by letter. | Did the client change internet provider? An old address such as @hetnet.nl or @home.nl may still work, or may have been closed: check with that provider. | Choose A4 again with the right address.'
+        'steps.mailServerDown'   = 'On a phone with Wi-Fi off, check for an outage at the provider (for example allestoringen.nl). | No outage? Pause the antivirus or firewall on this PC for a moment and try sending and receiving. | Works then? Add an exception for the mail program in that security program, and switch the protection back on.'
+        'steps.mailAppRetired'   = 'Install the new Outlook: open the Microsoft Store, search for Outlook and click Get. It is free. | Open it and add the client''s email address; Outlook finds the settings itself for most providers. | Or use webmail in the browser, and make a shortcut on the desktop. | Remove the old Mail app (Settings > Apps, "Mail and Calendar", three dots, Uninstall) so the client cannot open it by mistake.'
+        'steps.mailOk'           = 'Sign in to webmail in the browser with the client''s address and password. | Does that fail? The password is wrong: reset it through the provider''s website ("forgot password"). | Does webmail work? Remove the account from the mail program and add it again, typing the password afresh. | Mail arrives in webmail but not in the program? Check the spam folder, and whether the mailbox is full (delete old mail with big attachments).'
+
+        # ---- fixes added later
+        'fix.note.restartNeeded'     = '(works after a restart of the PC)'
+        'fix.note.uninstaller'       = '(opens the program''s own uninstaller)'
+        'fix.resetWinsock'           = 'Reset Windows'' network settings'
+        'fix.resetWinsock.done'      = 'Reset Windows'' network settings (restart needed)'
+        'fix.restartAdapter'         = 'Restart network adapter "{0}"'
+        'fix.restartAdapter.done'    = 'Restarted network adapter "{0}"'
+        'fix.uninstallProgram'       = 'Uninstall {0}'
+        'fix.uninstallProgram.done'  = 'Uninstalled {0}'
+        'fix.openNotifySettings'     = 'Open the notification settings in {0}'
+        'fix.openNotifySettings.done' = 'Opened the notification settings in {0}'
+        'fix.openWebmail'            = 'Open the {0} webmail in the browser'
+        'fix.openWebmail.done'       = 'Opened the {0} webmail'
+        'fix.restorePoint'           = 'Making a Windows restore point first...'
+        'fix.restorePointOk'         = 'Restore point made.'
+        'fix.restorePointRecent'     = 'Windows already made a restore point in the past 24 hours.'
+        'fix.restorePointNone'       = 'No restore point: System Protection is off on this PC.'
     }
 
     nl = @{
@@ -1488,6 +1539,54 @@ $script:Strings = @{
         'steps.errorsOk'              = 'De volgende keer dat de melding verschijnt: maak er een foto van, met een eventuele code. | Zoek de precieze tekst of code online op, of laat hem aan uw monteur zien. | Kies hierboven de oplossing om de eigen bestanden van Windows te controleren en te herstellen (beheerder nodig, duurt 15 tot 30 minuten).'
         'steps.fastStartup'           = 'Kies hierboven de oplossing om het uit te zetten (beheerder nodig), of doe het met de hand. | Typ Configuratiescherm in Start > Energiebeheer > Het gedrag van de aan/uit-knoppen bepalen. | Klik op "Instellingen wijzigen die momenteel niet beschikbaar zijn" en haal het vinkje weg bij "Snel opstarten inschakelen". Klik op Wijzigingen opslaan.'
         'steps.shutdownOk'            = 'Sla eerst het werk op en sluit alle programma''s. | Klik op Start > Aan/uit > Afsluiten (of Opnieuw opstarten). | Blijft hij langer dan 10 minuten op "Afsluiten" hangen? Houd de aan/uit-knop 10 seconden ingedrukt. | Gebeurt het vaker? Kies E1: wachtende updates zijn de meest voorkomende oorzaak.'
+
+        # ---- A4: email
+        'mail.ask'            = 'Welk e-mailadres? Alleen het deel na de @ wordt gebruikt, bijv. ziggo.nl'
+        'mail.invalid'        = '"{0}" lijkt geen e-mailadres. Typ het zo: naam@ziggo.nl'
+        'mail.typo'           = '"{0}" lijkt een typefout: bedoelt u {1}?'
+        'mail.receives'       = '{0} ontvangt e-mail'
+        'mail.noMx'           = '{0} kan geen e-mail ontvangen'
+        'mail.in'             = 'Ontvangen'
+        'mail.out'            = 'Versturen'
+        'mail.serverOk'       = '{0}: {1} antwoordt, {2} ms'
+        'mail.serverDown'     = '{0}: {1} antwoordt niet'
+        'mail.unknownProvider' = 'Mailservers van {0} zijn Housecall niet bekend: niet gecontroleerd'
+        'mail.apps'           = 'Mailprogramma''s: {0}'
+        'mail.noApps'         = 'Geen mailprogramma aanwezig (alleen webmail)'
+        'mail.retired'        = 'De oude Windows Mail-app staat erop; die werkt sinds eind 2024 niet meer'
+        'finding.mailTypo'       = '"{0}" is waarschijnlijk een typefout van {1}. Mail van of naar het verkeerde adres komt nergens aan.'
+        'advice.mailTypo'        = 'Controleer het adres in de accountinstellingen van het mailprogramma, en kies opnieuw A4 met het juiste adres.'
+        'finding.mailNoDomain'   = '{0} kan geen e-mail ontvangen: het adres is waarschijnlijk verkeerd gespeld, of bestaat niet meer.'
+        'advice.mailNoDomain'    = 'Controleer de spelling met de klant. Een oud provideradres (bijvoorbeeld na een verhuizing) kan zijn opgeheven.'
+        'finding.mailServerDown' = 'De mailserver van {0} antwoordt niet aan deze pc.'
+        'advice.mailServerDown'  = 'Kijk op een telefoon of er een storing is bij de provider (bijvoorbeeld allestoringen.nl). Is die er niet, dan blokkeert beveiligingssoftware op deze pc misschien de mail.'
+        'finding.mailAppRetired' = 'De oude Windows Mail-app staat nog op de pc. Microsoft heeft die eind 2024 uitgezet: er komt geen mail meer in binnen.'
+        'advice.mailAppRetired'  = 'Zet de klant over op de nieuwe Outlook (gratis, in de Microsoft Store) of op webmail. De stappen hieronder lopen het door.'
+        'finding.mailOk'         = 'De mailservers van {0} zijn bereikbaar. Het probleem is waarschijnlijk het wachtwoord, een volle mailbox, of de instellingen van het mailprogramma.'
+        'advice.mailOk'          = 'Probeer eerst in te loggen op webmail: lukt dat, dan zitten de instellingen van het mailprogramma fout. De stappen hieronder lopen het door.'
+        'steps.mailTypo'         = 'Open de accountinstellingen van het mailprogramma en kijk naar het adres. | Verbeter het deel na de @, of verwijder het account en voeg het opnieuw toe met het juiste adres. | Kies opnieuw A4 met het juiste adres.'
+        'steps.mailNoDomain'     = 'Controleer samen met de klant de spelling van het adres, letter voor letter. | Van internetprovider gewisseld? Een oud adres zoals @hetnet.nl of @home.nl kan nog werken, of kan zijn opgeheven: vraag het na bij die provider. | Kies opnieuw A4 met het juiste adres.'
+        'steps.mailServerDown'   = 'Kijk op een telefoon met wifi uit of er een storing is bij de provider (bijvoorbeeld allestoringen.nl). | Geen storing? Zet de virusscanner of firewall op deze pc even op pauze en probeer te versturen en te ontvangen. | Werkt het dan? Voeg in dat beveiligingsprogramma een uitzondering toe voor het mailprogramma, en zet de beveiliging weer aan.'
+        'steps.mailAppRetired'   = 'Installeer de nieuwe Outlook: open de Microsoft Store, zoek Outlook en klik op Downloaden. Hij is gratis. | Open hem en voeg het e-mailadres van de klant toe; bij de meeste providers vindt Outlook de instellingen zelf. | Of gebruik webmail in de browser, en zet een snelkoppeling op het bureaublad. | Verwijder de oude Mail-app (Instellingen > Apps, "E-mail en agenda", drie puntjes, Verwijderen) zodat de klant hem niet per ongeluk opent.'
+        'steps.mailOk'           = 'Log in de browser in op webmail met het adres en wachtwoord van de klant. | Lukt dat niet? Dan klopt het wachtwoord niet: stel het opnieuw in via de website van de provider ("wachtwoord vergeten"). | Werkt webmail wel? Verwijder het account uit het mailprogramma en voeg het opnieuw toe, en typ het wachtwoord opnieuw. | Komt mail wel in webmail maar niet in het programma? Kijk in de map Ongewenste e-mail, en of de mailbox vol is (verwijder oude mail met grote bijlagen).'
+
+        # ---- fixes added later
+        'fix.note.restartNeeded'     = '(werkt na een herstart van de pc)'
+        'fix.note.uninstaller'       = '(opent het eigen verwijderprogramma)'
+        'fix.resetWinsock'           = 'De netwerkinstellingen van Windows herstellen'
+        'fix.resetWinsock.done'      = 'Netwerkinstellingen van Windows hersteld (herstart nodig)'
+        'fix.restartAdapter'         = 'Netwerkadapter "{0}" herstarten'
+        'fix.restartAdapter.done'    = 'Netwerkadapter "{0}" herstart'
+        'fix.uninstallProgram'       = '{0} verwijderen'
+        'fix.uninstallProgram.done'  = '{0} verwijderd'
+        'fix.openNotifySettings'     = 'De meldingsinstellingen openen in {0}'
+        'fix.openNotifySettings.done' = 'Meldingsinstellingen geopend in {0}'
+        'fix.openWebmail'            = 'De webmail van {0} openen in de browser'
+        'fix.openWebmail.done'       = 'Webmail van {0} geopend'
+        'fix.restorePoint'           = 'Eerst een Windows-herstelpunt maken...'
+        'fix.restorePointOk'         = 'Herstelpunt gemaakt.'
+        'fix.restorePointRecent'     = 'Windows heeft de afgelopen 24 uur al een herstelpunt gemaakt.'
+        'fix.restorePointNone'       = 'Geen herstelpunt: Systeembeveiliging staat uit op deze pc.'
     }
 }
 
@@ -1806,8 +1905,7 @@ function Show-HcHome {
         Write-Option $letter (T "area.$letter")
     }
     Write-Host ''
-    Write-Option '?' (T 'menu.ai')
-    Write-Host ''
+    if (-not $script:NoAI) { Write-Option '?' (T 'menu.ai'); Write-Host '' }
     Write-OptionRow (Get-HcFooter)
     Write-Host ''
     if ($Message) { Write-Warn2 $Message } else { Write-Dim (T 'menu.hintHome') }
@@ -1823,8 +1921,7 @@ function Show-HcArea {
         Write-Option $code (T "problem.$code")
     }
     Write-Host ''
-    Write-Option '?' (T 'area.ai')
-    Write-Host ''
+    if (-not $script:NoAI) { Write-Option '?' (T 'area.ai'); Write-Host '' }
     Write-OptionRow (@(, @('0', (T 'menu.back'))) + (Get-HcFooter))
     Write-Host ''
     if ($Message) { Write-Warn2 $Message } else { Write-Dim (T 'area.hint') }
@@ -1913,11 +2010,15 @@ function Start-Housecall {
         [string]$Lang,
         # A problem code to open straight away, e.g. after restarting as admin.
         [string]$Start,
+        # Leave the AI chat out of the menu.
+        [switch]$NoAI,
         # For tests: answers to feed in instead of reading the keyboard.
         [string[]]$Answers
     )
 
     $script:DryRun = [bool]$DryRun
+    $script:NoAI = [bool]$NoAI
+    $script:RestorePointDone = $false
     $script:HcChanges.Clear()
     $script:HcVisit.Clear()
     $script:HandedOff = $false
@@ -1950,6 +2051,9 @@ function Start-Housecall {
         $message = $null
 
         $choice = Resolve-HcChoice (Read-HcLine (T 'menu.prompt')) -CurrentArea $area
+        if ($script:NoAI -and $choice.Kind -in @('ai', 'freetext')) {
+            $choice = [pscustomobject]@{ Kind = 'unknown'; Value = $(if ($choice.Value) { $choice.Value } else { '?' }) }
+        }
         switch ($choice.Kind) {
             'area'     { $area = $choice.Value }
             'problem'  { $area = $choice.Value.Substring(0, 1); Invoke-HcProblem $environment $choice.Value }
@@ -2291,6 +2395,7 @@ function Test-HcInternet {
         Add-HcLine $r problem (T 'net.noAddress' $shown)
         Set-HcFinding $r 'noAddress'
         Add-HcAction $r 'renewIp'
+        Add-HcAction $r 'restartAdapter' @{ Label = $f.Active.Name; Name = $f.Active.Name }
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -2316,6 +2421,7 @@ function Test-HcInternet {
     } else {
         Add-HcLine $r problem (T 'net.gatewayDown' $f.Gateway)
         Set-HcFinding $r 'gatewayDown'
+        Add-HcAction $r 'restartAdapter' @{ Label = $f.Active.Name; Name = $f.Active.Name }
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -2335,6 +2441,7 @@ function Test-HcInternet {
         Add-HcLine $r problem (T 'net.dnsDown' $servers)
         Set-HcFinding $r 'dnsDown'
         Add-HcAction $r 'flushDns'
+        Add-HcAction $r 'resetWinsock'
         Add-HcLine $r skipped (T 'net.skipped')
         return $r
     }
@@ -2344,7 +2451,7 @@ function Test-HcInternet {
     switch ($f.Web) {
         'ok'          { Add-HcLine $r ok (T 'net.webOk') }
         'intercepted' { Add-HcLine $r problem (T 'net.webIntercepted'); Set-HcFinding $r $(if ($f.Proxy) { 'proxy' } else { 'webIntercepted' }) }
-        'failed'      { Add-HcLine $r problem (T 'net.webFailed'); Set-HcFinding $r $(if ($f.Proxy) { 'proxy' } else { 'webIntercepted' }) }
+        'failed'      { Add-HcLine $r problem (T 'net.webFailed'); Set-HcFinding $r $(if ($f.Proxy) { 'proxy' } else { 'webIntercepted' }); Add-HcAction $r 'resetWinsock' }
     }
 
     # Nothing broken: the smaller things, then all good.
@@ -2561,6 +2668,177 @@ $script:ProblemHandlers['A1'] = 'Invoke-HcA1'
 $script:ProblemHandlers['A2'] = 'Invoke-HcA2'
 $script:ProblemHandlers['A3'] = 'Invoke-HcA3'
 
+# ==================================================== src\checks\email.ps1 ==
+<#
+    A4: email will not send or arrive.
+
+    Asks for the email address, but uses only the part after the @: that
+    domain decides the mail servers. Then: does the domain receive mail at
+    all, do its receiving (IMAP) and sending (SMTP) servers answer from this
+    PC, and which mail program is installed -- including the old Windows
+    Mail app, which Microsoft switched off at the end of 2024 and which many
+    older clients still try to use.
+
+    What cannot be checked from outside: the password, and whether the
+    mailbox is full. The finding says so, and the steps go through them.
+#>
+
+# The providers clients in the Netherlands use most, with their servers.
+# Webmail only where the address is certain.
+$script:MailProviders = @(
+    @{ Name = 'Ziggo';     Domains = 'ziggo.nl', 'home.nl', 'casema.nl', 'chello.nl', 'upcmail.nl', 'quicknet.nl'
+       Imap = 'imap.ziggo.nl'; Smtp = 'smtp.ziggo.nl'; SmtpPort = 587; Web = $null }
+    @{ Name = 'KPN';       Domains = 'kpnmail.nl', 'kpnplanet.nl', 'planet.nl', 'hetnet.nl', 'xs4all.nl', 'telfort.nl', 'telfortglasvezel.nl'
+       Imap = 'imap.kpnmail.nl'; Smtp = 'smtp.kpnmail.nl'; SmtpPort = 587; Web = $null }
+    @{ Name = 'Outlook.com'; Domains = 'outlook.com', 'outlook.nl', 'hotmail.com', 'hotmail.nl', 'live.com', 'live.nl', 'msn.com'
+       Imap = 'outlook.office365.com'; Smtp = 'smtp-mail.outlook.com'; SmtpPort = 587; Web = 'https://outlook.live.com/mail/' }
+    @{ Name = 'Gmail';     Domains = 'gmail.com', 'googlemail.com'
+       Imap = 'imap.gmail.com'; Smtp = 'smtp.gmail.com'; SmtpPort = 587; Web = 'https://mail.google.com/' }
+    @{ Name = 'iCloud';    Domains = 'icloud.com', 'me.com', 'mac.com'
+       Imap = 'imap.mail.me.com'; Smtp = 'smtp.mail.me.com'; SmtpPort = 587; Web = 'https://www.icloud.com/mail' }
+    @{ Name = 'Yahoo';     Domains = 'yahoo.com', 'yahoo.nl', 'ymail.com'
+       Imap = 'imap.mail.yahoo.com'; Smtp = 'smtp.mail.yahoo.com'; SmtpPort = 465; Web = 'https://mail.yahoo.com/' }
+)
+
+# "naam@Ziggo.nl " -> "ziggo.nl"; also accepts just the domain.
+function ConvertTo-HcMailDomain {
+    param([string]$Text)
+    $d = ("$Text".Trim().ToLowerInvariant() -split '@')[-1].Trim()
+    if ($d -match '^([a-z0-9-]+\.)+[a-z]{2,}$') { return $d }
+    $null
+}
+
+# How many letters must change to turn one word into the other (Levenshtein),
+# kept to two rows so no two-dimensional array is needed.
+function Get-HcEditDistance {
+    param([string]$A, [string]$B)
+    $previous = @(0..$B.Length)
+    for ($i = 1; $i -le $A.Length; $i++) {
+        $current = @($i) + @(0) * $B.Length
+        for ($j = 1; $j -le $B.Length; $j++) {
+            $cost = if ($A[$i - 1] -eq $B[$j - 1]) { 0 } else { 1 }
+            $delete = $previous[$j] + 1
+            $insert = $current[$j - 1] + 1
+            $replace = $previous[$j - 1] + $cost
+            $current[$j] = [Math]::Min([Math]::Min($delete, $insert), $replace)
+        }
+        $previous = $current
+    }
+    $previous[$B.Length]
+}
+
+# A known provider domain one or two letters away: "zigo.nl" -> "ziggo.nl".
+function Get-HcMailTypo {
+    param([string]$Domain)
+    foreach ($p in $script:MailProviders) {
+        if ($p.Domains -contains $Domain) { return $null }
+    }
+    foreach ($p in $script:MailProviders) {
+        foreach ($known in $p.Domains) {
+            $limit = if ($known.Length -ge 8) { 2 } else { 1 }
+            if ((Get-HcEditDistance $Domain $known) -le $limit) { return $known }
+        }
+    }
+    $null
+}
+
+function Get-HcMailApps {
+    $apps = @()
+    $appPath = { param($exe) [bool](Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\$exe" -ErrorAction SilentlyContinue) }
+    if (& $appPath 'OUTLOOK.EXE') { $apps += 'Outlook' }
+    if (Get-AppxPackage -Name Microsoft.OutlookForWindows -ErrorAction SilentlyContinue) { $apps += 'Outlook (new)' }
+    if (& $appPath 'thunderbird.exe') { $apps += 'Thunderbird' }
+    [pscustomobject]@{
+        Apps          = $apps
+        RetiredMail   = [bool](Get-AppxPackage -Name microsoft.windowscommunicationsapps -ErrorAction SilentlyContinue)
+    }
+}
+
+function Get-HcMailFacts {
+    param([string]$Domain)
+    $provider = $script:MailProviders | Where-Object { $_.Domains -contains $Domain } | Select-Object -First 1
+    $mx = @()
+    try { $mx = @(Resolve-DnsName $Domain -Type MX -DnsOnly -QuickTimeout -ErrorAction Stop | Where-Object { $_.NameExchange } | ForEach-Object { $_.NameExchange }) } catch { }
+    $f = [pscustomobject]@{
+        Domain = $Domain; Provider = $null; Web = $null; Typo = (Get-HcMailTypo $Domain)
+        ReceivesMail = ($mx.Count -gt 0); ImapHost = $null; ImapMs = $null; SmtpHost = $null; SmtpMs = $null
+        Apps = Get-HcMailApps
+    }
+    if ($provider) {
+        $f.Provider = $provider.Name
+        $f.Web = $provider.Web
+        $f.ImapHost = $provider.Imap
+        $f.SmtpHost = $provider.Smtp
+        $f.ImapMs = Get-HcTcpMs $provider.Imap 993 3000
+        $f.SmtpMs = Get-HcTcpMs $provider.Smtp $provider.SmtpPort 3000
+    }
+    $f
+}
+
+function Test-HcMail {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+    $d = $Facts.Domain
+    Add-HcLine $r ok (T 'net.internetWorks')
+
+    if ($Facts.Typo) {
+        Add-HcLine $r warn (T 'mail.typo' $d $Facts.Typo)
+        $found['mailTypo'] = @($d, $Facts.Typo)
+    }
+    if ($Facts.ReceivesMail) {
+        Add-HcLine $r ok (T 'mail.receives' $d)
+    } else {
+        Add-HcLine $r problem (T 'mail.noMx' $d)
+        $found['mailNoDomain'] = @($d)
+    }
+
+    if ($Facts.Provider) {
+        foreach ($s in @(@('in', $Facts.ImapHost, $Facts.ImapMs), @('out', $Facts.SmtpHost, $Facts.SmtpMs))) {
+            $what = T "mail.$($s[0])"
+            if ($s[2] -ge 0) { Add-HcLine $r ok (T 'mail.serverOk' $what $s[1] $s[2]) }
+            else {
+                Add-HcLine $r problem (T 'mail.serverDown' $what $s[1])
+                if (-not $found['mailServerDown']) { $found['mailServerDown'] = @($Facts.Provider) }
+            }
+        }
+    } elseif ($Facts.ReceivesMail -and -not $Facts.Typo) {
+        Add-HcLine $r skipped (T 'mail.unknownProvider' $d)
+    }
+
+    $apps = @($Facts.Apps.Apps)
+    if ($apps.Count) { Add-HcLine $r ok (T 'mail.apps' ($apps -join ', ')) } else { Add-HcLine $r ok (T 'mail.noApps') }
+    if ($Facts.Apps.RetiredMail) {
+        Add-HcLine $r warn (T 'mail.retired')
+        $found['mailAppRetired'] = @()
+    }
+    if ($Facts.Web) { Add-HcAction $r 'openWebmail' @{ Label = $Facts.Provider; Url = $Facts.Web } }
+
+    Select-HcFinding $r $found @('mailTypo', 'mailNoDomain', 'mailServerDown', 'mailAppRetired') 'mailOk'
+    if ($r.FindingId -eq 'mailOk') { $r.FindingArgs = @($(if ($Facts.Provider) { $Facts.Provider } else { $d })) }
+    $r
+}
+
+function Invoke-HcA4 {
+    $domain = $null
+    while (-not $domain) {
+        $typed = Read-HcLine (T 'mail.ask')
+        if (-not "$typed".Trim() -or "$typed".Trim().ToUpperInvariant() -eq 'Q') { return }
+        $domain = ConvertTo-HcMailDomain $typed
+        if (-not $domain) { Write-Warn2 (T 'mail.invalid' $typed) }
+    }
+    Write-Host ''
+    # A script variable, not a closure; see Invoke-HcA3.
+    $script:HcMailDomain = $domain
+    {
+        $base = Test-HcInternet (Get-HcNetworkFacts)
+        if ($script:InternetWorks -notcontains $base.FindingId) { return $base }
+        Test-HcMail (Get-HcMailFacts $script:HcMailDomain)
+    }
+}
+
+$script:ProblemHandlers['A4'] = 'Invoke-HcA4'
+
 # ==================================================== src\checks\security.ps1 ==
 <#
     Area F: Safety & scams.
@@ -2627,6 +2905,17 @@ $script:BrowserRoots = @(
     @{ Name = 'Opera';    Path = '%APPDATA%\Opera Software\Opera Stable' }
     @{ Name = 'Opera GX'; Path = '%APPDATA%\Opera Software\Opera GX Stable' }
 )
+
+# How to open each browser at its notification settings (fix openNotifySettings).
+# chrome.exe, msedge.exe and brave.exe are found through Windows' App Paths.
+$script:BrowserExe = @{
+    'Chrome'   = 'chrome.exe'
+    'Edge'     = 'msedge.exe'
+    'Brave'    = 'brave.exe'
+    'Opera'    = [Environment]::ExpandEnvironmentVariables('%LOCALAPPDATA%\Programs\Opera\launcher.exe')
+    'Opera GX' = [Environment]::ExpandEnvironmentVariables('%LOCALAPPDATA%\Programs\Opera GX\launcher.exe')
+}
+$script:BrowserScheme = @{ 'Chrome' = 'chrome'; 'Edge' = 'edge'; 'Brave' = 'brave'; 'Opera' = 'opera'; 'Opera GX' = 'opera' }
 
 # Sites that people really do allow to send notifications. They are listed
 # as fine; everything else is flagged, because that is where fake virus
@@ -2698,6 +2987,7 @@ function Get-HcRemoteTools {
         $found = [pscustomobject]@{
             Name = $tool.Name; Installed = $false; InstallDate = $null; Running = $false
             AutoStart = $false; Downloaded = $null; LastUsed = $null; Processes = $tool.Processes
+            Uninstall = $null
         }
         $p = $tool.Pattern
         if ($p) {
@@ -2705,6 +2995,7 @@ function Get-HcRemoteTools {
             if ($entry) {
                 $found.Installed = $true
                 $found.InstallDate = ConvertFrom-HcInstallDate $entry.InstallDate
+                $found.Uninstall = [string]$entry.UninstallString
             }
             $found.AutoStart = [bool](@($services + $runValues) -match $p)
             $file = $downloads | Where-Object { $_.Name -match $p } | Sort-Object CreationTime -Descending | Select-Object -First 1
@@ -2910,6 +3201,7 @@ function Test-HcSecurity {
                     Add-HcLine $r $status ('{0}: {1}' -f $t.Name, ($bits -join ', '))
 
                     if ($t.Running) { Add-HcAction $r 'stopRemote' @{ Label = $t.Name; Processes = $t.Processes } }
+                    if ($t.Uninstall) { Add-HcAction $r 'uninstallProgram' @{ Label = $t.Name; Command = $t.Uninstall } }
                     if ($t.Running -and -not $found['remoteActive']) { $found['remoteActive'] = @($t.Name) }
                     elseif ($isRecent -and -not $found['remoteRecent']) { $found['remoteRecent'] = @($t.Name, (Format-HcDate $newest)) }
                     elseif (-not $found['remoteOld']) { $found['remoteOld'] = @($t.Name) }
@@ -2961,6 +3253,9 @@ function Test-HcSecurity {
                 foreach ($s in $unknown) {
                     $text = if ($s.Since) { T 'sec.notifySite' $s.Site $s.Browser (Format-HcDate $s.Since) } else { T 'sec.notifySiteNoDate' $s.Site $s.Browser }
                     Add-HcLine $r warn $text
+                }
+                foreach ($b in @($unknown | ForEach-Object { $_.Browser } | Sort-Object -Unique)) {
+                    if ($script:BrowserExe.ContainsKey($b)) { Add-HcAction $r 'openNotifySettings' @{ Label = $b; Browser = $b } }
                 }
                 $found['notifySites'] = @($unknown.Count)
             }
@@ -4328,7 +4623,9 @@ $script:ProblemHandlers['E3'] = 'Invoke-HcE3'
                reprint = removes stuck print jobs, which need printing again,
                temp = only temporary files, noundo = cannot be undone,
                unsaved = closes a program, and its unsaved work,
-               redownload = Windows downloads again, long = takes a while
+               redownload = Windows downloads again, long = takes a while,
+               restartNeeded = works after a restart, uninstaller = opens the
+               program's own uninstaller
       Admin    needs an administrator PowerShell
       Apply    does it; throws when it fails
       Undo     puts it back ($null when there is nothing to put back)
@@ -4383,6 +4680,61 @@ $script:Fixes = @{
             if ($LASTEXITCODE -ne 0) { throw "ipconfig /renew: $LASTEXITCODE" }
         }
         Undo = $null
+    }
+
+    # Clears Windows' network settings back to how they were installed.
+    # Only takes effect after a restart; the note on the fix says so.
+    resetWinsock = @{
+        Note = 'restartNeeded'; Admin = $true
+        Apply = {
+            param($t)
+            & netsh.exe winsock reset | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "netsh winsock reset: $LASTEXITCODE" }
+            & netsh.exe int ip reset | Out-Null
+        }
+        Undo = $null
+    }
+    restartAdapter = @{
+        Note = 'safe'; Admin = $true
+        Apply = { param($t) Restart-NetAdapter -Name $t.Name -Confirm:$false -ErrorAction Stop }
+        Undo  = $null
+    }
+
+    # ---- F: remote tools and notification sites
+    # Runs the program's own uninstaller (it may ask for permission itself).
+    uninstallProgram = @{
+        Note = 'uninstaller'; Admin = $false
+        Apply = {
+            param($t)
+            $command = [string]$t.Command
+            if ($command -match '^\s*"([^"]+)"\s*(.*)$') { $exe = $Matches[1]; $arguments = $Matches[2] }
+            elseif ($command -match '^\s*(\S+\.exe)\s*(.*)$') { $exe = $Matches[1]; $arguments = $Matches[2] }
+            else { throw "Unknown uninstall command: $command" }
+            if ($arguments) { Start-Process -FilePath $exe -ArgumentList $arguments -Wait -ErrorAction Stop }
+            else { Start-Process -FilePath $exe -Wait -ErrorAction Stop }
+        }
+        Undo = $null
+    }
+    # Opens the browser straight at its notification settings, where a site
+    # is blocked in two clicks. Housecall does not edit the browser's own
+    # settings file: a browser that is open overwrites it, and a damaged one
+    # can reset the client's whole profile.
+    openNotifySettings = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = {
+            param($t)
+            $exe = $script:BrowserExe[$t.Browser]
+            $scheme = $script:BrowserScheme[$t.Browser]
+            Start-Process -FilePath $exe -ArgumentList "$($scheme)://settings/content/notifications" -ErrorAction Stop
+        }
+        Undo = $null
+    }
+
+    # Opens the provider's webmail in the browser: a check more than a change.
+    openWebmail = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = { param($t) Start-Process $t.Url }
+        Undo  = $null
     }
 
     # ---- C: printer and devices
@@ -4757,6 +5109,7 @@ function Invoke-HcActionMenu {
         return 'none'
     }
 
+    if ($fix.Admin) { New-HcRestorePoint }
     try {
         & $fix.Apply $action.Target
     } catch {
@@ -4788,6 +5141,7 @@ function Start-HcElevated {
 
     $options = "-Start '$Code' -Lang '$script:Lang'"
     if ($script:DryRun) { $options += ' -DryRun' }
+    if ($script:NoAI) { $options += ' -NoAI' }
     $quoted = $file.Replace("'", "''")
     $boot = "`$f = '$quoted'; `$s = [IO.File]::ReadAllText(`$f); Remove-Item -LiteralPath `$f -Force; " +
             "`$ErrorActionPreference = 'Stop'; . ([scriptblock]::Create(`$s)); `$script:HcSource = `$s; Start-Housecall $options"
@@ -4802,6 +5156,28 @@ function Start-HcElevated {
         return $false
     }
     $true
+}
+
+<#
+    A Windows restore point before the first admin fix of a session: the
+    safety net under Housecall's own undo. Windows allows one per 24 hours
+    and only when System Protection is on; both cases are reported and
+    Housecall carries on, because the fix itself still asks and undoes.
+#>
+$script:RestorePointDone = $false
+
+function New-HcRestorePoint {
+    if ($script:RestorePointDone -or -not $script:IsAdmin) { return }
+    $script:RestorePointDone = $true
+    Write-Dim (T 'fix.restorePoint')
+    $warnings = $null
+    try {
+        Checkpoint-Computer -Description ('Housecall ' + (Get-Date -Format 'yyyy-MM-dd HH:mm')) -RestorePointType MODIFY_SETTINGS `
+            -ErrorAction Stop -WarningAction SilentlyContinue -WarningVariable warnings
+        if ($warnings) { Write-Dim (T 'fix.restorePointRecent') } else { Write-Ok (T 'fix.restorePointOk') }
+    } catch {
+        Write-Warn2 (T 'fix.restorePointNone')
+    }
 }
 
 # U on the menu: undo this session's changes, newest first.
@@ -5022,4 +5398,4 @@ function Invoke-HcNotePrint {
 
 . ([scriptblock]::Create($HcSource))
 $script:HcSource = $HcSource
-Start-Housecall -DryRun:$DryRun -Lang $Lang -Start $Start
+Start-Housecall -DryRun:$DryRun -Lang $Lang -Start $Start -NoAI:$NoAI

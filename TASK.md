@@ -1,20 +1,20 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 60%** `████████████░░░░░░░░` 25 of 42 done · 0 in progress · 15 open · 0 blocked · 2 waiting on a decision
+**Progress: 69%** `██████████████░░░░░░` 29 of 42 done · 0 in progress · 11 open · 0 blocked · 2 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/15) |
+| Next up | `░░░░░░░░░░` | 0% (0/11) |
 | Blocked on Shamil | `░░░░░░░░░░` | 0% (0/2) |
-| Recently done | `██████████` | 100% (20/20) |
+| Recently done | `██████████` | 100% (24/24) |
 
 *Updated by hand for now; a small script can take this over once the list grows. Parked ideas do not count.*
 <!-- progress:end -->
 
 Working notes, kept so a new chat can pick up without re-deriving anything.
-Last updated: **26 September 2026**, after areas A, C and F, fixes with undo and guides, the client note, and restarting as admin.
+Last updated: **26 September 2026**, after **every menu option A1–F3**, all planned fixes, the restore point and `-NoAI`.
 
 **How we work this list:** items are worked top to bottom. Pick one, say the
 name, and it gets built. When it is done it moves to *Recently done* and we go
@@ -63,8 +63,14 @@ Areas **B**, **D** and **E** followed the same day: every menu option
 except **A4** (email) now runs real checks. Shamil tests everything at the
 end (he said so on 26 Sep), so work carries on without waiting for him.
 
-Next, recommended: **A4**, then the remaining fixes and the restore point.
-Visit memory waits on the relay decision.
+Then **A4** (email), the **remaining fixes**, the **restore point** and
+**`-NoAI`**. So every option in the menu now runs real checks, and
+everything left is either Shamil's (testing on a clean PC and a broken
+one, a real visit), waits on the relay decision (visit memory), or is the
+AI chat, which comes last.
+
+**Next: Shamil tests everything** (the one-liner, then each letter). What he
+finds goes into *Found in testing* below, and gets fixed first.
 
 **Seen on real Wi-Fi (26 Sep):** on Shamil's laptop A1 showed the Wi-Fi
 name and **95%** signal correctly. The drop-out count in A2 has not been
@@ -186,20 +192,16 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ## Next up
 
 **Phase 1: checks (offline, read-only)**
-- [ ] **A4** ← recommended, next: email: which mail program or webmail, then reach its servers (IMAP/SMTP ports). Needs a question first, like A3
 
 **Phase 2: fixes, proof and the note**
-- [ ] More fixes. Done: disable task, close remote tool, proxy off, flush DNS, renew IP, and for C: start/restart the print service, clear the queue, set the default printer, test page, switch a device on, restart a device, start the Bluetooth service. Still to do: reset Winsock, restart adapter; set default audio; restart audio service; uninstall a remote-access tool (through its own uninstaller); block a notification site (the browser must be closed first, or it overwrites the change)
-- [ ] Restore point before any admin fix, where Windows allows one
 
-**Phase 4: visit memory**
+**Phase 4: visit memory** *(waits on "where does the relay live")*
 - [ ] A PC fingerprint that is not personal (e.g. a hash of the BIOS serial)
 - [ ] After each visit, send a short record to Shamil's side (the relay, or a file he keeps). Never stored on the client's PC
 - [ ] On start: "Known PC: last visit 3 Mar, C1 printer spooler"
 
 **Phase 5: the one-liner and 0.1.0**
 - [ ] Test the one-liner on a clean Windows 11 with Defender on (hosting itself is done, see *Recently done*)
-- [ ] Options via the `[scriptblock]::Create((irm $s))` form: `-DryRun`, `-NoAI`, `-Lang nl`
 - [ ] Break a test PC or VM on purpose (adapter off, bad DNS, stopped spooler, AnyDesk installed) and check each one is found, fixed and proven
 - [ ] Use it at one real client visit
 
@@ -221,6 +223,28 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Recently done
+
+**A4, the last fixes, restore point, -NoAI** *(26 Sep)*
+- [x] **A4 email** (`src/checks/email.ps1`): asks for the address and uses
+      only the part after the @. Checks that the domain receives mail, that
+      the provider's receiving and sending servers answer (Ziggo, KPN incl.
+      xs4all/planet/hetnet/telfort, Outlook.com, Gmail, iCloud, Yahoo), a
+      typo of a known provider ("zigo.nl: did you mean ziggo.nl?"), which
+      mail program is installed, and the old Windows Mail app that stopped
+      working at the end of 2024. Opens webmail where the address is certain
+- [x] **The remaining fixes**: reset Windows' network settings (Winsock,
+      restart needed), restart the network adapter, uninstall a remote tool
+      through its own uninstaller, and open the browser's notification
+      settings page. *Decided:* Housecall does not edit the browser's
+      settings file to block a site itself, because an open browser
+      overwrites it and a damaged file can reset the client's profile
+- [x] **Restore point** before the first admin fix of a session
+      (`New-HcRestorePoint`): reports when Windows made one in the past 24
+      hours or System Protection is off, and carries on either way
+- [x] **`-NoAI`** hides the `?` chat; `?` and sentences then count as
+      unknown input. Passed on when Housecall restarts as admin. 12 new
+      tests, 220 in total, and a new guard: advice sentences may not
+      contain `{0}`, because advice is shown without values
 
 **Phase 1, areas D and E: Slow, freezing, Windows & updates** *(26 Sep)*
 - [x] **D1–D4** (`src/checks/performance.ps1`). CPU from the
@@ -400,6 +424,10 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ---
 
+## Found in testing
+
+*(empty: Shamil tests everything after 26 Sep; what he finds goes here, and gets fixed first)*
+
 ## Ideas, parked
 
 - [ ] **Window with big buttons** (WPF, like WinUtil). The checks and fixes stay the same; only the front changes
@@ -504,7 +532,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 | Build | `build.ps1` → `setup.ps1` |
 | Tests | `tests/Housecall.Tests.ps1` |
 | Check shape | `src/checks/common.ps1`: reports, findings, `Write-HcReport`, the handler list |
-| Area A | `src/checks/network.ps1`: facts, `Test-HcInternet` (A1), `Test-HcConnectionQuality` (A2), `Test-HcSite` (A3) |
+| Area A | `src/checks/network.ps1`: facts, `Test-HcInternet` (A1), `Test-HcConnectionQuality` (A2), `Test-HcSite` (A3); `src/checks/email.ps1`: `Test-HcMail` (A4) and the provider list |
 | Fixes | `src/fixes.ps1`: `$script:Fixes` (the only changes Housecall makes), the **Wat nu?** menu, the step-by-step viewer, undo |
 | Guides | `steps.<finding id>` in `src/strings.ps1`, steps separated by `\|` |
 | Note | `src/note.ps1`: `$script:Contact` (fill in!), the visit record, `Get-HcNoteBlocks` (content), the window and printing |
