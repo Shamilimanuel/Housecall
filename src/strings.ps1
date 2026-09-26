@@ -1,0 +1,379 @@
+<#
+    Every sentence Housecall shows, in English and Dutch.
+
+    Nothing user-facing is hard-coded anywhere else: code asks for a key with
+    T 'some.key' and gets the current language. Both tables must have exactly
+    the same keys -- tests/Housecall.Tests.ps1 fails when they drift.
+
+    Dutch uses the formal "u": the person reading over your shoulder is often
+    an older client.
+
+    Keep this file plain ASCII. PowerShell 5.1 reads a .ps1 without a
+    byte-order mark as ANSI, so an accented letter here would turn to mojibake.
+#>
+
+$script:Strings = @{
+    en = @{
+        'tagline'          = 'finds and fixes computer problems, always with your okay'
+        'promise'          = 'Nothing changes on this PC without a yes.'
+
+        'status.admin'     = 'admin'
+        'status.notAdmin'  = 'not admin'
+        'status.online'    = 'online'
+        'status.offline'   = 'offline'
+        'status.dryRun'    = 'DRY RUN: checks only, nothing gets fixed'
+
+        'menu.question'    = 'What is the problem about?'
+        'menu.ai'          = 'Something else: describe it yourself (AI chat)'
+        'menu.hintHome'    = 'Type a letter, or jump straight to a problem, e.g. A1'
+        'menu.back'        = 'Back'
+        'menu.language'    = 'Nederlands'
+        'menu.quit'        = 'Quit'
+        'menu.prompt'      = 'Choose'
+        'menu.unknown'     = '"{0}" is not an option. Try a letter such as A, or a code such as A1.'
+
+        'area.question'    = '{0}  {1}: what is the problem?'
+        'area.ai'          = 'None of these: describe it yourself (AI chat)'
+        'area.hint'        = 'Type a number, e.g. 1, or the full code'
+
+        'problem.notBuilt' = 'The checks for this problem are not built yet.'
+        'problem.willLook' = 'It will look at:'
+        'pressEnter'       = 'Press Enter to go back'
+
+        'ai.title'         = 'Describe the problem in your own words'
+        'ai.youTyped'      = 'You typed: {0}'
+        'ai.notBuilt'      = 'The AI chat is not built yet. Choose a letter from the menu for now.'
+        'ai.offline'       = 'This PC is offline, so the AI chat cannot be reached. The menu works without internet.'
+
+        'goodbye'          = 'Housecall is closed. Nothing was left behind on this PC.'
+        'env.notWindows'   = 'Housecall only runs on Windows.'
+        'env.oldPowerShell' = 'Housecall needs PowerShell 5.1 or newer. This PC has {0}.'
+
+        'area.A'  = 'Internet & Wi-Fi'
+        'area.B'  = 'Sound, screen & video calls'
+        'area.C'  = 'Printer & devices'
+        'area.D'  = 'Slow or freezing'
+        'area.E'  = 'Windows & updates'
+        'area.F'  = 'Safety & scams'
+
+        'looks.A' = 'network adapter, address from the router, router, DNS, internet, proxy, Wi-Fi signal'
+        'looks.B' = 'default sound device, mute and volume, audio service, camera and microphone access, screen scale'
+        'looks.C' = 'print service, stuck print jobs, default printer, USB devices with errors, Bluetooth'
+        'looks.D' = 'free disk space, programs using memory and CPU, startup programs, recent crashes, time since restart'
+        'looks.E' = 'Windows Update service, last successful update, waiting restart'
+        'looks.F' = 'remote-access programs such as AnyDesk, sites allowed to send pop-ups, Microsoft Defender, unknown scheduled tasks'
+
+        'problem.A1' = 'No internet at all'
+        'problem.A2' = 'Wi-Fi slow or keeps dropping'
+        'problem.A3' = 'One website or app will not load'
+        'problem.A4' = 'Email will not send or arrive'
+        'problem.B1' = 'No sound'
+        'problem.B2' = 'Microphone or camera (video calls)'
+        'problem.B3' = 'Screen too small, too dark or wrong'
+        'problem.C1' = 'Printer will not print'
+        'problem.C2' = 'Mouse, keyboard or USB stick'
+        'problem.C3' = 'Bluetooth'
+        'problem.D1' = 'The whole computer is slow'
+        'problem.D2' = 'Takes ages to start'
+        'problem.D3' = 'A program freezes or crashes'
+        'problem.D4' = 'The disk is full'
+        'problem.E1' = 'Update stuck or failing'
+        'problem.E2' = 'Error message on the screen'
+        'problem.E3' = 'Will not shut down or restart'
+        'problem.F1' = 'A pop-up says I have a virus'
+        'problem.F2' = 'Someone called me and got into my computer'
+        'problem.F3' = 'Full security check'
+
+        # ---- running a check
+        'run.checking' = 'Checking... nothing changes on this PC.'
+        'run.found'    = 'Found:'
+        'run.advice'   = 'What to do:'
+
+        # ---- A: check lines
+        'net.noAdapter'        = 'No network adapter found'
+        'net.wifiDisabled'     = 'Wi-Fi adapter "{0}" is switched off'
+        'net.adapterOff'       = 'Network adapter "{0}" is switched off'
+        'net.wifiNotConnected' = 'Wi-Fi is on, but not connected to any network'
+        'net.cableUnplugged'   = 'No network cable plugged in ("{0}")'
+        'net.adapterUp'        = 'Network adapter "{0}" is on'
+        'net.wifiConnected'    = 'Connected to Wi-Fi "{0}", signal {1}%'
+        'net.wifiConnectedNoSignal' = 'Connected to Wi-Fi'
+        'net.cableConnected'   = 'Connected by network cable'
+        'net.weakSignal'       = 'The Wi-Fi signal is weak: {0}%'
+        'net.proxy'            = 'Traffic goes through a proxy: {0}'
+        'net.noAddress'        = 'No address from the router ({0})'
+        'net.address'          = 'Address from the router: {0}'
+        'net.addressStatic'    = 'Fixed address, set by hand: {0}'
+        'net.noGateway'        = 'No router (gateway) set for this connection'
+        'net.gatewayOk'        = 'Router {0} answers in {1} ms'
+        'net.gatewayNoPing'    = 'Router {0} ignores test messages (that is fine)'
+        'net.gatewayDown'      = 'Router {0} does not answer'
+        'net.internetDown'     = 'Nothing gets past the router to the internet'
+        'net.internetOk'       = 'Internet reachable, {0} ms'
+        'net.dnsDown'          = 'Website names are not found (DNS server {0})'
+        'net.dnsOk'            = 'Website names are found (DNS)'
+        'net.webOk'            = 'Test page loads normally'
+        'net.webIntercepted'   = 'A login page or another program catches web traffic'
+        'net.webFailed'        = 'The test page does not load'
+        'net.skipped'          = 'Remaining checks skipped'
+        'net.lossOk'           = 'Router test: all {0} messages came back, {1} ms on average'
+        'net.loss'             = 'Router test: {0} of {1} messages got lost'
+        'net.drops'            = 'Wi-Fi disconnects in the past 7 days: {0} (sleep and shutdown included)'
+        'net.internetWorks'    = 'The internet works on this PC'
+        'net.none'             = 'none'
+
+        # ---- A: findings, and what to do about each
+        'finding.noAdapter'        = 'Windows sees no network adapter at all. The driver may be missing, or the adapter is broken.'
+        'advice.noAdapter'         = 'Open Device Manager and look for a network adapter with a warning sign. Install the driver from the maker''s website, using a phone (USB tethering) or another PC.'
+        'finding.wifiDisabled'     = 'The Wi-Fi adapter is switched off.'
+        'advice.wifiDisabled'      = 'Turn Wi-Fi on: Settings > Network & internet > Wi-Fi, or the Wi-Fi key on the keyboard. Also check that airplane mode is off.'
+        'finding.adapterOff'       = 'The network adapter is switched off.'
+        'advice.adapterOff'        = 'Turn it on again: Settings > Network & internet > Advanced network settings > Enable.'
+        'finding.wifiNotConnected' = 'Wi-Fi is on, but the PC is not connected to a network.'
+        'advice.wifiNotConnected'  = 'Check that airplane mode is off. Then click the Wi-Fi icon at the bottom right and choose the home network. The password is often on a sticker on the router.'
+        'finding.cableUnplugged'   = 'This PC uses a network cable, but the cable is not connected.'
+        'advice.cableUnplugged'    = 'Push the cable in at both ends until it clicks. Try another port on the router, or another cable.'
+        'finding.noAddress'        = 'The PC is connected, but the router gave it no address.'
+        'advice.noAddress'         = 'Renew the address: ipconfig /release, then ipconfig /renew. If that does not help, restart the router: power off for 30 seconds, then wait 3 minutes.'
+        'finding.noGateway'        = 'No router is set for this connection. Usually a fixed address that was set by hand.'
+        'advice.noGateway'         = 'Set the connection back to automatic: Settings > Network & internet > (the connection) > IP assignment > Automatic (DHCP).'
+        'finding.gatewayDown'      = 'The router does not answer.'
+        'advice.gatewayDown'       = 'Check that the router''s lights are on. Restart it: power off for 30 seconds, then wait 3 minutes.'
+        'finding.internetDown'     = 'The router works, but the router itself has no internet.'
+        'advice.internetDown'      = 'Restart the modem and router. Look for an outage at the provider, on a phone (e.g. allestoringen.nl). Check the internet light on the router.'
+        'finding.dnsDown'          = 'The internet works, but website names are not found (DNS).'
+        'advice.dnsDown'           = 'Clear the DNS cache: ipconfig /flushdns. If the DNS servers were set by hand, set them back to automatic.'
+        'finding.webIntercepted'   = 'Something catches web traffic: a Wi-Fi login page (hotel, guest network) or a program on this PC.'
+        'advice.webIntercepted'    = 'Open a browser and look for a login page. If there is none, run F3 to look for unknown programs.'
+        'finding.proxy'            = 'A proxy is set. On a home PC that is usually unwanted, and sometimes adware.'
+        'advice.proxy'             = 'Turn it off: Settings > Network & internet > Proxy. Then run F3 to look for unknown programs.'
+        'finding.weakSignal'       = 'The internet works, but the Wi-Fi signal here is weak.'
+        'advice.weakSignal'        = 'Move closer to the router, keep the router out of cupboards, or add a Wi-Fi extender or mesh point.'
+        'finding.allGood'          = 'The internet connection works on this PC.'
+        'advice.allGood'           = 'If one website or app fails, choose A3. If the internet is slow or drops, choose A2.'
+        'finding.unstable'         = 'The connection to the router is unstable: {0}% of the test messages got lost.'
+        'advice.unstable'          = 'Restart the router and move closer to it. A network cable is steadier than Wi-Fi.'
+        'finding.dropsMany'        = 'Wi-Fi dropped {0} times in the past 7 days, more than sleep and shutdown explain.'
+        'advice.dropsMany'         = 'Update the Wi-Fi driver, turn off power saving for the Wi-Fi adapter in Device Manager, and restart the router.'
+        'finding.connHealthy'      = 'The connection looks healthy right now. Slowness probably comes from the subscription or the provider.'
+        'advice.connHealthy'       = 'Run a speed test (e.g. speedtest.net) and compare it with the subscription. Try again at another time of day.'
+
+        # ---- A3: one website
+        'site.ask'       = 'Which website? For example: marktplaats.nl'
+        'site.invalid'   = '"{0}" does not look like a web address. Type it like this: whatsapp.com'
+        'site.hosts'     = 'The hosts file sends {0} to {1}'
+        'site.hostsOk'   = 'No special rule for {0} in the hosts file'
+        'site.dnsOk'     = '{0} found: {1}'
+        'site.dnsFail'   = '{0} not found'
+        'site.tcpOk'     = '{0} answers on the secure port, {1} ms'
+        'site.tcpFail'   = '{0} does not answer on the secure port'
+        'site.httpOk'    = '{0} sends a page (status {1})'
+        'site.httpError' = '{0} answers with an error (status {1})'
+        'site.httpNone'  = '{0} sends no page'
+
+        'finding.siteHosts'    = 'The hosts file points this site to another address: an old setting, or malware.'
+        'advice.siteHosts'     = 'Remove the line for this site from C:\Windows\System32\drivers\etc\hosts (needs admin), then run F3.'
+        'finding.siteNotFound' = 'The name {0} is not found. It may be misspelled, or the site no longer exists.'
+        'advice.siteNotFound'  = 'Check the spelling. Try it on a phone: if it fails there too, the problem is the site.'
+        'finding.siteBlocked'  = 'The site is found, but it does not answer this PC.'
+        'advice.siteBlocked'   = 'Try it on a phone with Wi-Fi off. If it works there, security software or a firewall on this PC may block it.'
+        'finding.siteError'    = 'The site answers with an error ({0}). The problem is probably at the site itself.'
+        'advice.siteError'     = 'Try again later. Check on a phone whether it fails there too.'
+        'finding.siteOk'       = 'The site works from this PC. The problem is probably in the browser or the app.'
+        'advice.siteOk'        = 'Clear the browser cache and cookies for this site, try another browser, or turn off browser extensions. For an app: update or reinstall it.'
+    }
+
+    nl = @{
+        'tagline'          = 'vindt en verhelpt computerproblemen, altijd met uw akkoord'
+        'promise'          = 'Er verandert niets op deze pc zonder uw ja.'
+
+        'status.admin'     = 'beheerder'
+        'status.notAdmin'  = 'geen beheerder'
+        'status.online'    = 'online'
+        'status.offline'   = 'offline'
+        'status.dryRun'    = 'PROEFDRAAI: alleen controleren, er wordt niets hersteld'
+
+        'menu.question'    = 'Waar gaat het probleem over?'
+        'menu.ai'          = 'Iets anders: beschrijf het zelf (AI-chat)'
+        'menu.hintHome'    = 'Typ een letter, of ga direct naar een probleem, bijv. A1'
+        'menu.back'        = 'Terug'
+        'menu.language'    = 'English'
+        'menu.quit'        = 'Stoppen'
+        'menu.prompt'      = 'Kies'
+        'menu.unknown'     = '"{0}" is geen keuze. Probeer een letter zoals A, of een code zoals A1.'
+
+        'area.question'    = '{0}  {1}: wat is het probleem?'
+        'area.ai'          = 'Geen van deze: beschrijf het zelf (AI-chat)'
+        'area.hint'        = 'Typ een nummer, bijv. 1, of de hele code'
+
+        'problem.notBuilt' = 'De controles voor dit probleem zijn nog niet gebouwd.'
+        'problem.willLook' = 'Er wordt gekeken naar:'
+        'pressEnter'       = 'Druk op Enter om terug te gaan'
+
+        'ai.title'         = 'Beschrijf het probleem in uw eigen woorden'
+        'ai.youTyped'      = 'U typte: {0}'
+        'ai.notBuilt'      = 'De AI-chat is nog niet gebouwd. Kies voorlopig een letter uit het menu.'
+        'ai.offline'       = 'Deze pc is offline, dus de AI-chat is niet bereikbaar. Het menu werkt zonder internet.'
+
+        'goodbye'          = 'Housecall is gesloten. Er is niets achtergebleven op deze pc.'
+        'env.notWindows'   = 'Housecall werkt alleen op Windows.'
+        'env.oldPowerShell' = 'Housecall heeft PowerShell 5.1 of nieuwer nodig. Deze pc heeft {0}.'
+
+        'area.A'  = 'Internet en wifi'
+        'area.B'  = 'Geluid, beeld en videobellen'
+        'area.C'  = 'Printer en apparaten'
+        'area.D'  = 'Traag of vastlopen'
+        'area.E'  = 'Windows en updates'
+        'area.F'  = 'Veiligheid en oplichting'
+
+        'looks.A' = 'netwerkadapter, adres van de router, router, DNS, internet, proxy, wifi-signaal'
+        'looks.B' = 'standaard geluidsapparaat, dempen en volume, audioservice, toegang tot camera en microfoon, schermschaal'
+        'looks.C' = 'afdrukservice, vastgelopen printopdrachten, standaardprinter, USB-apparaten met fouten, Bluetooth'
+        'looks.D' = 'vrije schijfruimte, programma''s die geheugen en processor gebruiken, opstartprogramma''s, recente crashes, tijd sinds herstart'
+        'looks.E' = 'Windows Update-service, laatste geslaagde update, wachtende herstart'
+        'looks.F' = 'programma''s voor overname op afstand zoals AnyDesk, sites die meldingen mogen sturen, Microsoft Defender, onbekende geplande taken'
+
+        'problem.A1' = 'Helemaal geen internet'
+        'problem.A2' = 'Wifi is traag of valt steeds weg'
+        'problem.A3' = 'Een website of app laadt niet'
+        'problem.A4' = 'E-mail verzenden of ontvangen lukt niet'
+        'problem.B1' = 'Geen geluid'
+        'problem.B2' = 'Microfoon of camera (videobellen)'
+        'problem.B3' = 'Scherm te klein, te donker of verkeerd'
+        'problem.C1' = 'De printer print niet'
+        'problem.C2' = 'Muis, toetsenbord of USB-stick'
+        'problem.C3' = 'Bluetooth'
+        'problem.D1' = 'De hele computer is traag'
+        'problem.D2' = 'Opstarten duurt heel lang'
+        'problem.D3' = 'Een programma loopt vast of crasht'
+        'problem.D4' = 'De schijf is vol'
+        'problem.E1' = 'Update loopt vast of mislukt'
+        'problem.E2' = 'Foutmelding op het scherm'
+        'problem.E3' = 'Afsluiten of herstarten lukt niet'
+        'problem.F1' = 'Een pop-up zegt dat ik een virus heb'
+        'problem.F2' = 'Iemand belde mij en kwam in mijn computer'
+        'problem.F3' = 'Volledige veiligheidscontrole'
+
+        # ---- running a check
+        'run.checking' = 'Bezig met controleren... er verandert niets op deze pc.'
+        'run.found'    = 'Gevonden:'
+        'run.advice'   = 'Wat te doen:'
+
+        # ---- A: check lines
+        'net.noAdapter'        = 'Geen netwerkadapter gevonden'
+        'net.wifiDisabled'     = 'Wifi-adapter "{0}" staat uit'
+        'net.adapterOff'       = 'Netwerkadapter "{0}" staat uit'
+        'net.wifiNotConnected' = 'Wifi staat aan, maar is met geen enkel netwerk verbonden'
+        'net.cableUnplugged'   = 'Geen netwerkkabel aangesloten ("{0}")'
+        'net.adapterUp'        = 'Netwerkadapter "{0}" staat aan'
+        'net.wifiConnected'    = 'Verbonden met wifi "{0}", signaal {1}%'
+        'net.wifiConnectedNoSignal' = 'Verbonden met wifi'
+        'net.cableConnected'   = 'Verbonden via een netwerkkabel'
+        'net.weakSignal'       = 'Het wifi-signaal is zwak: {0}%'
+        'net.proxy'            = 'Verkeer gaat via een proxy: {0}'
+        'net.noAddress'        = 'Geen adres van de router ({0})'
+        'net.address'          = 'Adres van de router: {0}'
+        'net.addressStatic'    = 'Vast adres, met de hand ingesteld: {0}'
+        'net.noGateway'        = 'Geen router (gateway) ingesteld voor deze verbinding'
+        'net.gatewayOk'        = 'Router {0} antwoordt in {1} ms'
+        'net.gatewayNoPing'    = 'Router {0} negeert testberichten (dat is geen probleem)'
+        'net.gatewayDown'      = 'Router {0} antwoordt niet'
+        'net.internetDown'     = 'Voorbij de router komt niets op internet'
+        'net.internetOk'       = 'Internet bereikbaar, {0} ms'
+        'net.dnsDown'          = 'Namen van websites worden niet gevonden (DNS-server {0})'
+        'net.dnsOk'            = 'Namen van websites worden gevonden (DNS)'
+        'net.webOk'            = 'Testpagina laadt normaal'
+        'net.webIntercepted'   = 'Een inlogpagina of een ander programma vangt het webverkeer af'
+        'net.webFailed'        = 'De testpagina laadt niet'
+        'net.skipped'          = 'Overige controles overgeslagen'
+        'net.lossOk'           = 'Routertest: alle {0} berichten kwamen terug, gemiddeld {1} ms'
+        'net.loss'             = 'Routertest: {0} van de {1} berichten kwijtgeraakt'
+        'net.drops'            = 'Keren dat de wifi wegviel, afgelopen 7 dagen: {0} (slaapstand en afsluiten meegeteld)'
+        'net.internetWorks'    = 'Internet werkt op deze pc'
+        'net.none'             = 'geen'
+
+        # ---- A: findings, and what to do about each
+        'finding.noAdapter'        = 'Windows ziet helemaal geen netwerkadapter. Het stuurprogramma ontbreekt misschien, of de adapter is kapot.'
+        'advice.noAdapter'         = 'Open Apparaatbeheer en zoek een netwerkadapter met een waarschuwingsteken. Installeer het stuurprogramma van de site van de fabrikant, via een telefoon (USB-tethering) of een andere pc.'
+        'finding.wifiDisabled'     = 'De wifi-adapter staat uit.'
+        'advice.wifiDisabled'      = 'Zet wifi aan: Instellingen > Netwerk en internet > Wifi, of de wifitoets op het toetsenbord. Controleer ook of de vliegtuigstand uit staat.'
+        'finding.adapterOff'       = 'De netwerkadapter staat uit.'
+        'advice.adapterOff'        = 'Zet hem weer aan: Instellingen > Netwerk en internet > Geavanceerde netwerkinstellingen > Inschakelen.'
+        'finding.wifiNotConnected' = 'Wifi staat aan, maar de pc is met geen netwerk verbonden.'
+        'advice.wifiNotConnected'  = 'Controleer of de vliegtuigstand uit staat. Klik dan rechtsonder op het wifi-icoon en kies het thuisnetwerk. Het wachtwoord staat vaak op een sticker op de router.'
+        'finding.cableUnplugged'   = 'Deze pc gebruikt een netwerkkabel, maar de kabel is niet aangesloten.'
+        'advice.cableUnplugged'    = 'Druk de kabel aan beide kanten aan tot hij klikt. Probeer een andere poort op de router, of een andere kabel.'
+        'finding.noAddress'        = 'De pc is verbonden, maar de router heeft hem geen adres gegeven.'
+        'advice.noAddress'         = 'Vernieuw het adres: ipconfig /release en daarna ipconfig /renew. Helpt dat niet, herstart dan de router: 30 seconden stroom eraf, daarna 3 minuten wachten.'
+        'finding.noGateway'        = 'Er is geen router ingesteld voor deze verbinding. Meestal een vast adres dat met de hand is ingesteld.'
+        'advice.noGateway'         = 'Zet de verbinding terug op automatisch: Instellingen > Netwerk en internet > (de verbinding) > IP-toewijzing > Automatisch (DHCP).'
+        'finding.gatewayDown'      = 'De router antwoordt niet.'
+        'advice.gatewayDown'       = 'Kijk of de lampjes van de router branden. Herstart hem: 30 seconden stroom eraf, daarna 3 minuten wachten.'
+        'finding.internetDown'     = 'De router werkt, maar de router zelf heeft geen internet.'
+        'advice.internetDown'      = 'Herstart modem en router. Kijk op een telefoon of er een storing is bij de provider (bijv. allestoringen.nl). Controleer het internetlampje op de router.'
+        'finding.dnsDown'          = 'Internet werkt, maar namen van websites worden niet gevonden (DNS).'
+        'advice.dnsDown'           = 'Leeg de DNS-cache: ipconfig /flushdns. Zijn de DNS-servers met de hand ingesteld, zet ze dan terug op automatisch.'
+        'finding.webIntercepted'   = 'Iets vangt het webverkeer af: een inlogpagina van de wifi (hotel, gastnetwerk) of een programma op deze pc.'
+        'advice.webIntercepted'    = 'Open een browser en kijk of er een inlogpagina verschijnt. Is die er niet, kies dan F3 om naar onbekende programma''s te zoeken.'
+        'finding.proxy'            = 'Er is een proxy ingesteld. Op een thuis-pc is dat meestal ongewenst, en soms adware.'
+        'advice.proxy'             = 'Zet hem uit: Instellingen > Netwerk en internet > Proxy. Kies daarna F3 om naar onbekende programma''s te zoeken.'
+        'finding.weakSignal'       = 'Internet werkt, maar het wifi-signaal is hier zwak.'
+        'advice.weakSignal'        = 'Ga dichter bij de router zitten, zet de router niet in een kast, of plaats een wifi-versterker of mesh-punt.'
+        'finding.allGood'          = 'De internetverbinding werkt op deze pc.'
+        'advice.allGood'           = 'Doet een bepaalde website of app het niet, kies dan A3. Is internet traag of valt het weg, kies dan A2.'
+        'finding.unstable'         = 'De verbinding met de router is onstabiel: {0}% van de testberichten raakte kwijt.'
+        'advice.unstable'          = 'Herstart de router en ga er dichterbij zitten. Een netwerkkabel is stabieler dan wifi.'
+        'finding.dropsMany'        = 'De wifi viel de afgelopen 7 dagen {0} keer weg, vaker dan slaapstand en afsluiten verklaren.'
+        'advice.dropsMany'         = 'Werk het wifi-stuurprogramma bij, zet energiebesparing voor de wifi-adapter uit in Apparaatbeheer, en herstart de router.'
+        'finding.connHealthy'      = 'De verbinding ziet er nu gezond uit. Traagheid komt waarschijnlijk door het abonnement of de provider.'
+        'advice.connHealthy'       = 'Doe een snelheidstest (bijv. speedtest.net) en vergelijk die met het abonnement. Probeer het ook op een ander moment van de dag.'
+
+        # ---- A3: one website
+        'site.ask'       = 'Welke website? Bijvoorbeeld: marktplaats.nl'
+        'site.invalid'   = '"{0}" lijkt geen webadres. Typ het zo: whatsapp.com'
+        'site.hosts'     = 'Het hosts-bestand stuurt {0} naar {1}'
+        'site.hostsOk'   = 'Geen speciale regel voor {0} in het hosts-bestand'
+        'site.dnsOk'     = '{0} gevonden: {1}'
+        'site.dnsFail'   = '{0} niet gevonden'
+        'site.tcpOk'     = '{0} antwoordt op de beveiligde poort, {1} ms'
+        'site.tcpFail'   = '{0} antwoordt niet op de beveiligde poort'
+        'site.httpOk'    = '{0} stuurt een pagina (status {1})'
+        'site.httpError' = '{0} antwoordt met een fout (status {1})'
+        'site.httpNone'  = '{0} stuurt geen pagina'
+
+        'finding.siteHosts'    = 'Het hosts-bestand stuurt deze site naar een ander adres: een oude instelling, of malware.'
+        'advice.siteHosts'     = 'Haal de regel voor deze site weg uit C:\Windows\System32\drivers\etc\hosts (beheerder nodig) en kies daarna F3.'
+        'finding.siteNotFound' = 'De naam {0} wordt niet gevonden. Misschien een typefout, of de site bestaat niet meer.'
+        'advice.siteNotFound'  = 'Controleer de spelling. Probeer het op een telefoon: lukt het daar ook niet, dan ligt het aan de site.'
+        'finding.siteBlocked'  = 'De site wordt gevonden, maar antwoordt niet aan deze pc.'
+        'advice.siteBlocked'   = 'Probeer het op een telefoon met wifi uit. Werkt het daar wel, dan blokkeert beveiligingssoftware of een firewall op deze pc het misschien.'
+        'finding.siteError'    = 'De site antwoordt met een fout ({0}). Het probleem ligt waarschijnlijk bij de site zelf.'
+        'advice.siteError'     = 'Probeer het later nog eens. Kijk op een telefoon of het daar ook misgaat.'
+        'finding.siteOk'       = 'De site werkt vanaf deze pc. Het probleem zit waarschijnlijk in de browser of de app.'
+        'advice.siteOk'        = 'Wis de cache en cookies van deze site in de browser, probeer een andere browser, of zet browserextensies uit. Bij een app: bijwerken of opnieuw installeren.'
+    }
+}
+
+$script:Lang = 'en'
+
+# T 'key' returns the sentence in the current language; extra arguments fill
+# its {0}, {1}... placeholders. A key missing from Dutch falls back to English,
+# and a key missing from both shows as [key] so it is spotted, not hidden.
+function T {
+    # Deliberately not [Parameter(Mandatory)]: that makes it an advanced
+    # function, and advanced functions refuse the extra $args used below.
+    param([string]$Key)
+    $text = $script:Strings[$script:Lang][$Key]
+    if ($null -eq $text) { $text = $script:Strings['en'][$Key] }
+    if ($null -eq $text) { return "[$Key]" }
+    if ($args.Count -gt 0) { return ($text -f $args) }
+    $text
+}
+
+# Dutch when Windows is set to Dutch, English for everything else.
+function Get-HcDefaultLanguage {
+    try {
+        if ((Get-UICulture).Name -like 'nl*') { return 'nl' }
+    } catch { }
+    'en'
+}
