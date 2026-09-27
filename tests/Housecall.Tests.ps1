@@ -25,6 +25,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\invoice.ps1')
 . (Join-Path $root 'src\invoice-page.ps1')
 . (Join-Path $root 'src\window.ps1')
+. (Join-Path $root 'src\window-visit.ps1')
 . (Join-Path $root 'src\ai.ps1')
 
 # Housecall's own source, put together the way dev.ps1 does it.
@@ -1368,7 +1369,7 @@ Describe 'The window (phase 6)' {
     }
 
     It 'has every text it shows, in both languages' {
-        $source = [IO.File]::ReadAllText((Join-Path $root 'src\window.ps1'))
+        $source = [IO.File]::ReadAllText((Join-Path $root 'src\window.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-visit.ps1'))
         $keys = @([regex]::Matches($source, "T '(win\.[\w.]+)'") | ForEach-Object { $_.Groups[1].Value }) +
                 @($script:HcTabs | ForEach-Object { "win.tab.$_" }) + @('F1', 'F2', 'F3' | ForEach-Object { "win.safety.$_" })
         $keys.Count | Should BeGreaterThan 20
@@ -1405,11 +1406,88 @@ Describe 'The window (phase 6)' {
         } finally { $rs.Close() }
     }
 
+    It 'turns "choose G2" in advice into buttons, never for the problem on screen' {
+        Get-HcMentionedCodes 'Choose G2 to check OneDrive, or A3. G1 is this one; H1 is no problem.' 'G1' | Should Be @('G2', 'A3')
+        @(Get-HcMentionedCodes 'Nothing to open here.' 'A1').Count | Should Be 0
+    }
+
     It 'never opens a window in a scripted run, even with -Window' {
         Mock Show-HcWindow { 'quit' }
         Start-Housecall -Lang nl -Window -Answers @('Q') 6>&1 | Out-Null
         Assert-MockCalled Show-HcWindow -Times 0 -Exactly
         Test-HcWindowPossible | Should Be $false
+    }
+}
+
+Describe 'The window: Afronden and the history' {
+    $script:Lang = 'nl'
+    # Shamil's own settings (27 Sep): no IBAN yet, no BTW yet.
+    $settings = [pscustomobject]@{ business_name = 'Shamil Imanuel'; postcode_city = 'Almere'; email = 'x@example.nl'; iban = $null
+        hourly_rate = '20.00'; callout_fee = '0.00'; start_fee = '15.00'; start_minutes = 30; btw_mode = 'unset'; payment_days = 14 }
+    $now = [datetime]'2026-09-27 15:00'
+
+    It 'fills the draft invoice as the relay will: starting price, quarters, parts' {
+        $fin = New-HcFinishState
+        $fin.Minutes = 50; $fin.Name = ' Mevr. de Vries '; $fin.Payment = 'cash'
+        [void]$fin.Extras.Add([pscustomobject]@{ Description = 'Draadloze muis'; Amount = [decimal]19.95 })
+        $inv = New-HcDraftInvoice $fin $settings $now
+        @($inv.lines | ForEach-Object { $_.amount }) | Should Be @(15, 10, 19.95)
+        $inv.total | Should Be 44.95
+        $inv.client_name | Should Be 'Mevr. de Vries'
+        $inv.number | Should Be 'concept'
+        $inv.due_date | Should Be '2026-10-11'
+        $inv.btw_amount | Should Be 0
+    }
+
+    It 'splits out 21% BTW when it is set, the total staying what the client pays' {
+        $fin = New-HcFinishState
+        $fin.Minutes = 30
+        $withBtw = [pscustomobject]@{ hourly_rate = '20.00'; start_fee = '15.00'; start_minutes = 30; btw_mode = '21' }
+        $inv = New-HcDraftInvoice $fin $withBtw $now
+        $inv.total | Should Be 15
+        $inv.subtotal | Should Be 12.40
+        $inv.btw_amount | Should Be 2.60
+    }
+
+    It 'offers a bank transfer only once there is an IBAN' {
+        Get-HcPayMethods $settings | Should Be @('pin', 'cash', 'tikkie')
+        $withIban = [pscustomobject]@{ iban = 'NL00BANK0123456789' }
+        Get-HcPayMethods $withIban | Should Be @('pin', 'cash', 'tikkie', 'transfer')
+    }
+
+    It 'draws the note as the same page, without number or amounts, with what was found' {
+        $script:HcVisit.Clear(); $script:HcChanges.Clear(); $script:HcWork.Clear()
+        [void]$script:HcVisit.Add([pscustomobject]@{ Code = 'C2'; FindingId = 'numLockOff'; FindingArgs = @() })
+        [void]$script:HcChanges.Add([pscustomobject]@{ FixId = 'numLockOn'; Target = @{}; Label = 'NumLock aangezet' })
+        $fin = New-HcFinishState
+        $fin.Minutes = 50
+        $texts = @(Get-HcInvoiceLayout (New-HcDraftInvoice $fin $settings $now) -Note | ForEach-Object { $_ } | Where-Object { $_.Kind -eq 'text' } | ForEach-Object { $_.Text })
+        $texts -contains 'Briefje' | Should Be $true
+        $texts -contains 'NumLock aangezet' | Should Be $true
+        $texts -contains (T 'finding.numLockOff') | Should Be $true
+        @($texts | Where-Object { $_ -match [char]0x20AC -or $_ -match 'concept' }).Count | Should Be 0
+        $invoiceTexts = @(Get-HcInvoiceLayout (New-HcDraftInvoice $fin $settings $now) | ForEach-Object { $_ } | ForEach-Object { $_.Text })
+        $invoiceTexts -contains 'Factuur' | Should Be $true
+        @($invoiceTexts | Where-Object { $_ -match [char]0x20AC }).Count | Should BeGreaterThan 1
+        $script:HcVisit.Clear(); $script:HcChanges.Clear()
+    }
+
+    It 'sends the relay the same invoice and visit from the window as from the text menu' {
+        $script:HcToken = 'token'
+        $script:HcVisit.Clear(); $script:HcWork.Clear()
+        [void]$script:HcVisit.Add([pscustomobject]@{ Code = 'A1'; FindingId = 'allGood'; FindingArgs = @() })
+        $form = [pscustomobject]@{ Client = @{ name = 'X' }; Lines = @([pscustomobject]@{ Description = 'Arbeid'; Amount = [decimal]15 }); Payment = 'pin' }
+        $body = New-HcInvoiceBody $form ('a' * 64)
+        $body.action | Should Be 'invoice_create'
+        $body.pc | Should Be ('a' * 64)
+        $body.lines[0].amount | Should Be 15
+        $body.problems[0].code | Should Be 'A1'
+        $visit = New-HcVisitBody ([pscustomobject]@{ Os = 'Windows 11 Home' }) ('n' * 100) '2026-0005' ('a' * 64)
+        $visit.action | Should Be 'visit_save'
+        $visit.label.Length | Should Be 80
+        $visit.invoice_number | Should Be '2026-0005'
+        (New-HcVisitBody ([pscustomobject]@{ Os = 'x' }) '' '' ('a' * 64)).label | Should Be $null
+        $script:HcToken = $null; $script:HcVisit.Clear()
     }
 }
 

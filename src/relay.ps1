@@ -213,18 +213,23 @@ function Save-HcVisitRecord {
         $typed = "$(Read-HcLine (T 'mem.labelAsk' $current))".Trim()
         $label = if ($typed -and $typed -ne 'Q') { $typed } else { $script:HcKnownLabel }
     }
-    if ($label -and $label.Length -gt 80) { $label = $label.Substring(0, 80) }
+    $r = Invoke-HcRelay (New-HcVisitBody $Environment $label $(if ($Invoice) { [string]$Invoice.number } else { $null }))
+    if ($r.Ok) { Write-Ok (T 'mem.saved') } else { Write-Warn2 (T 'mem.notSaved' (Get-HcRelayMessage $r.Error)) }
+}
 
-    $r = Invoke-HcRelay @{
+# What visit_save gets, from the text menu and the window alike.
+function New-HcVisitBody {
+    param([pscustomobject]$Environment, [string]$Label, [string]$InvoiceNumber, [string]$PcId = (Get-HcPcId))
+    if ($Label -and $Label.Length -gt 80) { $Label = $Label.Substring(0, 80) }
+    @{
         action   = 'visit_save'
         token    = $script:HcToken
-        pc       = (Get-HcPcId)
-        label    = $label
+        pc       = $PcId
+        label    = $(if ($Label) { $Label } else { $null })
         lang     = $script:Lang
         os       = $Environment.Os
         problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
         changes  = @(Get-HcVisitChanges)
-        invoice_number = $(if ($Invoice) { [string]$Invoice.number } else { $null })
+        invoice_number = $(if ($InvoiceNumber) { $InvoiceNumber } else { $null })
     }
-    if ($r.Ok) { Write-Ok (T 'mem.saved') } else { Write-Warn2 (T 'mem.notSaved' (Get-HcRelayMessage $r.Error)) }
 }

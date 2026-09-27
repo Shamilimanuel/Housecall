@@ -40,7 +40,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'cba5072bd1ac'
+$HcBuild = 'b48b9f7df5e0'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -1019,7 +1019,7 @@ $script:Strings = @{
         'win.finish'         = 'Finish'
         'win.noteInvoice'    = 'Note / invoice'
         'win.console'        = 'Text menu'
-        'win.consoleHint'    = 'For now: visit history and the AI chat.'
+        'win.consoleHint'    = 'For now: the AI chat.'
         'win.result'         = 'Result'
         'win.pick'           = 'Pick a problem. Housecall only checks; nothing changes on this PC without a yes.'
         'win.check'          = 'Check'
@@ -1042,12 +1042,66 @@ $script:Strings = @{
         'win.safety.F1'      = 'Websites allowed to send notifications, and pop-ups that keep coming back.'
         'win.safety.F2'      = 'AnyDesk, TeamViewer and the like: when they were put on, and whether they run now.'
         'win.safety.F3'      = 'Virus scanner, updates, unknown tasks and more, all at once.'
-        'win.visit.time'     = 'Time'
-        'win.visit.done'     = 'Done'
-        'win.visit.nothing'  = 'Nothing changed yet.'
-        'win.visit.later'    = 'Earlier visits to this PC are in the text menu for now.'
         'win.pc.soon'        = 'Coming soon: this PC''s model and age, Windows support, disk, memory and battery, with advice on upgrades.'
         'win.ai.soon'        = 'Describing a problem in your own words is in the text menu for now (the ? key).'
+        'win.open'                   = 'Open {0}'
+        'win.visitView.finish'       = 'Finish'
+        'win.visitView.history'      = 'Earlier visits'
+        'win.code.label'             = 'Authenticator code'
+        'win.code.digit'             = 'Digit {0} of 6'
+        'win.code.go'                = 'Continue (Enter)'
+        'win.code.hint'              = 'Type the 6 digits from Google Authenticator.'
+        'win.code.incomplete'        = 'Not complete yet: 6 digits are needed.'
+        'win.code.checking'          = 'Checking the code...'
+        'win.fin.draft'              = 'draft'
+        'win.fin.codeIntro'          = 'With the code, Housecall fetches your prices and details, and the invoice can get its number.'
+        'win.fin.noteOnly'           = 'Just a note, without a code'
+        'win.fin.loading'            = 'Fetching...'
+        'win.fin.asked'              = 'What was it about?'
+        'win.fin.askedNote'          = 'goes at the top of the page'
+        'win.fin.doneNote'           = 'Housecall''s own fixes are already on it'
+        'win.fin.remove'             = 'Remove'
+        'win.fin.more'               = '{0} more...'
+        'win.fin.add'                = 'Add'
+        'win.fin.client'             = 'Client'
+        'win.fin.clientNote'         = 'may stay empty on a note'
+        'win.fin.email'              = 'Email (may stay empty)'
+        'win.fin.time'               = 'Time and costs'
+        'win.fin.part'               = 'Part'
+        'win.fin.price'              = 'Price'
+        'win.fin.days'               = '{0} days'
+        'win.fin.badPart'            = 'Give the part a name and a price, like 19,95.'
+        'win.fin.closeFirst'         = 'Finish the visit first: make the invoice or a note. Or close without one.'
+        'win.fin.closeAnyway'        = 'Close without a note'
+        'win.fin.working'            = 'Busy...'
+        'win.fin.made'               = 'Invoice {0} made'
+        'win.fin.savedToo'           = 'and the visit saved.'
+        'win.fin.pdf'                = 'Save as PDF'
+        'win.fin.close'              = 'Done, close Housecall'
+        'win.fin.make'               = 'Make the invoice'
+        'win.fin.makeHint'           = 'Check the invoice on the right. It then gets its number and is kept for 7 years.'
+        'win.fin.notePrint'          = 'Print the note'
+        'win.fin.noteOffline'        = 'Offline or a dry run: a note, no invoice.'
+        'win.fin.noteSaves'          = 'Done also saves the visit in the history.'
+        'win.fin.noteNoCode'         = 'Without the code the visit is not saved in the history.'
+        'win.fin.stateMade'          = 'Invoice {0}'
+        'win.fin.stateNote'          = 'Note, without prices'
+        'win.fin.stateDraft'         = 'Draft, no number yet'
+        'win.fin.mode.invoice'       = 'Invoice'
+        'win.fin.mode.note'          = 'Just a note'
+        'win.fin.previewAfterCode'   = 'The invoice appears here after the code.'
+        'win.fin.pdfInvoice'         = 'Invoice {0}.pdf'
+        'win.fin.pdfNote'            = 'Note {0}.pdf'
+        'win.fin.pdfFailed'          = 'The PDF was not saved: {0}'
+        'win.fin.pdfSaved'           = 'Saved: {0}'
+        'win.hist.offline'           = 'This PC is offline, so the history cannot be fetched.'
+        'win.hist.codeIntro'         = 'With the code, Housecall fetches this PC''s earlier visits.'
+        'win.hist.delete'            = 'Delete'
+        'win.hist.deleteAsk'         = 'Delete the visit of {0}? An invoice with it is kept.'
+        'doc.noteWord'               = 'Note'
+        'doc.forCap'                 = 'FOR'
+        'doc.noteKeep'               = 'Keep this note: it says what was done to your computer.'
+        'doc.noPdfPrinter'           = '"Microsoft Print to PDF" is not on this PC.'
         'steps.batteryMissing'     = 'Shut the laptop down and unplug it. | If the battery can be taken out (a latch underneath), take it out and put it back firmly. | Still no battery? Note the laptop''s model (sticker underneath) and order a battery for exactly that model, or plan the replacement as a separate job.'
         'steps.notCharging'        = 'Check that the charger is firmly in the laptop and in the wall socket; try another socket. | Look at the charging light on the laptop or the charger, if there is one. | Try a different charger of the same type, if one is available. | Still not charging: the charger or the battery is broken. Note the model (sticker underneath) and order the right part.'
         'steps.batteryWorn'        = 'Note the laptop''s model (sticker underneath) and look up a battery for exactly that model. | Until then, the laptop works normally while plugged in. | Plan replacing the battery as a separate job.'
@@ -2219,7 +2273,7 @@ $script:Strings = @{
         'win.finish'         = 'Afronden'
         'win.noteInvoice'    = 'Briefje / factuur'
         'win.console'        = 'Tekstmenu'
-        'win.consoleHint'    = 'Voor nu: bezoekgeschiedenis en de AI-chat.'
+        'win.consoleHint'    = 'Voor nu: de AI-chat.'
         'win.result'         = 'Resultaat'
         'win.pick'           = 'Kies een probleem. Housecall controleert alleen; er verandert niets op deze pc zonder uw ja.'
         'win.check'          = 'Controleren'
@@ -2242,12 +2296,66 @@ $script:Strings = @{
         'win.safety.F1'      = 'Websites die meldingen mogen sturen, en pop-ups die steeds terugkomen.'
         'win.safety.F2'      = 'AnyDesk, TeamViewer en dergelijke: wanneer ze erop zijn gezet, en of ze nu draaien.'
         'win.safety.F3'      = 'Virusscanner, updates, onbekende taken en meer, alles in een keer.'
-        'win.visit.time'     = 'Tijd'
-        'win.visit.done'     = 'Gedaan'
-        'win.visit.nothing'  = 'Nog niets veranderd.'
-        'win.visit.later'    = 'Eerdere bezoeken aan deze pc staan voor nu in het tekstmenu.'
         'win.pc.soon'        = 'Binnenkort: model en leeftijd van deze pc, Windows-ondersteuning, schijf, geheugen en accu, met advies over upgrades.'
         'win.ai.soon'        = 'Een probleem in eigen woorden beschrijven kan voor nu in het tekstmenu (de ?-toets).'
+        'win.open'                   = 'Open {0}'
+        'win.visitView.finish'       = 'Afronden'
+        'win.visitView.history'      = 'Eerdere bezoeken'
+        'win.code.label'             = 'Authenticator-code'
+        'win.code.digit'             = 'Cijfer {0} van 6'
+        'win.code.go'                = 'Doorgaan (Enter)'
+        'win.code.hint'              = 'Typ de 6 cijfers uit Google Authenticator.'
+        'win.code.incomplete'        = 'Nog niet compleet: er zijn 6 cijfers nodig.'
+        'win.code.checking'          = 'Code controleren...'
+        'win.fin.draft'              = 'concept'
+        'win.fin.codeIntro'          = 'Met de code haalt Housecall uw prijzen en gegevens op, en kan de factuur straks een nummer krijgen.'
+        'win.fin.noteOnly'           = 'Alleen een briefje, zonder code'
+        'win.fin.loading'            = 'Bezig met ophalen...'
+        'win.fin.asked'              = 'Waar ging het om?'
+        'win.fin.askedNote'          = 'komt bovenaan de pagina'
+        'win.fin.doneNote'           = 'de oplossingen van Housecall staan er al'
+        'win.fin.remove'             = 'Weghalen'
+        'win.fin.more'               = 'nog {0}...'
+        'win.fin.add'                = 'Toevoegen'
+        'win.fin.client'             = 'Klant'
+        'win.fin.clientNote'         = 'mag leeg op een briefje'
+        'win.fin.email'              = 'E-mail (mag leeg)'
+        'win.fin.time'               = 'Tijd en kosten'
+        'win.fin.part'               = 'Onderdeel'
+        'win.fin.price'              = 'Prijs'
+        'win.fin.days'               = '{0} dagen'
+        'win.fin.badPart'            = 'Geef het onderdeel een naam en een prijs, zoals 19,95.'
+        'win.fin.closeFirst'         = 'Rond het bezoek eerst af: maak de factuur of een briefje. Of sluit zonder.'
+        'win.fin.closeAnyway'        = 'Sluiten zonder briefje'
+        'win.fin.working'            = 'Bezig...'
+        'win.fin.made'               = 'Factuur {0} gemaakt'
+        'win.fin.savedToo'           = 'en het bezoek bewaard.'
+        'win.fin.pdf'                = 'Opslaan als PDF'
+        'win.fin.close'              = 'Klaar, Housecall sluiten'
+        'win.fin.make'               = 'Factuur maken'
+        'win.fin.makeHint'           = 'Controleer rechts de factuur. Hij krijgt dan zijn nummer en wordt 7 jaar bewaard.'
+        'win.fin.notePrint'          = 'Briefje afdrukken'
+        'win.fin.noteOffline'        = 'Offline of proefdraai: een briefje, geen factuur.'
+        'win.fin.noteSaves'          = 'Klaar bewaart het bezoek ook in de geschiedenis.'
+        'win.fin.noteNoCode'         = 'Zonder code wordt het bezoek niet in de geschiedenis bewaard.'
+        'win.fin.stateMade'          = 'Factuur {0}'
+        'win.fin.stateNote'          = 'Briefje, zonder prijzen'
+        'win.fin.stateDraft'         = 'Concept, nog geen nummer'
+        'win.fin.mode.invoice'       = 'Factuur'
+        'win.fin.mode.note'          = 'Alleen briefje'
+        'win.fin.previewAfterCode'   = 'De factuur verschijnt hier na de code.'
+        'win.fin.pdfInvoice'         = 'Factuur {0}.pdf'
+        'win.fin.pdfNote'            = 'Briefje {0}.pdf'
+        'win.fin.pdfFailed'          = 'De PDF is niet opgeslagen: {0}'
+        'win.fin.pdfSaved'           = 'Opgeslagen: {0}'
+        'win.hist.offline'           = 'Deze pc is offline, dus de geschiedenis kan niet worden opgehaald.'
+        'win.hist.codeIntro'         = 'Met de code haalt Housecall de eerdere bezoeken aan deze pc op.'
+        'win.hist.delete'            = 'Verwijderen'
+        'win.hist.deleteAsk'         = 'Het bezoek van {0} verwijderen? Een factuur erbij blijft bewaard.'
+        'doc.noteWord'               = 'Briefje'
+        'doc.forCap'                 = 'VOOR'
+        'doc.noteKeep'               = 'Bewaar dit briefje: hierop staat wat er aan uw computer is gedaan.'
+        'doc.noPdfPrinter'           = '"Microsoft Print to PDF" staat niet op deze pc.'
         'steps.batteryMissing'     = 'Sluit de laptop af en haal de stekker eruit. | Kan de accu eruit (een schuifje aan de onderkant)? Haal hem eruit en zet hem stevig terug. | Nog steeds geen accu? Noteer het model van de laptop (sticker aan de onderkant) en bestel een accu voor precies dat model, of plan het vervangen als aparte klus.'
         'steps.notCharging'        = 'Controleer of de lader stevig in de laptop en in het stopcontact zit; probeer een ander stopcontact. | Kijk naar het oplaadlampje op de laptop of de lader, als dat er is. | Probeer een andere lader van hetzelfde type, als die er is. | Laadt hij nog steeds niet: de lader of de accu is kapot. Noteer het model (sticker aan de onderkant) en bestel het juiste onderdeel.'
         'steps.batteryWorn'        = 'Noteer het model van de laptop (sticker aan de onderkant) en zoek een accu voor precies dat model. | Tot die tijd werkt de laptop gewoon met de stekker erin. | Plan het vervangen van de accu als aparte klus.'
@@ -2975,7 +3083,11 @@ function Start-Housecall {
         Write-Dim (T 'win.opening')
         switch (Show-HcWindow $environment $Start $message) {
             'handedoff' { Write-Ok (T 'fix.elevated'); return }
-            'quit'      { Stop-HcVisit $environment; return }
+            # The window finished the visit itself: note or invoice, and the history.
+            'done'      {
+                if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
+                return
+            }
             'console'   { $Start = $null; $message = $null }
         }
     }
@@ -7610,20 +7722,25 @@ function Save-HcVisitRecord {
         $typed = "$(Read-HcLine (T 'mem.labelAsk' $current))".Trim()
         $label = if ($typed -and $typed -ne 'Q') { $typed } else { $script:HcKnownLabel }
     }
-    if ($label -and $label.Length -gt 80) { $label = $label.Substring(0, 80) }
+    $r = Invoke-HcRelay (New-HcVisitBody $Environment $label $(if ($Invoice) { [string]$Invoice.number } else { $null }))
+    if ($r.Ok) { Write-Ok (T 'mem.saved') } else { Write-Warn2 (T 'mem.notSaved' (Get-HcRelayMessage $r.Error)) }
+}
 
-    $r = Invoke-HcRelay @{
+# What visit_save gets, from the text menu and the window alike.
+function New-HcVisitBody {
+    param([pscustomobject]$Environment, [string]$Label, [string]$InvoiceNumber, [string]$PcId = (Get-HcPcId))
+    if ($Label -and $Label.Length -gt 80) { $Label = $Label.Substring(0, 80) }
+    @{
         action   = 'visit_save'
         token    = $script:HcToken
-        pc       = (Get-HcPcId)
-        label    = $label
+        pc       = $PcId
+        label    = $(if ($Label) { $Label } else { $null })
         lang     = $script:Lang
         os       = $Environment.Os
         problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
         changes  = @(Get-HcVisitChanges)
-        invoice_number = $(if ($Invoice) { [string]$Invoice.number } else { $null })
+        invoice_number = $(if ($InvoiceNumber) { $InvoiceNumber } else { $null })
     }
-    if ($r.Ok) { Write-Ok (T 'mem.saved') } else { Write-Warn2 (T 'mem.notSaved' (Get-HcRelayMessage $r.Error)) }
 }
 
 # ==================================================== src\invoice.ps1 ==
@@ -8120,20 +8237,26 @@ function Invoke-HcInvoice {
     if (-not $useWindow) { $form = Read-HcInvoiceForm $s.Settings }
     if (-not $form) { Write-Dim (T 'inv.skipped'); return $null }
 
-    $r = Invoke-HcRelay @{
-        action   = 'invoice_create'
-        token    = $script:HcToken
-        pc       = (Get-HcPcId)
-        lang     = $script:Lang
-        client   = $form.Client
-        lines    = @($form.Lines | ForEach-Object { @{ description = $_.Description; amount = [double]$_.Amount } })
-        payment  = $form.Payment
-        problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
-        changes  = @(Get-HcVisitChanges)
-    }
+    $r = Invoke-HcRelay (New-HcInvoiceBody $form)
     if (-not $r.Ok) { Write-Warn2 (T 'inv.failed' (Get-HcRelayMessage $r.Error)); return $null }
     Write-Ok (T 'inv.made' $r.Data.invoice.number)
     $r.Data.invoice
+}
+
+# What invoice_create gets, from the text menu and the window alike.
+function New-HcInvoiceBody {
+    param($Form, [string]$PcId = (Get-HcPcId))
+    @{
+        action   = 'invoice_create'
+        token    = $script:HcToken
+        pc       = $PcId
+        lang     = $script:Lang
+        client   = $Form.Client
+        lines    = @($Form.Lines | ForEach-Object { @{ description = $_.Description; amount = [double]$_.Amount } })
+        payment  = $Form.Payment
+        problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
+        changes  = @(Get-HcVisitChanges)
+    }
 }
 
 # ----------------------------------------------------------------- document --
@@ -8275,8 +8398,10 @@ function Get-HcInvoiceWork {
     }
 }
 
+# -Note: the same page as a plain note, for a visit without an invoice: no
+# number and no amounts, but what was found, and how to reach Shamil.
 function Get-HcInvoiceLayout {
-    param($Invoice)
+    param($Invoice, [switch]$Note)
     $style = Get-HcInvoiceStyle
     $F = $style.Fonts
     $P = $script:HcPage
@@ -8311,9 +8436,10 @@ function Get-HcInvoiceLayout {
 
     # Top: "Factuur", number and date on the left; the seller on the right.
     # GDI+ pads text by a sixth of its size; at 30 px that shows, so pull it back in line.
-    & $text (T 'doc.invoiceWord') 'title' ($P.Left - 4) $y $half
+    & $text $(if ($Note) { T 'doc.noteWord' } else { T 'doc.invoiceWord' }) 'title' ($P.Left - 4) $y $half
     $leftY = $y + (& $measure 'F' 'title' $half)
-    & $text ((T 'doc.numberDate' $Invoice.number (Format-HcLongDate $issued))) 'small' $P.Left $leftY $half 'muted'
+    $dateLine = if ($Note) { Format-HcLongDate $issued } else { T 'doc.numberDate' $Invoice.number (Format-HcLongDate $issued) }
+    & $text $dateLine 'small' $P.Left $leftY $half 'muted'
     $leftY += (& $measure 'x' 'small' $half)
     $rightY = $y + 6
     $sellerX = $P.Left + $half + 32
@@ -8330,7 +8456,7 @@ function Get-HcInvoiceLayout {
     $y = [Math]::Max($leftY, $rightY) + 34
 
     # The client, next to what it was about.
-    & $text (T 'doc.toCap') 'cap' $P.Left $y $half 'muted'
+    & $text $(if ($Note) { T 'doc.forCap' } else { T 'doc.toCap' }) 'cap' $P.Left $y $half 'muted'
     & $text (T 'doc.subjectCap') 'cap' $sellerX $y $half 'muted'
     $y += 18
     $clientY = $y
@@ -8348,7 +8474,7 @@ function Get-HcInvoiceLayout {
 
     # The table.
     & $text (T 'doc.descriptionCap') 'cap' $P.Left $y $descW 'muted'
-    & $text (T 'doc.amountCap') 'cap' ($P.Right - $amountW) $y $amountW 'muted' 'right'
+    if (-not $Note) { & $text (T 'doc.amountCap') 'cap' ($P.Right - $amountW) $y $amountW 'muted' 'right' }
     $y += 20
     & $line $y 'ink' 1.5
     $y += 8
@@ -8369,7 +8495,36 @@ function Get-HcInvoiceLayout {
         & $line $y
         $y += 8
     }
-    foreach ($l in @($Invoice.lines)) {
+    if ($Note) {
+        if ($work.Count -eq 0) {
+            & $text (T 'note.nothingChanged') 'item' $P.Left $y $descW 'muted'
+            $y += (& $measure 'x' 'item' $descW) + 14
+        }
+        # What was found, so the client can read back what was going on.
+        $found = @($script:HcVisit | Where-Object { $_.FindingId })
+        if ($found.Count) {
+            & $room 40
+            & $text (T 'note.found') 'bodyBold' $P.Left $y $full
+            $y += (& $measure 'x' 'bodyBold' $full) + 2
+            foreach ($v in $found) {
+                $all = @('finding.' + $v.FindingId) + @($v.FindingArgs)
+                $t = T @all
+                $h = & $measure $t 'item' $full
+                & $room $h
+                & $text $t 'item' $P.Left $y $full
+                $y += $h + 4
+            }
+            $y += 14
+        }
+        foreach ($para in @(@(T 'doc.noteKeep') + @($script:Contact))) {
+            $h = & $measure $para 'small' $full
+            & $room $h
+            & $text $para 'small' $P.Left $y $full 'muted'
+            $y += $h + 4
+        }
+    }
+    $money = if ($Note) { @() } else { @($Invoice.lines) }
+    foreach ($l in $money) {
         $h = & $measure $l.description 'body' $descW
         & $room ($h + 10)
         & $text $l.description 'body' $P.Left $y $descW
@@ -8378,39 +8533,42 @@ function Get-HcInvoiceLayout {
         & $line $y
         $y += 8
     }
-    if ($Invoice.btw_mode -eq '21') {
-        foreach ($pair in @(@((T 'doc.subtotal'), $Invoice.subtotal), @((T 'doc.btw'), $Invoice.btw_amount))) {
-            & $room 26
-            & $text $pair[0] 'small' $P.Left $y $descW 'muted'
-            & $text (Format-HcMoney ([decimal]$pair[1])) 'small' ($P.Right - $amountW) $y $amountW 'muted' 'right'
-            $y += 22
+    # The money: only on the invoice.
+    if (-not $Note) {
+        if ($Invoice.btw_mode -eq '21') {
+            foreach ($pair in @(@((T 'doc.subtotal'), $Invoice.subtotal), @((T 'doc.btw'), $Invoice.btw_amount))) {
+                & $room 26
+                & $text $pair[0] 'small' $P.Left $y $descW 'muted'
+                & $text (Format-HcMoney ([decimal]$pair[1])) 'small' ($P.Right - $amountW) $y $amountW 'muted' 'right'
+                $y += 22
+            }
         }
-    }
-    & $room 44
-    $y += 2
-    & $line $y 'ink' 2
-    $y += 8
-    & $text (T 'doc.totalWord') 'total' $P.Left $y $descW
-    & $text (Format-HcMoney ([decimal]$Invoice.total)) 'total' ($P.Right - $amountW - 40) $y ($amountW + 40) 'ink' 'right'
-    $y += (& $measure 'x' 'total' $descW) + 26
+        & $room 44
+        $y += 2
+        & $line $y 'ink' 2
+        $y += 8
+        & $text (T 'doc.totalWord') 'total' $P.Left $y $descW
+        & $text (Format-HcMoney ([decimal]$Invoice.total)) 'total' ($P.Right - $amountW - 40) $y ($amountW + 40) 'ink' 'right'
+        $y += (& $measure 'x' 'total' $descW) + 26
 
-    # How it was paid, and the BTW note.
-    $paidOn = Format-HcLongDate $issued
-    $pay = switch ($Invoice.payment) {
-        'pin'      { T 'doc.paidPin' $paidOn }
-        'cash'     { T 'doc.paidCash' $paidOn }
-        'tikkie'   { T 'doc.paidTikkie' $paidOn }
-        'transfer' {
-            $due = Format-HcLongDate ([datetime]::Parse([string]$Invoice.due_date, [Globalization.CultureInfo]::InvariantCulture))
-            T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number
+        # How it was paid, and the BTW note.
+        $paidOn = Format-HcLongDate $issued
+        $pay = switch ($Invoice.payment) {
+            'pin'      { T 'doc.paidPin' $paidOn }
+            'cash'     { T 'doc.paidCash' $paidOn }
+            'tikkie'   { T 'doc.paidTikkie' $paidOn }
+            'transfer' {
+                $due = Format-HcLongDate ([datetime]::Parse([string]$Invoice.due_date, [Globalization.CultureInfo]::InvariantCulture))
+                T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number
+            }
         }
-    }
-    foreach ($para in @($pay, $(if ($Invoice.btw_mode -eq 'kor') { T 'doc.kor' })) | Where-Object { $_ }) {
-        $font = if ($para -eq $pay) { 'body' } else { 'small' }
-        $h = & $measure $para $font $full
-        & $room $h
-        & $text $para $font $P.Left $y $full $(if ($font -eq 'small') { 'muted' } else { 'ink' })
-        $y += $h + 10
+        foreach ($para in @($pay, $(if ($Invoice.btw_mode -eq 'kor') { T 'doc.kor' })) | Where-Object { $_ }) {
+            $font = if ($para -eq $pay) { 'body' } else { 'small' }
+            $h = & $measure $para $font $full
+            & $room $h
+            & $text $para $font $P.Left $y $full $(if ($font -eq 'small') { 'muted' } else { 'ink' })
+            $y += $h + 10
+        }
     }
 
     # The foot of every page.
@@ -8530,7 +8688,9 @@ function Show-HcInvoicePages {
     $form.Dispose()
 }
 
-function Invoke-HcInvoicePrint {
+# The pages in $script:HcInvoicePages as a document for any printer.
+function New-HcPagesDocument {
+    Add-Type -AssemblyName System.Windows.Forms, System.Drawing -ErrorAction Stop
     $doc = New-Object Drawing.Printing.PrintDocument
     $doc.DocumentName = 'Housecall'
     $script:HcInvoicePrintAt = 0
@@ -8546,6 +8706,11 @@ function Invoke-HcInvoicePrint {
         $script:HcInvoicePrintAt++
         $e.HasMorePages = $script:HcInvoicePrintAt -lt $script:HcInvoicePages.Count
     })
+    $doc
+}
+
+function Invoke-HcInvoicePrint {
+    $doc = New-HcPagesDocument
     $dialog = New-Object Windows.Forms.PrintDialog
     $dialog.Document = $doc
     $dialog.UseEXDialog = $true
@@ -8553,6 +8718,29 @@ function Invoke-HcInvoicePrint {
         try { $doc.Print() } catch { [void][Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Housecall') }
     }
     $doc.Dispose()
+}
+
+<#
+    Saves the pages as a PDF through Windows' own "Microsoft Print to PDF",
+    without a print dialog: for a client who wants the invoice by email, or
+    a copy on the USB stick. Returns $null when it worked, else the reason.
+#>
+function Save-HcPagesPdf {
+    param([string]$Path)
+    $doc = New-HcPagesDocument
+    try {
+        $doc.PrinterSettings.PrinterName = 'Microsoft Print to PDF'
+        if (-not $doc.PrinterSettings.IsValid) { return (T 'doc.noPdfPrinter') }
+        $doc.PrinterSettings.PrintToFile = $true
+        $doc.PrinterSettings.PrintFileName = $Path
+        $doc.PrintController = New-Object Drawing.Printing.StandardPrintController
+        $doc.Print()
+        $null
+    } catch {
+        $_.Exception.Message
+    } finally {
+        $doc.Dispose()
+    }
 }
 
 # ==================================================== src\window.ps1 ==
@@ -8603,6 +8791,15 @@ function Get-HcCheckAllCodes {
     @($script:Areas.Values | ForEach-Object { $_ } | Where-Object { $_ -notin @('A3', 'A4', 'F1', 'F2') })
 }
 
+# The problem codes a finding or advice points to ("choose A3"), in order,
+# without the one on screen.
+function Get-HcMentionedCodes {
+    param([string]$Text, [string]$Current)
+    $all = @($script:Areas.Values | ForEach-Object { $_ })
+    @([regex]::Matches("$Text", '\b([A-G]\d)\b') | ForEach-Object { $_.Groups[1].Value } |
+        Where-Object { $all -contains $_ -and $_ -ne $Current } | Select-Object -Unique)
+}
+
 # The theme Windows itself uses for apps, so the window matches the PC.
 function Get-HcDefaultTheme {
     $light = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' -ErrorAction SilentlyContinue).AppsUseLightTheme
@@ -8628,7 +8825,7 @@ function Test-HcWindowPossible {
 # every other kind sets the language and rights first, since the worker
 # has its own copy of those.
 $script:HcWorkerScript = {
-    param($Kind, $Lang, $IsAdmin, $DryRun, $Code, $Text, $FixId, $Target, $Source)
+    param($Kind, $Lang, $IsAdmin, $DryRun, $Code, $Text, $FixId, $Target, $Source, $Body)
     $ErrorActionPreference = 'Stop'
     if ($Kind -eq 'load') { . ([scriptblock]::Create($Source)); return }
     $script:Lang = $Lang
@@ -8650,6 +8847,8 @@ $script:HcWorkerScript = {
         }
         'undo'   { & $script:Fixes[$FixId].Undo $Target }
         'online' { Test-HcOnline }
+        'relay'  { Invoke-HcRelay $Body }
+        'pcid'   { Get-HcPcId }
     }
 }.ToString()
 
@@ -8668,7 +8867,7 @@ function Start-HcJob {
     [void]$ps.AddScript($script:HcWorkerScript)
     $parameters = @{
         Kind = $Job.Kind; Lang = $script:Lang; IsAdmin = [bool]$script:IsAdmin; DryRun = [bool]$script:DryRun
-        Code = $Job.Code; Text = $Job.Text; FixId = $Job.FixId; Target = $Job.Target; Source = $Job.Source
+        Code = $Job.Code; Text = $Job.Text; FixId = $Job.FixId; Target = $Job.Target; Source = $Job.Source; Body = $Job.Body
     }
     foreach ($name in $parameters.Keys) { [void]$ps.AddParameter($name, $parameters[$name]) }
     $Job.PS = $ps
@@ -8707,6 +8906,7 @@ function Invoke-HcTick {
             Update-HcGroups
         }
         $w.WasBusy = [bool]($w.Job -or $w.Queue.Count)
+        if ($w.PreviewDue -and (Get-Date) -ge $w.PreviewDue) { $w.PreviewDue = $null; Update-HcPreview }
     } catch {
         $w.Notice = T 'win.error' $_.Exception.Message
         Update-HcResult
@@ -8863,6 +9063,25 @@ function New-HcWindowXaml {
       </Border>
     </Grid>
 
+    <Grid Grid.Row="1" x:Name="VisitTab" Visibility="Collapsed">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MinWidth="380"/>
+        <ColumnDefinition Width="0.85*" MaxWidth="600"/>
+      </Grid.ColumnDefinitions>
+      <DockPanel>
+        <Border x:Name="FinishBarBorder" DockPanel.Dock="Bottom" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="22,12,22,8">
+          <StackPanel x:Name="FinishBar"/>
+        </Border>
+        <ScrollViewer x:Name="FinishScroll" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="FinishPanel" Margin="22,16,22,18"/></ScrollViewer>
+      </DockPanel>
+      <Border Grid.Column="1" Background="{DynamicResource Side}" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0">
+        <DockPanel>
+          <DockPanel x:Name="PreviewTop" DockPanel.Dock="Top" Margin="18,12,18,10" LastChildFill="False"/>
+          <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="PreviewPanel" Margin="18,0,18,18"/></ScrollViewer>
+        </DockPanel>
+      </Border>
+    </Grid>
+
     <ScrollViewer Grid.Row="1" x:Name="OtherTab" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
       <StackPanel x:Name="OtherPanel" Margin="26,22,26,22" MaxWidth="900" HorizontalAlignment="Left"/>
     </ScrollViewer>
@@ -8976,6 +9195,7 @@ function Update-HcAll {
     Update-HcGroups
     Update-HcResult
     Update-HcOther
+    Update-HcVisit
 }
 
 function Update-HcTabs {
@@ -8986,9 +9206,10 @@ function Update-HcTabs {
         $style = if ($w.Tab -eq $tab) { 'HcTabOn' } else { 'HcTab' }
         [void]$panel.Children.Add((New-HcButton (T "win.tab.$tab") @{ Do = 'tab'; Tab = $tab } $style))
     }
-    $problems = $w.Tab -eq 'problems'
-    $w.Window.FindName('ProblemsTab').Visibility = if ($problems) { 'Visible' } else { 'Collapsed' }
-    $w.Window.FindName('OtherTab').Visibility = if ($problems) { 'Collapsed' } else { 'Visible' }
+    $body = if ($w.Tab -eq 'problems') { 'ProblemsTab' } elseif ($w.Tab -eq 'visit' -and $w.VisitView -eq 'finish') { 'VisitTab' } else { 'OtherTab' }
+    foreach ($name in @('ProblemsTab', 'VisitTab', 'OtherTab')) {
+        $w.Window.FindName($name).Visibility = if ($name -eq $body) { 'Visible' } else { 'Collapsed' }
+    }
 }
 
 function Update-HcStatus {
@@ -9030,7 +9251,7 @@ function Update-HcSide {
     if ($script:DryRun) { [void]$panel.Children.Add((New-HcText (T 'status.dryRun') 13 'Hi' -Bold -Margin @(0, 4, 0, 0))) }
 
     [void]$panel.Children.Add((New-HcHeading (T 'win.actions')))
-    $all = New-HcButton (T 'win.checkAll') @{ Do = 'checkAll' } 'HcPrimary'
+    $all = New-HcButton (T 'win.checkAll') @{ Do = 'checkAll' }
     $all.IsEnabled = -not $busy
     [void]$panel.Children.Add($all)
     $undo = New-HcButton (T 'menu.undo') @{ Do = 'undo' }
@@ -9038,9 +9259,12 @@ function Update-HcSide {
     [void]$panel.Children.Add($undo)
 
     [void]$panel.Children.Add((New-HcHeading (T 'win.finish')))
-    $finish = New-HcButton (T 'win.noteInvoice') @{ Do = 'close'; Outcome = 'quit' }
+    $finish = New-HcButton (T 'win.noteInvoice') @{ Do = 'visitView'; View = 'finish' } 'HcPrimary'
     $finish.IsEnabled = -not $busy
     [void]$panel.Children.Add($finish)
+    $history = New-HcButton (T 'menu.history') @{ Do = 'visitView'; View = 'history' }
+    $history.IsEnabled = -not $busy
+    [void]$panel.Children.Add($history)
     $console = New-HcButton (T 'win.console') @{ Do = 'close'; Outcome = 'console' }
     $console.IsEnabled = -not $busy
     [void]$panel.Children.Add($console)
@@ -9185,6 +9409,10 @@ function Add-HcReportView {
             & $add (New-HcText (T 'run.advice') 13 'Soft' -Bold -Margin @(0, 2, 0, 2))
             & $add (New-HcText $advice 15 'Text' -Margin @(0, 0, 0, 10))
         }
+        # "Choose G2 to check OneDrive": the other problem one click away.
+        foreach ($other in @(Get-HcMentionedCodes ((T @findingArgs) + ' ' + $advice) $w.Code)) {
+            & $add (New-HcButton ((T 'win.open' $other) + '  ' + (T "problem.$other")) @{ Do = 'problem'; Code = $other })
+        }
     }
 
     $actions = @($r.Actions)
@@ -9270,7 +9498,7 @@ function Update-HcOther {
     $panel.Children.Clear()
     $add = { param($element) [void]$panel.Children.Add($element) }
     if ($w.Tab -eq 'problems') { return }
-    & $add (New-HcText (T "win.tab.$($w.Tab)") 24 'Text' -Bold -Margin @(0, 0, 0, 12))
+    if ($w.Tab -ne 'visit') { & $add (New-HcText (T "win.tab.$($w.Tab)") 24 'Text' -Bold -Margin @(0, 0, 0, 12)) }
     switch ($w.Tab) {
         'safety' {
             & $add (New-HcText (T 'win.safetyIntro') 15 'Soft' -Margin @(0, 0, 0, 14))
@@ -9289,16 +9517,7 @@ function Update-HcOther {
             }
             & $add $wrap
         }
-        'visit' {
-            $clock = Get-HcClockLine
-            & $add (New-HcBox (T 'win.visit.time') @(New-HcText $clock.Text 15 $(if ($clock.Over) { 'Warn' } else { 'Text' }) -Margin @(0, 0, 0, 2)) 'Panel')
-            $done = @($script:HcChanges | ForEach-Object { [string][char]0x2713 + ' ' + $_.Label })
-            if ($done.Count -eq 0) { $done = @(T 'win.visit.nothing') }
-            & $add (New-HcBox (T 'win.visit.done') @($done | ForEach-Object { New-HcText $_ 15 'Text' -Margin @(0, 0, 0, 2) }) 'Panel')
-            & $add (New-HcButton (T 'win.noteInvoice') @{ Do = 'close'; Outcome = 'quit' } 'HcPrimary')
-            & $add (New-HcText (T 'win.visit.later') 14 'Soft' -Margin @(0, 10, 0, 6))
-            & $add (New-HcButton (T 'win.console') @{ Do = 'close'; Outcome = 'console' })
-        }
+        'visit' { Update-HcHistoryPanel $panel }
         'pc' { & $add (New-HcText (T 'win.pc.soon') 15 'Soft') }
         'ai' {
             & $add (New-HcText (T 'win.ai.soon') 15 'Soft')
@@ -9315,7 +9534,10 @@ function Invoke-HcClick {
     try {
         $tag = $Sender.Tag
         switch ($tag.Do) {
-            'tab'      { $w.Tab = $tag.Tab; Update-HcTabs; Update-HcOther }
+            'tab'      {
+                if ($tag.Tab -eq 'visit') { Open-HcVisitTab $w.VisitView; return }
+                $w.Tab = $tag.Tab; Update-HcTabs; Update-HcOther
+            }
             'language' { $script:Lang = if ($script:Lang -eq 'nl') { 'en' } else { 'nl' }; Update-HcAll }
             'theme'    { Set-HcTheme $(if ($w.Theme -eq 'dark') { 'light' } else { 'dark' }); Update-HcStatus }
             'area'     { $w.Open[$tag.Letter] = -not $w.Open[$tag.Letter]; Update-HcGroups }
@@ -9351,6 +9573,7 @@ function Invoke-HcClick {
                 $w.Outcome = $tag.Outcome
                 $w.Window.Close()
             }
+            default    { Invoke-HcVisitClick $tag }
         }
     } catch {
         $w.Notice = T 'win.error' $_.Exception.Message
@@ -9594,9 +9817,12 @@ function Show-HcWindow {
         Banner = $null; Notice = $Message; Confirm = $null; ShowSteps = $false; UndoAsk = $null; UndoMessages = $null
         FromAll = $false; All = $null; BusyText = ''; Clock = $null
         Queue = New-Object System.Collections.ArrayList; Job = $null; WasBusy = $false
-        Runspace = $null; Outcome = 'quit'
+        Runspace = $null; Outcome = 'done'; Finished = $false; CloseAnyway = $false; CloseAsk = $false
+        VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null }
+        Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
     }
     $w = $script:HcWin
+    try { $window.Icon = New-HcLogoImage } catch { }
 
     # The window must fit an old 1366x768 laptop as well as a big screen.
     $area = [Windows.SystemParameters]::WorkArea
@@ -9620,14 +9846,25 @@ function Show-HcWindow {
     $clock.Interval = [TimeSpan]::FromSeconds(20)
     $clock.Add_Tick({ try { Update-HcClock } catch { } })
 
-    # A fix or undo halfway must finish: closing waits for it.
+    # A fix or undo halfway must finish: closing waits for it. And a visit
+    # ends with a document: closing first goes to Afronden, once.
     $window.Add_Closing({
-        $job = $script:HcWin.Job
-        if ($job -and $job.Kind -in @('fix', 'undo')) {
-            $_.Cancel = $true
-            $script:HcWin.Notice = T 'win.busyClose'
-            Update-HcResult
-        }
+        $w = $script:HcWin
+        try {
+            $job = $w.Job
+            if ($job -and $job.Kind -in @('fix', 'undo')) {
+                $_.Cancel = $true
+                $w.Notice = T 'win.busyClose'
+                Update-HcResult
+                return
+            }
+            $worth = $script:HcVisit.Count -gt 0 -or $script:HcChanges.Count -gt 0
+            if ($worth -and -not $w.Finished -and -not $w.CloseAnyway -and $w.Outcome -notin @('console', 'handedoff')) {
+                $_.Cancel = $true
+                $w.CloseAsk = $true
+                Open-HcVisitTab 'finish'
+            }
+        } catch { }
     })
     $window.Add_ContentRendered({ $this.Topmost = $true; $this.Activate(); $this.Topmost = $false })
 
@@ -9652,7 +9889,972 @@ function Complete-HcLoad {
         Update-HcResult
         return
     }
+    # The PC's scrambled id, for the relay, read once while nothing else runs.
+    Add-HcJob @{ Kind = 'pcid'; Done = 'Complete-HcPcId' }
     if ($Job.Start -and ($script:Areas.Values | ForEach-Object { $_ }) -contains $Job.Start) { Open-HcProblem $Job.Start }
+}
+
+function Complete-HcPcId {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $id = @($Output | Where-Object { "$_" -match '^[0-9a-f]{64}$' }) | Select-Object -First 1
+    if ($id) { $script:HcWin.PcId = [string]$id }
+}
+
+# The logo as the window's icon: the white house with its orange waves on
+# a navy tile, the same mark as the business card.
+function New-HcLogoImage {
+    $white = [Windows.Media.Brushes]::White
+    $orange = New-Object Windows.Media.SolidColorBrush([Windows.Media.Color]::FromRgb(0xE8, 0x86, 0x2E))
+    $navy = New-Object Windows.Media.SolidColorBrush([Windows.Media.Color]::FromRgb(0x16, 0x32, 0x3F))
+    $pen = { param($brush, $width)
+        $p = New-Object Windows.Media.Pen($brush, $width)
+        $p.StartLineCap = 'Round'; $p.EndLineCap = 'Round'; $p.LineJoin = 'Round'
+        $p }
+    $mark = New-Object Windows.Media.DrawingGroup
+    foreach ($d in @('M6,33 L28,14 L50,33', 'M13,31 V54 A3,3 0 0 0 16,57 H40 A3,3 0 0 0 43,54 V31')) {
+        [void]$mark.Children.Add((New-Object Windows.Media.GeometryDrawing($null, (& $pen $white 6), [Windows.Media.Geometry]::Parse($d))))
+    }
+    [void]$mark.Children.Add((New-Object Windows.Media.GeometryDrawing($white, $null, (New-Object Windows.Media.RectangleGeometry((New-Object Windows.Rect(23, 41, 10, 16)), 2, 2)))))
+    foreach ($d in @('M46,16 A8,8 0 0 1 52,22', 'M47,7.5 A16,16 0 0 1 60.5,21')) {
+        [void]$mark.Children.Add((New-Object Windows.Media.GeometryDrawing($null, (& $pen $orange 4.5), [Windows.Media.Geometry]::Parse($d))))
+    }
+    $mark.Transform = New-Object Windows.Media.ScaleTransform(0.78, 0.78, 33, 33)
+    $all = New-Object Windows.Media.DrawingGroup
+    [void]$all.Children.Add((New-Object Windows.Media.GeometryDrawing($navy, $null, (New-Object Windows.Media.RectangleGeometry((New-Object Windows.Rect(0, 0, 64, 64)), 14, 14)))))
+    [void]$all.Children.Add($mark)
+    $image = New-Object Windows.Media.DrawingImage($all)
+    $image.Freeze()
+    $image
+}
+
+# ==================================================== src\window-visit.ps1 ==
+<#
+    The window's Bezoek tab (phase 6, step 2): finishing the visit with an
+    invoice or a plain note, and this PC's earlier visits.
+
+    Both start with the Authenticator code, in six slots: the prices, the
+    invoice number and the history all live behind the relay. With the code
+    in, the form fills a live A4 preview (the same page that is printed),
+    and "Factuur maken" needs nothing more. A note needs no code at all.
+
+    The form writes straight into the visit's own state ($script:HcAsked,
+    $script:HcWork), so the invoice, the note and the history get exactly
+    what the text menu would give them. Relay calls run in the worker.
+#>
+
+# ------------------------------------------------------------ pure parts --
+
+# The lines of the invoice being filled in: time, call-out, and the extra
+# parts that were added with a valid amount.
+function Get-HcDraftLines {
+    param([hashtable]$Fin, $Settings)
+    foreach ($l in @(Get-HcLabourLines ([int]$Fin.Minutes) $Settings)) { $l }
+    $fee = [decimal]$(if ($Settings.callout_fee) { $Settings.callout_fee } else { 0 })
+    if ($Fin.Callout -and $fee -gt 0) { [pscustomobject]@{ Description = (T 'inv.calloutLine'); Amount = $fee } }
+    foreach ($e in @($Fin.Extras)) { [pscustomobject]@{ Description = $e.Description; Amount = [decimal]$e.Amount } }
+}
+
+# The invoice as it will look before the relay numbers it: the same shape
+# invoice_create returns, so one page layout draws both.
+function New-HcDraftInvoice {
+    param([hashtable]$Fin, $Settings, [datetime]$Now = (Get-Date))
+    $lines = @(Get-HcDraftLines $Fin $Settings)
+    $total = [decimal]0
+    foreach ($l in $lines) { $total += [decimal]$l.Amount }
+    $subtotal = $total
+    $btw = [decimal]0
+    if ("$($Settings.btw_mode)" -eq '21') {
+        $subtotal = [Math]::Round($total / [decimal]1.21, 2)
+        $btw = $total - $subtotal
+    }
+    $days = if ($Settings.payment_days) { [int]$Settings.payment_days } else { 14 }
+    [pscustomobject]@{
+        number               = (T 'win.fin.draft')
+        issued_at            = $Now.ToUniversalTime().ToString('o')
+        seller               = $(if ($Settings) { $Settings } else { [pscustomobject]@{ business_name = 'Housecall' } })
+        client_name          = "$($Fin.Name)".Trim()
+        client_address       = "$($Fin.Address)".Trim()
+        client_postcode_city = "$($Fin.Postcode)".Trim()
+        client_email         = "$($Fin.Email)".Trim()
+        lines                = @($lines | ForEach-Object { [pscustomobject]@{ description = $_.Description; amount = [decimal]$_.Amount } })
+        btw_mode             = "$($Settings.btw_mode)"
+        subtotal             = $subtotal
+        btw_amount           = $btw
+        total                = $total
+        payment              = $Fin.Payment
+        due_date             = $Now.AddDays($days).ToString('yyyy-MM-dd')
+    }
+}
+
+# How the client can pay: a transfer only once an IBAN is set, since the
+# invoice has to say where to.
+function Get-HcPayMethods {
+    param($Settings)
+    $methods = @('pin', 'cash', 'tikkie')
+    if ($Settings.iban) { $methods += 'transfer' }
+    $methods
+}
+
+# The start of a visit's state in the window.
+function New-HcFinishState {
+    @{
+        Stage = 'new'; Mode = 'invoice'; Settings = $null; Notice = $null; Invoice = $null; Saved = $false; Pages = $null
+        Name = "$script:HcKnownLabel"; Address = ''; Postcode = ''; Email = ''; Minutes = 0; Callout = $true
+        Extras = New-Object System.Collections.ArrayList; Payment = 'pin'; Offline = $false; CalcBlock = $null; AllPresets = $false
+    }
+}
+
+# ------------------------------------------------------------- opening --
+
+function Open-HcVisitTab {
+    param([string]$View = 'finish')
+    $w = $script:HcWin
+    $w.Tab = 'visit'
+    $w.VisitView = $View
+    if ($View -eq 'finish') { Start-HcFinish } else { Start-HcHistory }
+    Update-HcTabs
+    Update-HcVisit
+}
+
+function Start-HcFinish {
+    $w = $script:HcWin
+    $f = $w.Fin
+    if ($f.Stage -ne 'new') { return }
+    if (-not $f.Minutes) { $f.Minutes = Get-HcSuggestedMinutes }
+    # Without the relay there is no invoice; the note is always possible.
+    if (-not $w.Environment.Online -or $script:DryRun) {
+        $f.Mode = 'note'
+        $f.Stage = 'form'
+        $f.Offline = $true
+        return
+    }
+    if (Test-HcUnlocked) { Start-HcSettingsLoad } else { $f.Stage = 'code' }
+}
+
+function Start-HcSettingsLoad {
+    $f = $script:HcWin.Fin
+    $f.Stage = 'loading'
+    Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'settings_get'; token = $script:HcToken }; Done = 'Complete-HcSettings' }
+}
+
+function Get-HcRelayResult {
+    param([object[]]$Output)
+    @($Output | Where-Object { $_ -and $_.PSObject.Properties['Ok'] }) | Select-Object -Last 1
+}
+
+function Complete-HcSettings {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $f = $script:HcWin.Fin
+    $r = Get-HcRelayResult $Output
+    if ($ErrorText -or -not $r -or -not $r.Ok) {
+        $code = if ($r) { $r.Error } else { 'unreachable' }
+        if ($code -eq 'locked_out') { $script:HcToken = $null; $f.Stage = 'code'; $f.Notice = T 'relay.expired' }
+        else { $f.Stage = 'form'; $f.Mode = 'note'; $f.Notice = T 'inv.failed' (Get-HcRelayMessage $code) }
+        Update-HcVisit
+        return
+    }
+    $s = $r.Data.settings
+    if (-not $s -or -not $s.business_name) {
+        $f.Stage = 'form'; $f.Mode = 'note'; $f.Notice = T 'inv.noSettings'
+        Update-HcVisit
+        return
+    }
+    $f.Settings = $s
+    $script:HcStartMinutes = if ([decimal]$(if ($s.start_fee) { $s.start_fee } else { 0 }) -gt 0) { [int]$s.start_minutes } else { 0 }
+    if ((Get-HcPayMethods $s) -notcontains $f.Payment) { $f.Payment = 'pin' }
+    $f.Stage = 'form'
+    Update-HcVisit
+    Update-HcClock
+}
+
+# ----------------------------------------------------------- code slots --
+
+# Six boxes for the Authenticator code. Typing moves on by itself, pasting
+# fills them all, Backspace goes back, and Enter (or the sixth digit) sends.
+function New-HcCodeBox {
+    param([string]$For, [string]$Intro)
+    $w = $script:HcWin
+    $w.Totp = @{ For = $For; Slots = @(); Hint = $null; Filling = $false }
+    $stack = New-Object Windows.Controls.StackPanel
+    if ($Intro) { [void]$stack.Children.Add((New-HcText $Intro 15 'Text' -Margin @(0, 0, 0, 10))) }
+    [void]$stack.Children.Add((New-HcText (T 'win.code.label').ToUpperInvariant() 12 'Soft' -Bold -Margin @(0, 0, 0, 6)))
+    $row = New-Object Windows.Controls.StackPanel
+    $row.Orientation = 'Horizontal'
+    $slots = @()
+    for ($i = 0; $i -lt 6; $i++) {
+        $box = New-Object Windows.Controls.TextBox
+        $box.Width = 50
+        $box.Height = 60
+        $box.FontSize = 28
+        $box.FontWeight = [Windows.FontWeights]::Bold
+        $box.FontFamily = New-Object Windows.Media.FontFamily('Consolas')
+        $box.TextAlignment = 'Center'
+        $box.VerticalContentAlignment = 'Center'
+        $box.MaxLength = 6
+        $box.BorderThickness = New-HcThickness @(2, 2, 2, 2)
+        $box.Margin = New-HcThickness @(0, 0, $(if ($i -eq 2) { 18 } else { 8 }), 0)
+        $box.SetResourceReference([Windows.Controls.Control]::BackgroundProperty, 'Panel')
+        $box.SetResourceReference([Windows.Controls.Control]::ForegroundProperty, 'Text')
+        $box.SetResourceReference([Windows.Controls.Control]::BorderBrushProperty, 'Line')
+        $box.SetResourceReference([Windows.Controls.TextBox]::CaretBrushProperty, 'Hi')
+        $box.Tag = @{ Slot = $i }
+        [Windows.Automation.AutomationProperties]::SetName($box, (T 'win.code.digit' ($i + 1)))
+        $box.Add_PreviewTextInput({ if ($_.Text -notmatch '^\d+$') { $_.Handled = $true } })
+        $box.Add_TextChanged({ Invoke-HcSlotChanged $this })
+        $box.Add_PreviewKeyDown({ Invoke-HcSlotKey $this $_ })
+        $box.Add_GotKeyboardFocus({
+            $this.SelectAll()
+            $this.SetResourceReference([Windows.Controls.Control]::BorderBrushProperty, 'Hi')
+        })
+        $box.Add_LostKeyboardFocus({ $this.SetResourceReference([Windows.Controls.Control]::BorderBrushProperty, 'Line') })
+        if ($i -eq 0) { $box.Add_Loaded({ [void]$this.Focus() }) }
+        $slots += $box
+        [void]$row.Children.Add($box)
+    }
+    $w.Totp.Slots = $slots
+    [void]$stack.Children.Add($row)
+    $go = New-HcButton (T 'win.code.go') @{ Do = 'codeSubmit' } 'HcPrimary'
+    $go.HorizontalAlignment = 'Left'
+    $go.Margin = New-HcThickness @(0, 12, 0, 6)
+    [void]$stack.Children.Add($go)
+    $w.Totp.Hint = New-HcText (T 'win.code.hint') 13.5 'Soft' -Margin @(0, 0, 0, 0)
+    [void]$stack.Children.Add($w.Totp.Hint)
+    New-HcBox '' @($stack) 'Side'
+}
+
+function Invoke-HcSlotChanged {
+    param($Sender)
+    $c = $script:HcWin.Totp
+    if (-not $c -or $c.Filling) { return }
+    try {
+        $c.Filling = $true
+        $i = $Sender.Tag.Slot
+        $digits = $Sender.Text -replace '\D', ''
+        if (-not $digits) { $Sender.Text = ''; return }
+        # One digit, or a pasted code: spread it over this box and the next.
+        for ($k = 0; $k -lt $digits.Length -and ($i + $k) -lt 6; $k++) { $c.Slots[$i + $k].Text = [string]$digits[$k] }
+        [void]$c.Slots[[Math]::Min($i + $digits.Length, 5)].Focus()
+    } finally {
+        $c.Filling = $false
+    }
+    if ((($c.Slots | ForEach-Object { $_.Text }) -join '') -match '^\d{6}$') { Submit-HcCode }
+}
+
+function Invoke-HcSlotKey {
+    param($Sender, $KeyArgs)
+    $c = $script:HcWin.Totp
+    $i = $Sender.Tag.Slot
+    switch ([string]$KeyArgs.Key) {
+        'Back' {
+            if (-not $Sender.Text -and $i -gt 0) {
+                $c.Slots[$i - 1].Text = ''
+                [void]$c.Slots[$i - 1].Focus()
+                $KeyArgs.Handled = $true
+            }
+        }
+        'Left'   { if ($i -gt 0) { [void]$c.Slots[$i - 1].Focus(); $KeyArgs.Handled = $true } }
+        'Right'  { if ($i -lt 5) { [void]$c.Slots[$i + 1].Focus(); $KeyArgs.Handled = $true } }
+        'Return' { $KeyArgs.Handled = $true; Submit-HcCode }
+    }
+}
+
+function Submit-HcCode {
+    $w = $script:HcWin
+    $c = $w.Totp
+    if (-not $c -or (Test-HcBusy)) { return }
+    $code = ($c.Slots | ForEach-Object { $_.Text }) -join ''
+    if ($code -notmatch '^\d{6}$') {
+        $c.Hint.Text = T 'win.code.incomplete'
+        $first = @($c.Slots | Where-Object { -not $_.Text }) | Select-Object -First 1
+        if ($first) { [void]$first.Focus() }
+        return
+    }
+    foreach ($s in $c.Slots) { $s.IsEnabled = $false }
+    $c.Hint.Text = T 'win.code.checking'
+    Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'unlock'; code = $code }; For = $c.For; Done = 'Complete-HcUnlock' }
+}
+
+function Complete-HcUnlock {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $w = $script:HcWin
+    $r = Get-HcRelayResult $Output
+    if ($ErrorText -or -not $r -or -not $r.Ok) {
+        $code = if ($r) { $r.Error } else { 'unreachable' }
+        $c = $w.Totp
+        if ($c) {
+            $c.Hint.Text = Get-HcRelayMessage $code
+            $c.Hint.SetResourceReference([Windows.Controls.TextBlock]::ForegroundProperty, 'Warn')
+            $c.Filling = $true
+            foreach ($s in $c.Slots) { $s.Text = ''; $s.IsEnabled = $true }
+            $c.Filling = $false
+            [void]$c.Slots[0].Focus()
+        }
+        return
+    }
+    $script:HcToken = $r.Data.token
+    $script:HcTokenExpires = [datetime]::Parse($r.Data.expires, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime()
+    $w.Totp = $null
+    Update-HcSide
+    if ($Job.For -eq 'history') {
+        Start-HcHistoryLoad
+    } else {
+        # Who this PC belongs to, from its earlier visits: the name for the invoice.
+        Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcWindowPcId) }; Done = 'Complete-HcKnown' }
+        Start-HcSettingsLoad
+    }
+    Update-HcVisit
+}
+
+function Get-HcWindowPcId {
+    $w = $script:HcWin
+    if (-not $w.PcId) { $w.PcId = Get-HcPcId }
+    $w.PcId
+}
+
+function Complete-HcKnown {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $w = $script:HcWin
+    $r = Get-HcRelayResult $Output
+    if ($ErrorText -or -not $r -or -not $r.Ok) { return }
+    $label = @($r.Data.visits | Where-Object { $_ -and $_.label } | Select-Object -First 1).label
+    if (-not $label) { return }
+    $script:HcKnownLabel = $label
+    if (-not "$($w.Fin.Name)".Trim()) {
+        $w.Fin.Name = $label
+        if ($w.Fin.Stage -eq 'form') { Update-HcVisit }
+    }
+}
+
+# ------------------------------------------------------------- painting --
+
+function Update-HcVisit {
+    $w = $script:HcWin
+    if ($w.Tab -ne 'visit') { return }
+    if ($w.VisitView -eq 'history') { Update-HcOther; return }
+    Update-HcFinishPanel
+    Update-HcFinishBar
+    Update-HcPreview
+}
+
+# Afronden | Eerdere bezoeken, at the top of both views.
+function New-HcVisitToggle {
+    $w = $script:HcWin
+    $row = New-Object Windows.Controls.StackPanel
+    $row.Orientation = 'Horizontal'
+    $row.Margin = New-HcThickness @(0, 0, 0, 12)
+    foreach ($view in @('finish', 'history')) {
+        $style = if ($w.VisitView -eq $view) { 'HcPrimary' } else { 'HcButton' }
+        $b = New-HcButton (T "win.visitView.$view") @{ Do = 'visitView'; View = $view } $style
+        $b.Margin = New-HcThickness @(0, 0, 8, 0)
+        $b.IsEnabled = -not (Test-HcBusy) -or $w.VisitView -eq $view
+        [void]$row.Children.Add($b)
+    }
+    $row
+}
+
+function New-HcSection {
+    param([string]$Title, [string]$Note)
+    $head = New-Object Windows.Controls.WrapPanel
+    $head.Margin = New-HcThickness @(0, 14, 0, 8)
+    [void]$head.Children.Add((New-HcText $Title 17 'Text' -Bold -Margin @(0, 0, 10, 0)))
+    if ($Note) {
+        $n = New-HcText $Note 13 'Soft' -Margin @(0, 3, 0, 0)
+        [void]$head.Children.Add($n)
+    }
+    $head
+}
+
+# A labelled text box that writes into $HcWin.Fin as it is typed in.
+function New-HcField {
+    param([string]$Label, [string]$Field, [string]$Value, [double]$Width = 0)
+    $stack = New-Object Windows.Controls.StackPanel
+    $stack.Margin = New-HcThickness @(0, 0, 12, 8)
+    $stack.HorizontalAlignment = 'Left'
+    if ($Width) { $stack.Width = $Width }
+    [void]$stack.Children.Add((New-HcText $Label 13 'Soft' -Bold -Margin @(0, 0, 0, 3)))
+    $box = New-HcTextBox $Value
+    $box.Tag = @{ Field = $Field }
+    $box.Add_TextChanged({ Invoke-HcFieldChanged $this })
+    [void]$stack.Children.Add($box)
+    $stack
+}
+
+function New-HcTextBox {
+    param([string]$Value)
+    $box = New-Object Windows.Controls.TextBox
+    $box.Text = $Value
+    $box.FontSize = 15
+    $box.Padding = New-HcThickness @(8, 6, 8, 6)
+    $box.SetResourceReference([Windows.Controls.Control]::BackgroundProperty, 'Panel')
+    $box.SetResourceReference([Windows.Controls.Control]::ForegroundProperty, 'Text')
+    $box.SetResourceReference([Windows.Controls.Control]::BorderBrushProperty, 'Line')
+    $box.SetResourceReference([Windows.Controls.TextBox]::CaretBrushProperty, 'Text')
+    $box
+}
+
+function New-HcChip {
+    param([string]$Text, [hashtable]$Tag, [switch]$On)
+    $b = New-HcButton $Text $Tag $(if ($On) { 'HcPrimary' } else { 'HcButton' })
+    $b.Padding = New-HcThickness @(11, 5, 11, 5)
+    $b.Margin = New-HcThickness @(0, 0, 6, 6)
+    $b
+}
+
+function Update-HcFinishPanel {
+    $w = $script:HcWin
+    $f = $w.Fin
+    $panel = $w.Window.FindName('FinishPanel')
+    $panel.Children.Clear()
+    $add = { param($element) [void]$panel.Children.Add($element) }
+    & $add (New-HcVisitToggle)
+    if ($f.Notice) { & $add (New-HcText $f.Notice 14.5 'Warn' -Bold) }
+
+    switch ($f.Stage) {
+        'code' {
+            & $add (New-HcText (T 'win.visitView.finish') 22 'Text' -Bold -Margin @(0, 4, 0, 8))
+            & $add (New-HcCodeBox 'finish' (T 'win.fin.codeIntro'))
+            $note = New-HcButton (T 'win.fin.noteOnly') @{ Do = 'noteOnly' }
+            $note.HorizontalAlignment = 'Left'
+            $note.Margin = New-HcThickness @(0, 6, 0, 0)
+            & $add $note
+            return
+        }
+        'loading' {
+            & $add (New-HcText (T 'win.fin.loading') 15 'Soft')
+            $bar = New-Object Windows.Controls.ProgressBar
+            $bar.IsIndeterminate = $true
+            $bar.Height = 6
+            $bar.SetResourceReference([Windows.Controls.Control]::ForegroundProperty, 'Hi')
+            & $add $bar
+            return
+        }
+    }
+
+    $done = $f.Stage -in @('working', 'done')
+    $form = New-Object Windows.Controls.StackPanel
+    $form.IsEnabled = -not $done
+    $put = { param($element) [void]$form.Children.Add($element) }
+
+    # What the visit was about: typed, or one of the problems opened.
+    & $put (New-HcSection (T 'win.fin.asked') (T 'win.fin.askedNote'))
+    if (-not "$script:HcAsked".Trim() -and $script:HcVisit.Count) { $script:HcAsked = T "problem.$($script:HcVisit[0].Code)" }
+    $asked = New-HcTextBox "$script:HcAsked"
+    $asked.Tag = @{ Field = 'Asked' }
+    $asked.Add_TextChanged({ Invoke-HcFieldChanged $this })
+    $asked.Margin = New-HcThickness @(0, 0, 0, 6)
+    & $put $asked
+    $chips = New-Object Windows.Controls.WrapPanel
+    foreach ($v in @($script:HcVisit)) {
+        [void]$chips.Children.Add((New-HcChip ($v.Code + '  ' + (T "problem.$($v.Code)")) @{ Do = 'finAsked'; Text = (T "problem.$($v.Code)") }))
+    }
+    & $put $chips
+
+    # What was done: Housecall's own fixes, then Shamil's list.
+    & $put (New-HcSection (T 'note.done') (T 'win.fin.doneNote'))
+    foreach ($c in @($script:HcChanges)) {
+        $row = New-Object Windows.Controls.DockPanel
+        $tag = New-HcText 'Housecall' 11.5 'Soft' -Bold -Margin @(8, 2, 0, 0)
+        [Windows.Controls.DockPanel]::SetDock($tag, 'Right')
+        [void]$row.Children.Add($tag)
+        [void]$row.Children.Add((New-HcLine 'ok' $c.Label))
+        & $put (New-HcBox '' @($row) 'Panel')
+    }
+    for ($i = 0; $i -lt $script:HcWork.Count; $i++) {
+        $item = $script:HcWork[$i]
+        $row = New-Object Windows.Controls.DockPanel
+        $buttons = New-Object Windows.Controls.StackPanel
+        $buttons.Orientation = 'Horizontal'
+        [Windows.Controls.DockPanel]::SetDock($buttons, 'Right')
+        foreach ($state in @($true, $false)) {
+            $label = if ($state) { T 'inv.win.fixed' } else { T 'inv.win.notFixed' }
+            $b = New-HcChip $label @{ Do = 'workDone'; Index = $i; Done = $state } -On:($item.Done -eq $state)
+            $b.Margin = New-HcThickness @(6, 0, 0, 0)
+            [void]$buttons.Children.Add($b)
+        }
+        $x = New-HcChip ([string][char]0x00D7) @{ Do = 'workRemove'; Index = $i }
+        $x.Margin = New-HcThickness @(6, 0, 0, 0)
+        $x.ToolTip = T 'win.fin.remove'
+        [void]$buttons.Children.Add($x)
+        [void]$row.Children.Add($buttons)
+        [void]$row.Children.Add((New-HcLine $(if ($item.Done) { 'ok' } else { 'problem' }) $item.Text))
+        $box = New-HcBox '' @($row) 'Panel'
+        $box.Padding = New-HcThickness @(10, 6, 6, 4)
+        $box.Margin = New-HcThickness @(0, 0, 0, 6)
+        & $put $box
+    }
+    $addRow = New-Object Windows.Controls.DockPanel
+    $addRow.Margin = New-HcThickness @(0, 4, 0, 6)
+    $addButton = New-HcButton (T 'win.fin.add') @{ Do = 'workAdd' }
+    $addButton.Margin = New-HcThickness @(8, 0, 0, 0)
+    [Windows.Controls.DockPanel]::SetDock($addButton, 'Right')
+    [void]$addRow.Children.Add($addButton)
+    $w.WorkBox = New-HcTextBox ''
+    $w.WorkBox.Tag = @{ Do = 'workAdd' }
+    $w.WorkBox.Add_KeyDown({ if ($_.Key -eq 'Return') { Invoke-HcClick $this } })
+    [void]$addRow.Children.Add($w.WorkBox)
+    & $put $addRow
+    # The most used first; the rest behind "more", so the form stays short.
+    $presets = New-Object Windows.Controls.WrapPanel
+    $left = @(Get-HcWorkPresets | Where-Object { $p = $_; -not @($script:HcWork | Where-Object { $_.Text -eq $p }).Count })
+    $shown = if ($f.AllPresets) { $left } else { @($left | Select-Object -First 8) }
+    foreach ($p in $shown) { [void]$presets.Children.Add((New-HcChip ('+ ' + $p) @{ Do = 'workPreset'; Text = $p })) }
+    if ($left.Count -gt $shown.Count) { [void]$presets.Children.Add((New-HcChip (T 'win.fin.more' ($left.Count - $shown.Count)) @{ Do = 'morePresets' })) }
+    & $put $presets
+
+    # The client.
+    & $put (New-HcSection (T 'win.fin.client') $(if ($f.Mode -eq 'note') { T 'win.fin.clientNote' } else { '' }))
+    $grid = New-Object Windows.Controls.WrapPanel
+    [void]$grid.Children.Add((New-HcField (T 'inv.win.name') 'Name' $f.Name 250))
+    [void]$grid.Children.Add((New-HcField (T 'win.fin.email') 'Email' $f.Email 250))
+    [void]$grid.Children.Add((New-HcField (T 'inv.address') 'Address' $f.Address 250))
+    [void]$grid.Children.Add((New-HcField (T 'inv.postcode') 'Postcode' $f.Postcode 250))
+    & $put $grid
+
+    if ($f.Mode -eq 'invoice' -and $f.Settings) {
+        # Time and costs.
+        & $put (New-HcSection (T 'win.fin.time'))
+        $clock = Get-HcClockLine
+        & $put (New-HcText $clock.Text 15 $(if ($clock.Over) { 'Warn' } else { 'Text' }) -Bold)
+        $minutes = New-HcField (T 'inv.win.minutes') 'Minutes' ([string]$f.Minutes) 140
+        & $put $minutes
+        & $put (New-HcText (Get-HcRateText $f.Settings) 13.5 'Soft')
+        $fee = [decimal]$(if ($f.Settings.callout_fee) { $f.Settings.callout_fee } else { 0 })
+        if ($fee -gt 0) {
+            $check = New-Object Windows.Controls.CheckBox
+            $check.Content = T 'inv.win.callout' (Format-HcMoney $fee)
+            $check.IsChecked = [bool]$f.Callout
+            $check.Tag = @{ Field = 'Callout' }
+            $check.SetResourceReference([Windows.Controls.Control]::ForegroundProperty, 'Text')
+            $check.Margin = New-HcThickness @(0, 4, 0, 8)
+            $check.Add_Click({ Invoke-HcFieldChanged $this })
+            & $put $check
+        }
+        # Parts, each with its price.
+        foreach ($e in @($f.Extras)) {
+            $i = $f.Extras.IndexOf($e)
+            $row = New-Object Windows.Controls.DockPanel
+            $x = New-HcChip ([string][char]0x00D7) @{ Do = 'extraRemove'; Index = $i }
+            [Windows.Controls.DockPanel]::SetDock($x, 'Right')
+            [void]$row.Children.Add($x)
+            [void]$row.Children.Add((New-HcText ($e.Description + '   ' + (Format-HcMoney $e.Amount)) 15 'Text' -Margin @(0, 4, 0, 0)))
+            $box = New-HcBox '' @($row) 'Panel'
+            $box.Padding = New-HcThickness @(12, 6, 6, 0)
+            $box.Margin = New-HcThickness @(0, 0, 0, 6)
+            & $put $box
+        }
+        $extra = New-Object Windows.Controls.WrapPanel
+        $w.ExtraText = New-HcField (T 'win.fin.part') 'ExtraText' '' 250
+        $w.ExtraPrice = New-HcField (T 'win.fin.price') 'ExtraPrice' '' 110
+        [void]$extra.Children.Add($w.ExtraText)
+        [void]$extra.Children.Add($w.ExtraPrice)
+        $addPart = New-HcButton (T 'win.fin.add') @{ Do = 'extraAdd' }
+        $addPart.VerticalAlignment = 'Bottom'
+        [void]$extra.Children.Add($addPart)
+        & $put $extra
+        $f.CalcBlock = New-HcText '' 14 'Soft' -Margin @(0, 4, 0, 0)
+        & $put $f.CalcBlock
+        Update-HcCalc
+
+        # How it is paid.
+        & $put (New-HcSection (T 'inv.win.payment'))
+        $pay = New-Object Windows.Controls.WrapPanel
+        foreach ($m in @(Get-HcPayMethods $f.Settings)) {
+            $label = T ('inv.pay.' + $m)
+            $label = $label.Substring(0, 1).ToUpperInvariant() + $label.Substring(1)
+            if ($m -eq 'transfer') { $label += ' (' + (T 'win.fin.days' $(if ($f.Settings.payment_days) { $f.Settings.payment_days } else { 14 })) + ')' }
+            [void]$pay.Children.Add((New-HcChip $label @{ Do = 'pay'; Method = $m } -On:($f.Payment -eq $m)))
+        }
+        & $put $pay
+    }
+    & $add $form
+}
+
+# "Arbeid 50 min: starttarief ... EUR 15,00 . + 2 x 15 min ... EUR 10,00 . Totaal EUR 25,00"
+function Update-HcCalc {
+    $f = $script:HcWin.Fin
+    if (-not $f.CalcBlock -or -not $f.Settings) { return }
+    $lines = @(Get-HcDraftLines $f $f.Settings)
+    $total = [decimal]0
+    foreach ($l in $lines) { $total += [decimal]$l.Amount }
+    $dot = '  ' + [char]0x00B7 + '  '
+    # A non-breaking space after the euro sign, so an amount never splits.
+    $money = { param($a) (Format-HcMoney $a) -replace ([string][char]0x20AC + ' '), ([string][char]0x20AC + [char]0x00A0) }
+    $parts = @($lines | ForEach-Object { $_.Description + ': ' + (& $money $_.Amount) })
+    $f.CalcBlock.Text = (@($parts) + @((T 'doc.totalWord') + ' ' + (& $money $total))) -join $dot
+}
+
+function Update-HcFinishBar {
+    $w = $script:HcWin
+    $f = $w.Fin
+    $bar = $w.Window.FindName('FinishBar')
+    $bar.Children.Clear()
+    $row = New-Object Windows.Controls.WrapPanel
+    $add = { param($element) $element.Margin = New-HcThickness @(0, 0, 8, 6); [void]$row.Children.Add($element) }
+    $hint = $null
+    if ($w.CloseAsk) { [void]$bar.Children.Add((New-HcText (T 'win.fin.closeFirst') 14.5 'Warn' -Bold)) }
+    switch ($f.Stage) {
+        'working' { $hint = T 'win.fin.working' }
+        'done' {
+            if ($f.Invoice) {
+                [void]$bar.Children.Add((New-HcText ([string][char]0x2713 + ' ' + (T 'win.fin.made' $f.Invoice.number) + $(if ($f.Saved) { ' ' + (T 'win.fin.savedToo') } else { '' })) 15 'Ok' -Bold))
+            }
+            & $add (New-HcButton (T 'note.print') @{ Do = 'finPrint' } 'HcPrimary')
+            & $add (New-HcButton (T 'win.fin.pdf') @{ Do = 'finPdf' })
+            & $add (New-HcButton (T 'win.fin.close') @{ Do = 'finDone' })
+        }
+        'form' {
+            if ($f.Mode -eq 'invoice' -and $f.Settings) {
+                & $add (New-HcButton (T 'win.fin.make') @{ Do = 'finMake' } 'HcPrimary')
+                $hint = T 'win.fin.makeHint'
+            } else {
+                & $add (New-HcButton (T 'win.fin.notePrint') @{ Do = 'finPrint' } 'HcPrimary')
+                & $add (New-HcButton (T 'win.fin.pdf') @{ Do = 'finPdf' })
+                & $add (New-HcButton (T 'win.fin.close') @{ Do = 'finDone' })
+                $hint = if ($f.Offline) { T 'win.fin.noteOffline' } elseif (Test-HcUnlocked) { T 'win.fin.noteSaves' } else { T 'win.fin.noteNoCode' }
+            }
+        }
+    }
+    # Last, as the least wanted way out.
+    if ($w.CloseAsk -and $f.Stage -ne 'done') { & $add (New-HcButton (T 'win.fin.closeAnyway') @{ Do = 'closeAnyway' }) }
+    if ($row.Children.Count) { [void]$bar.Children.Add($row) }
+    if ($hint) { [void]$bar.Children.Add((New-HcText $hint 13 'Soft' -Margin @(0, 0, 0, 0))) }
+    $w.Window.FindName('FinishBarBorder').Visibility = if ($bar.Children.Count) { 'Visible' } else { 'Collapsed' }
+}
+
+# The A4 page on the right: the invoice being filled in, the finished one,
+# or the note. Drawn by the same code as the printout.
+function Update-HcPreview {
+    $w = $script:HcWin
+    $f = $w.Fin
+    if ($w.Tab -ne 'visit' -or $w.VisitView -ne 'finish') { return }
+    $top = $w.Window.FindName('PreviewTop')
+    $top.Children.Clear()
+    $panel = $w.Window.FindName('PreviewPanel')
+    $panel.Children.Clear()
+
+    $state = if ($f.Stage -eq 'done' -and $f.Invoice) { T 'win.fin.stateMade' $f.Invoice.number }
+             elseif ($f.Mode -eq 'note') { T 'win.fin.stateNote' }
+             else { T 'win.fin.stateDraft' }
+    $label = New-HcText $state.ToUpperInvariant() 12 $(if ($f.Invoice) { 'Ok' } else { 'Soft' }) -Bold -Margin @(0, 8, 0, 0)
+    [Windows.Controls.DockPanel]::SetDock($label, 'Left')
+    [void]$top.Children.Add($label)
+    if ($f.Stage -ne 'done') {
+        $modes = New-Object Windows.Controls.StackPanel
+        $modes.Orientation = 'Horizontal'
+        [Windows.Controls.DockPanel]::SetDock($modes, 'Right')
+        foreach ($m in @('invoice', 'note')) {
+            $b = New-HcChip (T "win.fin.mode.$m") @{ Do = 'finMode'; Mode = $m } -On:($f.Mode -eq $m)
+            $b.IsEnabled = -not ($m -eq 'invoice' -and $f.Offline) -and $f.Stage -ne 'working'
+            [void]$modes.Children.Add($b)
+        }
+        [void]$top.Children.Add($modes)
+    }
+
+    if ($f.Mode -eq 'invoice' -and -not $f.Settings -and -not $f.Invoice) {
+        [void]$panel.Children.Add((New-HcText (T 'win.fin.previewAfterCode') 14.5 'Soft' -Margin @(0, 12, 0, 0)))
+        $f.Pages = $null
+        return
+    }
+    try {
+        # One @() around the whole choice: each page is an array of steps,
+        # and an if-statement would unroll the list of pages into its steps.
+        $pages = @(if ($f.Invoice) { Get-HcInvoiceLayout $f.Invoice }
+                   elseif ($f.Mode -eq 'note') { Get-HcInvoiceLayout (New-HcDraftInvoice $f $f.Settings) -Note }
+                   else { Get-HcInvoiceLayout (New-HcDraftInvoice $f $f.Settings) })
+    } catch {
+        [void]$panel.Children.Add((New-HcText (T 'win.error' $_.Exception.Message) 14 'Warn'))
+        return
+    }
+    $f.Pages = $pages
+    foreach ($steps in $pages) {
+        $bmp = New-HcInvoiceBitmap $steps
+        $stream = New-Object IO.MemoryStream
+        try {
+            $bmp.Save($stream, [Drawing.Imaging.ImageFormat]::Png)
+            $stream.Position = 0
+            $source = New-Object Windows.Media.Imaging.BitmapImage
+            $source.BeginInit()
+            $source.CacheOption = 'OnLoad'
+            $source.StreamSource = $stream
+            $source.EndInit()
+            $source.Freeze()
+        } finally {
+            $stream.Dispose()
+            $bmp.Dispose()
+        }
+        $image = New-Object Windows.Controls.Image
+        $image.Source = $source
+        $image.Stretch = 'Uniform'
+        [Windows.Media.RenderOptions]::SetBitmapScalingMode($image, 'HighQuality')
+        $paper = New-Object Windows.Controls.Border
+        $paper.Background = [Windows.Media.Brushes]::White
+        $paper.Margin = New-HcThickness @(0, 0, 0, 14)
+        $paper.Effect = New-Object Windows.Media.Effects.DropShadowEffect -Property @{ BlurRadius = 14; ShadowDepth = 2; Opacity = 0.25 }
+        $paper.Child = $image
+        [void]$panel.Children.Add($paper)
+    }
+}
+
+# A redraw a moment after the last keystroke, not on every one.
+function Request-HcPreview {
+    $script:HcWin.PreviewDue = (Get-Date).AddMilliseconds(300)
+}
+
+# ---------------------------------------------------------------- doing --
+
+function Invoke-HcFieldChanged {
+    param($Sender)
+    $w = $script:HcWin
+    $f = $w.Fin
+    $field = $Sender.Tag.Field
+    switch ($field) {
+        'Asked'    { $script:HcAsked = "$($Sender.Text)".Trim() }
+        'Minutes'  {
+            $n = 0
+            if ([int]::TryParse("$($Sender.Text)".Trim(), [ref]$n) -and $n -ge 0 -and $n -le 1440) { $f.Minutes = $n }
+            Update-HcCalc
+        }
+        'Callout'  { $f.Callout = [bool]$Sender.IsChecked; Update-HcCalc }
+        'ExtraText' { return }
+        'ExtraPrice' { return }
+        default    { $f[$field] = "$($Sender.Text)" }
+    }
+    $f.Notice = $null
+    Request-HcPreview
+}
+
+function Invoke-HcVisitClick {
+    param([hashtable]$Tag)
+    $w = $script:HcWin
+    $f = $w.Fin
+    switch ($Tag.Do) {
+        'visitView'  { Open-HcVisitTab $Tag.View }
+        'finAsked'   { $script:HcAsked = $Tag.Text; Update-HcVisit }
+        'workPreset' { [void](Add-HcWorkItem $Tag.Text $true); Update-HcVisit }
+        'morePresets' { $f.AllPresets = $true; Update-HcFinishPanel }
+        'workAdd'    { if (Add-HcWorkItem $w.WorkBox.Text $true) { Update-HcVisit; [void]$w.WorkBox.Focus() } }
+        'workDone'   { $script:HcWork[$Tag.Index].Done = $Tag.Done; Update-HcVisit }
+        'workRemove' { $script:HcWork.RemoveAt($Tag.Index); Update-HcVisit }
+        'extraAdd'   {
+            $text = "$($w.ExtraText.Children[1].Text)".Trim()
+            $amount = ConvertTo-HcAmount $w.ExtraPrice.Children[1].Text
+            if (-not $text -or $null -eq $amount) { $f.Notice = T 'win.fin.badPart'; Update-HcFinishPanel; return }
+            [void]$f.Extras.Add([pscustomobject]@{ Description = $text; Amount = $amount })
+            $f.Notice = $null
+            Update-HcVisit
+        }
+        'extraRemove' { $f.Extras.RemoveAt($Tag.Index); Update-HcVisit }
+        'pay'        { $f.Payment = $Tag.Method; Update-HcVisit }
+        'finMode'    {
+            if ($Tag.Mode -eq 'invoice' -and -not $f.Settings) {
+                $f.Mode = 'invoice'
+                if (Test-HcUnlocked) { Start-HcSettingsLoad } else { $f.Stage = 'code' }
+            } else {
+                $f.Mode = $Tag.Mode
+            }
+            $f.Notice = $null
+            Update-HcVisit
+        }
+        'noteOnly'   { $f.Mode = 'note'; $f.Stage = 'form'; $w.Totp = $null; Update-HcVisit }
+        'codeSubmit' { Submit-HcCode }
+        'finMake'    { Start-HcMakeInvoice }
+        'finPrint'   {
+            if (-not $f.Pages) { Update-HcPreview }
+            $script:HcInvoicePages = $f.Pages
+            Invoke-HcInvoicePrint
+        }
+        'finPdf'     { Save-HcWindowPdf }
+        'finDone'    { Complete-HcVisitWindow }
+        'closeAnyway' { $w.CloseAnyway = $true; $w.Outcome = 'done'; $w.Window.Close() }
+        'histDelete' { $w.Hist.Confirm = $Tag.Id; $w.Hist.Notice = $null; Update-HcOther }
+        'histNo'     { $w.Hist.Confirm = $null; Update-HcOther }
+        'histYes'    {
+            $visit = @($w.Hist.Visits | Where-Object { [long]$_.id -eq [long]$w.Hist.Confirm }) | Select-Object -First 1
+            $w.Hist.Confirm = $null
+            $w.Hist.Stage = 'loading'
+            Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_delete'; token = $script:HcToken; pc = (Get-HcWindowPcId); id = [long]$visit.id }
+                         Visit = $visit; Done = 'Complete-HcHistoryDelete' }
+            Update-HcOther
+        }
+    }
+}
+
+# Checks the form the way the text menu's window did, then lets the relay
+# number and keep it, and saves the visit with it.
+function Start-HcMakeInvoice {
+    $w = $script:HcWin
+    $f = $w.Fin
+    $check = ConvertTo-HcInvoiceForm @{
+        Name = $f.Name; Address = $f.Address; Postcode = $f.Postcode; Email = $f.Email
+        Minutes = $f.Minutes; Callout = $f.Callout; Payment = $f.Payment
+        Extras = @($f.Extras | ForEach-Object { [pscustomobject]@{ Description = $_.Description; Amount = ([decimal]$_.Amount).ToString([Globalization.CultureInfo]::InvariantCulture) } })
+    } $f.Settings
+    if ($check.Error) { $f.Notice = $check.Error; Update-HcFinishPanel; return }
+    $f.Notice = $null
+    $f.Stage = 'working'
+    Add-HcJob @{ Kind = 'relay'; Body = (New-HcInvoiceBody $check.Form (Get-HcWindowPcId)); Done = 'Complete-HcInvoiceMade' }
+    Update-HcVisit
+}
+
+function Complete-HcInvoiceMade {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $w = $script:HcWin
+    $f = $w.Fin
+    $r = Get-HcRelayResult $Output
+    if ($ErrorText -or -not $r -or -not $r.Ok) {
+        $code = if ($r) { $r.Error } else { 'unreachable' }
+        if ($code -eq 'locked_out') { $script:HcToken = $null; $f.Stage = 'code'; $f.Notice = T 'relay.expired' }
+        else { $f.Stage = 'form'; $f.Notice = T 'inv.failed' (Get-HcRelayMessage $code) }
+        Update-HcVisit
+        return
+    }
+    $f.Invoice = $r.Data.invoice
+    $f.Stage = 'done'
+    $w.CloseAsk = $false
+    Add-HcJob @{ Kind = 'relay'; Body = (New-HcVisitBody $w.Environment ([string]$f.Invoice.client_name) ([string]$f.Invoice.number) (Get-HcWindowPcId)); Done = 'Complete-HcVisitSaved' }
+    Update-HcVisit
+}
+
+function Complete-HcVisitSaved {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $w = $script:HcWin
+    $f = $w.Fin
+    $r = Get-HcRelayResult $Output
+    if (-not $ErrorText -and $r -and $r.Ok) { $f.Saved = $true }
+    else { $f.Notice = T 'mem.notSaved' (Get-HcRelayMessage $(if ($r) { $r.Error } else { 'unreachable' })) }
+    if ($Job.ThenClose) { $w.Outcome = 'done'; $w.Finished = $true; $w.Window.Close(); return }
+    Update-HcFinishBar
+    Update-HcFinishPanel
+}
+
+# Klaar: with a note, the visit is still saved when the code was given.
+function Complete-HcVisitWindow {
+    $w = $script:HcWin
+    $f = $w.Fin
+    $worth = $script:HcVisit.Count -gt 0 -or $script:HcWork.Count -gt 0
+    if (-not $f.Invoice -and -not $f.Saved -and $worth -and -not $script:DryRun -and $w.Environment.Online -and (Test-HcUnlocked)) {
+        $f.Stage = 'working'
+        $label = if ("$($f.Name)".Trim()) { "$($f.Name)".Trim() } else { $script:HcKnownLabel }
+        Add-HcJob @{ Kind = 'relay'; Body = (New-HcVisitBody $w.Environment $label $null (Get-HcWindowPcId)); ThenClose = $true; Done = 'Complete-HcVisitSaved' }
+        Update-HcVisit
+        return
+    }
+    $w.Outcome = 'done'
+    $w.Finished = $true
+    $w.Window.Close()
+}
+
+# Opslaan als PDF: Windows' own PDF printer, to a file the client can get
+# by email. Documents by default; the name says what it is.
+function Save-HcWindowPdf {
+    $w = $script:HcWin
+    $f = $w.Fin
+    if (-not $f.Pages) { Update-HcPreview }
+    if (-not $f.Pages) { return }
+    $dialog = New-Object Microsoft.Win32.SaveFileDialog
+    $dialog.Filter = 'PDF (*.pdf)|*.pdf'
+    $dialog.InitialDirectory = [Environment]::GetFolderPath('MyDocuments')
+    $dialog.FileName = if ($f.Invoice) { T 'win.fin.pdfInvoice' $f.Invoice.number } else { T 'win.fin.pdfNote' (Get-Date -Format 'yyyy-MM-dd') }
+    if (-not $dialog.ShowDialog($w.Window)) { return }
+    $script:HcInvoicePages = $f.Pages
+    $problem = Save-HcPagesPdf $dialog.FileName
+    $f.Notice = if ($problem) { T 'win.fin.pdfFailed' $problem } else { T 'win.fin.pdfSaved' $dialog.FileName }
+    Update-HcFinishPanel
+}
+
+# -------------------------------------------------------------- history --
+
+function Start-HcHistory {
+    $w = $script:HcWin
+    $h = $w.Hist
+    if (-not $w.Environment.Online) { $h.Stage = 'offline'; return }
+    if ($h.Stage -in @('loading', 'list')) { return }
+    if (Test-HcUnlocked) { Start-HcHistoryLoad } else { $h.Stage = 'code' }
+}
+
+function Start-HcHistoryLoad {
+    $h = $script:HcWin.Hist
+    $h.Stage = 'loading'
+    Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcWindowPcId) }; Done = 'Complete-HcHistory' }
+}
+
+function Complete-HcHistory {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $w = $script:HcWin
+    $h = $w.Hist
+    $r = Get-HcRelayResult $Output
+    if ($ErrorText -or -not $r -or -not $r.Ok) {
+        $code = if ($r) { $r.Error } else { 'unreachable' }
+        if ($code -eq 'locked_out') { $script:HcToken = $null; $h.Stage = 'code'; $h.Notice = T 'relay.expired' }
+        else { $h.Stage = 'list'; $h.Visits = @(); $h.Notice = Get-HcRelayMessage $code }
+    } else {
+        $h.Visits = @($r.Data.visits | Where-Object { $_ })
+        $h.Stage = 'list'
+        $label = @($h.Visits | Where-Object { $_.label } | Select-Object -First 1).label
+        if ($label) { $script:HcKnownLabel = $label; if (-not "$($w.Fin.Name)".Trim()) { $w.Fin.Name = $label } }
+    }
+    Update-HcOther
+}
+
+function Complete-HcHistoryDelete {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $h = $script:HcWin.Hist
+    $r = Get-HcRelayResult $Output
+    if ($ErrorText -or -not $r -or -not $r.Ok) {
+        $h.Notice = Get-HcRelayMessage $(if ($r) { $r.Error } else { 'unreachable' })
+    } else {
+        $h.Notice = T 'mem.deleted'
+        if ($Job.Visit.invoice_number) { $h.Notice += ' ' + (T 'mem.invoiceKept' $Job.Visit.invoice_number) }
+    }
+    Start-HcHistoryLoad
+    Update-HcOther
+}
+
+function Update-HcHistoryPanel {
+    param($Panel)
+    $w = $script:HcWin
+    $h = $w.Hist
+    $add = { param($element) [void]$Panel.Children.Add($element) }
+    & $add (New-HcVisitToggle)
+    & $add (New-HcText (T 'mem.title') 22 'Text' -Bold -Margin @(0, 4, 0, 10))
+    if ($h.Notice) { & $add (New-HcText $h.Notice 14.5 'Ok' -Bold) }
+    switch ($h.Stage) {
+        'offline' { & $add (New-HcText (T 'win.hist.offline') 15 'Soft') }
+        'code'    { & $add (New-HcCodeBox 'history' (T 'win.hist.codeIntro')) }
+        'loading' {
+            & $add (New-HcText (T 'win.fin.loading') 15 'Soft')
+            $bar = New-Object Windows.Controls.ProgressBar
+            $bar.IsIndeterminate = $true
+            $bar.Height = 6
+            $bar.MaxWidth = 400
+            $bar.HorizontalAlignment = 'Left'
+            $bar.SetResourceReference([Windows.Controls.Control]::ForegroundProperty, 'Hi')
+            & $add $bar
+        }
+        'list' {
+            if (@($h.Visits).Count -eq 0) { & $add (New-HcText (T 'mem.none') 15 'Soft'); return }
+            foreach ($v in @($h.Visits)) {
+                $card = New-Object Windows.Controls.StackPanel
+                $head = New-Object Windows.Controls.DockPanel
+                $delete = New-HcChip (T 'win.hist.delete') @{ Do = 'histDelete'; Id = [long]$v.id }
+                [Windows.Controls.DockPanel]::SetDock($delete, 'Right')
+                [void]$head.Children.Add($delete)
+                $title = Format-HcVisitLine $v
+                if ($v.label) { $title += '  ' + [char]0x00B7 + '  ' + $v.label }
+                [void]$head.Children.Add((New-HcText $title 16 'Text' -Bold -Margin @(0, 4, 0, 4)))
+                [void]$card.Children.Add($head)
+                if ($v.invoice_number) { [void]$card.Children.Add((New-HcText (T 'mem.invoice' $v.invoice_number) 13.5 'Hi' -Bold -Margin @(0, 0, 0, 4))) }
+                foreach ($p in @($v.problems)) { [void]$card.Children.Add((New-HcText ($p.code + '  ' + (T "problem.$($p.code)")) 14 'Soft' -Margin @(0, 0, 0, 2))) }
+                foreach ($c in @($v.changes)) { [void]$card.Children.Add((New-HcLine 'ok' $c)) }
+                if ($h.Confirm -eq [long]$v.id) {
+                    [void]$card.Children.Add((New-HcQuestion (T 'win.hist.deleteAsk' (Format-HcVisitLine $v)) 'histYes' 'histNo'))
+                }
+                $box = New-HcBox '' @($card) 'Panel'
+                $box.Padding = New-HcThickness @(16, 12, 12, 8)
+                & $add $box
+            }
+        }
+    }
 }
 
 # ==================================================== src\ai.ps1 ==

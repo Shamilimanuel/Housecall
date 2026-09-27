@@ -229,7 +229,11 @@ function Start-Housecall {
         Write-Dim (T 'win.opening')
         switch (Show-HcWindow $environment $Start $message) {
             'handedoff' { Write-Ok (T 'fix.elevated'); return }
-            'quit'      { Stop-HcVisit $environment; return }
+            # The window finished the visit itself: note or invoice, and the history.
+            'done'      {
+                if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
+                return
+            }
             'console'   { $Start = $null; $message = $null }
         }
     }

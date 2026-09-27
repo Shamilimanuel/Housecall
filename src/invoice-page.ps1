@@ -47,8 +47,10 @@ function Get-HcInvoiceWork {
     }
 }
 
+# -Note: the same page as a plain note, for a visit without an invoice: no
+# number and no amounts, but what was found, and how to reach Shamil.
 function Get-HcInvoiceLayout {
-    param($Invoice)
+    param($Invoice, [switch]$Note)
     $style = Get-HcInvoiceStyle
     $F = $style.Fonts
     $P = $script:HcPage
@@ -83,9 +85,10 @@ function Get-HcInvoiceLayout {
 
     # Top: "Factuur", number and date on the left; the seller on the right.
     # GDI+ pads text by a sixth of its size; at 30 px that shows, so pull it back in line.
-    & $text (T 'doc.invoiceWord') 'title' ($P.Left - 4) $y $half
+    & $text $(if ($Note) { T 'doc.noteWord' } else { T 'doc.invoiceWord' }) 'title' ($P.Left - 4) $y $half
     $leftY = $y + (& $measure 'F' 'title' $half)
-    & $text ((T 'doc.numberDate' $Invoice.number (Format-HcLongDate $issued))) 'small' $P.Left $leftY $half 'muted'
+    $dateLine = if ($Note) { Format-HcLongDate $issued } else { T 'doc.numberDate' $Invoice.number (Format-HcLongDate $issued) }
+    & $text $dateLine 'small' $P.Left $leftY $half 'muted'
     $leftY += (& $measure 'x' 'small' $half)
     $rightY = $y + 6
     $sellerX = $P.Left + $half + 32
@@ -102,7 +105,7 @@ function Get-HcInvoiceLayout {
     $y = [Math]::Max($leftY, $rightY) + 34
 
     # The client, next to what it was about.
-    & $text (T 'doc.toCap') 'cap' $P.Left $y $half 'muted'
+    & $text $(if ($Note) { T 'doc.forCap' } else { T 'doc.toCap' }) 'cap' $P.Left $y $half 'muted'
     & $text (T 'doc.subjectCap') 'cap' $sellerX $y $half 'muted'
     $y += 18
     $clientY = $y
@@ -120,7 +123,7 @@ function Get-HcInvoiceLayout {
 
     # The table.
     & $text (T 'doc.descriptionCap') 'cap' $P.Left $y $descW 'muted'
-    & $text (T 'doc.amountCap') 'cap' ($P.Right - $amountW) $y $amountW 'muted' 'right'
+    if (-not $Note) { & $text (T 'doc.amountCap') 'cap' ($P.Right - $amountW) $y $amountW 'muted' 'right' }
     $y += 20
     & $line $y 'ink' 1.5
     $y += 8
@@ -141,7 +144,36 @@ function Get-HcInvoiceLayout {
         & $line $y
         $y += 8
     }
-    foreach ($l in @($Invoice.lines)) {
+    if ($Note) {
+        if ($work.Count -eq 0) {
+            & $text (T 'note.nothingChanged') 'item' $P.Left $y $descW 'muted'
+            $y += (& $measure 'x' 'item' $descW) + 14
+        }
+        # What was found, so the client can read back what was going on.
+        $found = @($script:HcVisit | Where-Object { $_.FindingId })
+        if ($found.Count) {
+            & $room 40
+            & $text (T 'note.found') 'bodyBold' $P.Left $y $full
+            $y += (& $measure 'x' 'bodyBold' $full) + 2
+            foreach ($v in $found) {
+                $all = @('finding.' + $v.FindingId) + @($v.FindingArgs)
+                $t = T @all
+                $h = & $measure $t 'item' $full
+                & $room $h
+                & $text $t 'item' $P.Left $y $full
+                $y += $h + 4
+            }
+            $y += 14
+        }
+        foreach ($para in @(@(T 'doc.noteKeep') + @($script:Contact))) {
+            $h = & $measure $para 'small' $full
+            & $room $h
+            & $text $para 'small' $P.Left $y $full 'muted'
+            $y += $h + 4
+        }
+    }
+    $money = if ($Note) { @() } else { @($Invoice.lines) }
+    foreach ($l in $money) {
         $h = & $measure $l.description 'body' $descW
         & $room ($h + 10)
         & $text $l.description 'body' $P.Left $y $descW
@@ -150,39 +182,42 @@ function Get-HcInvoiceLayout {
         & $line $y
         $y += 8
     }
-    if ($Invoice.btw_mode -eq '21') {
-        foreach ($pair in @(@((T 'doc.subtotal'), $Invoice.subtotal), @((T 'doc.btw'), $Invoice.btw_amount))) {
-            & $room 26
-            & $text $pair[0] 'small' $P.Left $y $descW 'muted'
-            & $text (Format-HcMoney ([decimal]$pair[1])) 'small' ($P.Right - $amountW) $y $amountW 'muted' 'right'
-            $y += 22
+    # The money: only on the invoice.
+    if (-not $Note) {
+        if ($Invoice.btw_mode -eq '21') {
+            foreach ($pair in @(@((T 'doc.subtotal'), $Invoice.subtotal), @((T 'doc.btw'), $Invoice.btw_amount))) {
+                & $room 26
+                & $text $pair[0] 'small' $P.Left $y $descW 'muted'
+                & $text (Format-HcMoney ([decimal]$pair[1])) 'small' ($P.Right - $amountW) $y $amountW 'muted' 'right'
+                $y += 22
+            }
         }
-    }
-    & $room 44
-    $y += 2
-    & $line $y 'ink' 2
-    $y += 8
-    & $text (T 'doc.totalWord') 'total' $P.Left $y $descW
-    & $text (Format-HcMoney ([decimal]$Invoice.total)) 'total' ($P.Right - $amountW - 40) $y ($amountW + 40) 'ink' 'right'
-    $y += (& $measure 'x' 'total' $descW) + 26
+        & $room 44
+        $y += 2
+        & $line $y 'ink' 2
+        $y += 8
+        & $text (T 'doc.totalWord') 'total' $P.Left $y $descW
+        & $text (Format-HcMoney ([decimal]$Invoice.total)) 'total' ($P.Right - $amountW - 40) $y ($amountW + 40) 'ink' 'right'
+        $y += (& $measure 'x' 'total' $descW) + 26
 
-    # How it was paid, and the BTW note.
-    $paidOn = Format-HcLongDate $issued
-    $pay = switch ($Invoice.payment) {
-        'pin'      { T 'doc.paidPin' $paidOn }
-        'cash'     { T 'doc.paidCash' $paidOn }
-        'tikkie'   { T 'doc.paidTikkie' $paidOn }
-        'transfer' {
-            $due = Format-HcLongDate ([datetime]::Parse([string]$Invoice.due_date, [Globalization.CultureInfo]::InvariantCulture))
-            T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number
+        # How it was paid, and the BTW note.
+        $paidOn = Format-HcLongDate $issued
+        $pay = switch ($Invoice.payment) {
+            'pin'      { T 'doc.paidPin' $paidOn }
+            'cash'     { T 'doc.paidCash' $paidOn }
+            'tikkie'   { T 'doc.paidTikkie' $paidOn }
+            'transfer' {
+                $due = Format-HcLongDate ([datetime]::Parse([string]$Invoice.due_date, [Globalization.CultureInfo]::InvariantCulture))
+                T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number
+            }
         }
-    }
-    foreach ($para in @($pay, $(if ($Invoice.btw_mode -eq 'kor') { T 'doc.kor' })) | Where-Object { $_ }) {
-        $font = if ($para -eq $pay) { 'body' } else { 'small' }
-        $h = & $measure $para $font $full
-        & $room $h
-        & $text $para $font $P.Left $y $full $(if ($font -eq 'small') { 'muted' } else { 'ink' })
-        $y += $h + 10
+        foreach ($para in @($pay, $(if ($Invoice.btw_mode -eq 'kor') { T 'doc.kor' })) | Where-Object { $_ }) {
+            $font = if ($para -eq $pay) { 'body' } else { 'small' }
+            $h = & $measure $para $font $full
+            & $room $h
+            & $text $para $font $P.Left $y $full $(if ($font -eq 'small') { 'muted' } else { 'ink' })
+            $y += $h + 10
+        }
     }
 
     # The foot of every page.
@@ -302,7 +337,9 @@ function Show-HcInvoicePages {
     $form.Dispose()
 }
 
-function Invoke-HcInvoicePrint {
+# The pages in $script:HcInvoicePages as a document for any printer.
+function New-HcPagesDocument {
+    Add-Type -AssemblyName System.Windows.Forms, System.Drawing -ErrorAction Stop
     $doc = New-Object Drawing.Printing.PrintDocument
     $doc.DocumentName = 'Housecall'
     $script:HcInvoicePrintAt = 0
@@ -318,6 +355,11 @@ function Invoke-HcInvoicePrint {
         $script:HcInvoicePrintAt++
         $e.HasMorePages = $script:HcInvoicePrintAt -lt $script:HcInvoicePages.Count
     })
+    $doc
+}
+
+function Invoke-HcInvoicePrint {
+    $doc = New-HcPagesDocument
     $dialog = New-Object Windows.Forms.PrintDialog
     $dialog.Document = $doc
     $dialog.UseEXDialog = $true
@@ -325,4 +367,27 @@ function Invoke-HcInvoicePrint {
         try { $doc.Print() } catch { [void][Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Housecall') }
     }
     $doc.Dispose()
+}
+
+<#
+    Saves the pages as a PDF through Windows' own "Microsoft Print to PDF",
+    without a print dialog: for a client who wants the invoice by email, or
+    a copy on the USB stick. Returns $null when it worked, else the reason.
+#>
+function Save-HcPagesPdf {
+    param([string]$Path)
+    $doc = New-HcPagesDocument
+    try {
+        $doc.PrinterSettings.PrinterName = 'Microsoft Print to PDF'
+        if (-not $doc.PrinterSettings.IsValid) { return (T 'doc.noPdfPrinter') }
+        $doc.PrinterSettings.PrintToFile = $true
+        $doc.PrinterSettings.PrintFileName = $Path
+        $doc.PrintController = New-Object Drawing.Printing.StandardPrintController
+        $doc.Print()
+        $null
+    } catch {
+        $_.Exception.Message
+    } finally {
+        $doc.Dispose()
+    }
 }

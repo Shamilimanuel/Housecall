@@ -491,20 +491,26 @@ function Invoke-HcInvoice {
     if (-not $useWindow) { $form = Read-HcInvoiceForm $s.Settings }
     if (-not $form) { Write-Dim (T 'inv.skipped'); return $null }
 
-    $r = Invoke-HcRelay @{
-        action   = 'invoice_create'
-        token    = $script:HcToken
-        pc       = (Get-HcPcId)
-        lang     = $script:Lang
-        client   = $form.Client
-        lines    = @($form.Lines | ForEach-Object { @{ description = $_.Description; amount = [double]$_.Amount } })
-        payment  = $form.Payment
-        problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
-        changes  = @(Get-HcVisitChanges)
-    }
+    $r = Invoke-HcRelay (New-HcInvoiceBody $form)
     if (-not $r.Ok) { Write-Warn2 (T 'inv.failed' (Get-HcRelayMessage $r.Error)); return $null }
     Write-Ok (T 'inv.made' $r.Data.invoice.number)
     $r.Data.invoice
+}
+
+# What invoice_create gets, from the text menu and the window alike.
+function New-HcInvoiceBody {
+    param($Form, [string]$PcId = (Get-HcPcId))
+    @{
+        action   = 'invoice_create'
+        token    = $script:HcToken
+        pc       = $PcId
+        lang     = $script:Lang
+        client   = $Form.Client
+        lines    = @($Form.Lines | ForEach-Object { @{ description = $_.Description; amount = [double]$_.Amount } })
+        payment  = $Form.Payment
+        problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
+        changes  = @(Get-HcVisitChanges)
+    }
 }
 
 # ----------------------------------------------------------------- document --

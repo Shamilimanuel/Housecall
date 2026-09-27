@@ -70,6 +70,7 @@ $HcSource = @(
     'invoice.ps1'
     'invoice-page.ps1'
     'window.ps1'
+    'window-visit.ps1'
     'ai.ps1'
 ) | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $PSScriptRoot 'src') $_)) }
 $HcSource = $HcSource -join "`r`n"

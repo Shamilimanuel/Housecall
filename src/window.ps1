@@ -45,6 +45,15 @@ function Get-HcCheckAllCodes {
     @($script:Areas.Values | ForEach-Object { $_ } | Where-Object { $_ -notin @('A3', 'A4', 'F1', 'F2') })
 }
 
+# The problem codes a finding or advice points to ("choose A3"), in order,
+# without the one on screen.
+function Get-HcMentionedCodes {
+    param([string]$Text, [string]$Current)
+    $all = @($script:Areas.Values | ForEach-Object { $_ })
+    @([regex]::Matches("$Text", '\b([A-G]\d)\b') | ForEach-Object { $_.Groups[1].Value } |
+        Where-Object { $all -contains $_ -and $_ -ne $Current } | Select-Object -Unique)
+}
+
 # The theme Windows itself uses for apps, so the window matches the PC.
 function Get-HcDefaultTheme {
     $light = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' -ErrorAction SilentlyContinue).AppsUseLightTheme
@@ -70,7 +79,7 @@ function Test-HcWindowPossible {
 # every other kind sets the language and rights first, since the worker
 # has its own copy of those.
 $script:HcWorkerScript = {
-    param($Kind, $Lang, $IsAdmin, $DryRun, $Code, $Text, $FixId, $Target, $Source)
+    param($Kind, $Lang, $IsAdmin, $DryRun, $Code, $Text, $FixId, $Target, $Source, $Body)
     $ErrorActionPreference = 'Stop'
     if ($Kind -eq 'load') { . ([scriptblock]::Create($Source)); return }
     $script:Lang = $Lang
@@ -92,6 +101,8 @@ $script:HcWorkerScript = {
         }
         'undo'   { & $script:Fixes[$FixId].Undo $Target }
         'online' { Test-HcOnline }
+        'relay'  { Invoke-HcRelay $Body }
+        'pcid'   { Get-HcPcId }
     }
 }.ToString()
 
@@ -110,7 +121,7 @@ function Start-HcJob {
     [void]$ps.AddScript($script:HcWorkerScript)
     $parameters = @{
         Kind = $Job.Kind; Lang = $script:Lang; IsAdmin = [bool]$script:IsAdmin; DryRun = [bool]$script:DryRun
-        Code = $Job.Code; Text = $Job.Text; FixId = $Job.FixId; Target = $Job.Target; Source = $Job.Source
+        Code = $Job.Code; Text = $Job.Text; FixId = $Job.FixId; Target = $Job.Target; Source = $Job.Source; Body = $Job.Body
     }
     foreach ($name in $parameters.Keys) { [void]$ps.AddParameter($name, $parameters[$name]) }
     $Job.PS = $ps
@@ -149,6 +160,7 @@ function Invoke-HcTick {
             Update-HcGroups
         }
         $w.WasBusy = [bool]($w.Job -or $w.Queue.Count)
+        if ($w.PreviewDue -and (Get-Date) -ge $w.PreviewDue) { $w.PreviewDue = $null; Update-HcPreview }
     } catch {
         $w.Notice = T 'win.error' $_.Exception.Message
         Update-HcResult
@@ -305,6 +317,25 @@ function New-HcWindowXaml {
       </Border>
     </Grid>
 
+    <Grid Grid.Row="1" x:Name="VisitTab" Visibility="Collapsed">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MinWidth="380"/>
+        <ColumnDefinition Width="0.85*" MaxWidth="600"/>
+      </Grid.ColumnDefinitions>
+      <DockPanel>
+        <Border x:Name="FinishBarBorder" DockPanel.Dock="Bottom" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="22,12,22,8">
+          <StackPanel x:Name="FinishBar"/>
+        </Border>
+        <ScrollViewer x:Name="FinishScroll" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="FinishPanel" Margin="22,16,22,18"/></ScrollViewer>
+      </DockPanel>
+      <Border Grid.Column="1" Background="{DynamicResource Side}" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0">
+        <DockPanel>
+          <DockPanel x:Name="PreviewTop" DockPanel.Dock="Top" Margin="18,12,18,10" LastChildFill="False"/>
+          <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="PreviewPanel" Margin="18,0,18,18"/></ScrollViewer>
+        </DockPanel>
+      </Border>
+    </Grid>
+
     <ScrollViewer Grid.Row="1" x:Name="OtherTab" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
       <StackPanel x:Name="OtherPanel" Margin="26,22,26,22" MaxWidth="900" HorizontalAlignment="Left"/>
     </ScrollViewer>
@@ -418,6 +449,7 @@ function Update-HcAll {
     Update-HcGroups
     Update-HcResult
     Update-HcOther
+    Update-HcVisit
 }
 
 function Update-HcTabs {
@@ -428,9 +460,10 @@ function Update-HcTabs {
         $style = if ($w.Tab -eq $tab) { 'HcTabOn' } else { 'HcTab' }
         [void]$panel.Children.Add((New-HcButton (T "win.tab.$tab") @{ Do = 'tab'; Tab = $tab } $style))
     }
-    $problems = $w.Tab -eq 'problems'
-    $w.Window.FindName('ProblemsTab').Visibility = if ($problems) { 'Visible' } else { 'Collapsed' }
-    $w.Window.FindName('OtherTab').Visibility = if ($problems) { 'Collapsed' } else { 'Visible' }
+    $body = if ($w.Tab -eq 'problems') { 'ProblemsTab' } elseif ($w.Tab -eq 'visit' -and $w.VisitView -eq 'finish') { 'VisitTab' } else { 'OtherTab' }
+    foreach ($name in @('ProblemsTab', 'VisitTab', 'OtherTab')) {
+        $w.Window.FindName($name).Visibility = if ($name -eq $body) { 'Visible' } else { 'Collapsed' }
+    }
 }
 
 function Update-HcStatus {
@@ -472,7 +505,7 @@ function Update-HcSide {
     if ($script:DryRun) { [void]$panel.Children.Add((New-HcText (T 'status.dryRun') 13 'Hi' -Bold -Margin @(0, 4, 0, 0))) }
 
     [void]$panel.Children.Add((New-HcHeading (T 'win.actions')))
-    $all = New-HcButton (T 'win.checkAll') @{ Do = 'checkAll' } 'HcPrimary'
+    $all = New-HcButton (T 'win.checkAll') @{ Do = 'checkAll' }
     $all.IsEnabled = -not $busy
     [void]$panel.Children.Add($all)
     $undo = New-HcButton (T 'menu.undo') @{ Do = 'undo' }
@@ -480,9 +513,12 @@ function Update-HcSide {
     [void]$panel.Children.Add($undo)
 
     [void]$panel.Children.Add((New-HcHeading (T 'win.finish')))
-    $finish = New-HcButton (T 'win.noteInvoice') @{ Do = 'close'; Outcome = 'quit' }
+    $finish = New-HcButton (T 'win.noteInvoice') @{ Do = 'visitView'; View = 'finish' } 'HcPrimary'
     $finish.IsEnabled = -not $busy
     [void]$panel.Children.Add($finish)
+    $history = New-HcButton (T 'menu.history') @{ Do = 'visitView'; View = 'history' }
+    $history.IsEnabled = -not $busy
+    [void]$panel.Children.Add($history)
     $console = New-HcButton (T 'win.console') @{ Do = 'close'; Outcome = 'console' }
     $console.IsEnabled = -not $busy
     [void]$panel.Children.Add($console)
@@ -627,6 +663,10 @@ function Add-HcReportView {
             & $add (New-HcText (T 'run.advice') 13 'Soft' -Bold -Margin @(0, 2, 0, 2))
             & $add (New-HcText $advice 15 'Text' -Margin @(0, 0, 0, 10))
         }
+        # "Choose G2 to check OneDrive": the other problem one click away.
+        foreach ($other in @(Get-HcMentionedCodes ((T @findingArgs) + ' ' + $advice) $w.Code)) {
+            & $add (New-HcButton ((T 'win.open' $other) + '  ' + (T "problem.$other")) @{ Do = 'problem'; Code = $other })
+        }
     }
 
     $actions = @($r.Actions)
@@ -712,7 +752,7 @@ function Update-HcOther {
     $panel.Children.Clear()
     $add = { param($element) [void]$panel.Children.Add($element) }
     if ($w.Tab -eq 'problems') { return }
-    & $add (New-HcText (T "win.tab.$($w.Tab)") 24 'Text' -Bold -Margin @(0, 0, 0, 12))
+    if ($w.Tab -ne 'visit') { & $add (New-HcText (T "win.tab.$($w.Tab)") 24 'Text' -Bold -Margin @(0, 0, 0, 12)) }
     switch ($w.Tab) {
         'safety' {
             & $add (New-HcText (T 'win.safetyIntro') 15 'Soft' -Margin @(0, 0, 0, 14))
@@ -731,16 +771,7 @@ function Update-HcOther {
             }
             & $add $wrap
         }
-        'visit' {
-            $clock = Get-HcClockLine
-            & $add (New-HcBox (T 'win.visit.time') @(New-HcText $clock.Text 15 $(if ($clock.Over) { 'Warn' } else { 'Text' }) -Margin @(0, 0, 0, 2)) 'Panel')
-            $done = @($script:HcChanges | ForEach-Object { [string][char]0x2713 + ' ' + $_.Label })
-            if ($done.Count -eq 0) { $done = @(T 'win.visit.nothing') }
-            & $add (New-HcBox (T 'win.visit.done') @($done | ForEach-Object { New-HcText $_ 15 'Text' -Margin @(0, 0, 0, 2) }) 'Panel')
-            & $add (New-HcButton (T 'win.noteInvoice') @{ Do = 'close'; Outcome = 'quit' } 'HcPrimary')
-            & $add (New-HcText (T 'win.visit.later') 14 'Soft' -Margin @(0, 10, 0, 6))
-            & $add (New-HcButton (T 'win.console') @{ Do = 'close'; Outcome = 'console' })
-        }
+        'visit' { Update-HcHistoryPanel $panel }
         'pc' { & $add (New-HcText (T 'win.pc.soon') 15 'Soft') }
         'ai' {
             & $add (New-HcText (T 'win.ai.soon') 15 'Soft')
@@ -757,7 +788,10 @@ function Invoke-HcClick {
     try {
         $tag = $Sender.Tag
         switch ($tag.Do) {
-            'tab'      { $w.Tab = $tag.Tab; Update-HcTabs; Update-HcOther }
+            'tab'      {
+                if ($tag.Tab -eq 'visit') { Open-HcVisitTab $w.VisitView; return }
+                $w.Tab = $tag.Tab; Update-HcTabs; Update-HcOther
+            }
             'language' { $script:Lang = if ($script:Lang -eq 'nl') { 'en' } else { 'nl' }; Update-HcAll }
             'theme'    { Set-HcTheme $(if ($w.Theme -eq 'dark') { 'light' } else { 'dark' }); Update-HcStatus }
             'area'     { $w.Open[$tag.Letter] = -not $w.Open[$tag.Letter]; Update-HcGroups }
@@ -793,6 +827,7 @@ function Invoke-HcClick {
                 $w.Outcome = $tag.Outcome
                 $w.Window.Close()
             }
+            default    { Invoke-HcVisitClick $tag }
         }
     } catch {
         $w.Notice = T 'win.error' $_.Exception.Message
@@ -1036,9 +1071,12 @@ function Show-HcWindow {
         Banner = $null; Notice = $Message; Confirm = $null; ShowSteps = $false; UndoAsk = $null; UndoMessages = $null
         FromAll = $false; All = $null; BusyText = ''; Clock = $null
         Queue = New-Object System.Collections.ArrayList; Job = $null; WasBusy = $false
-        Runspace = $null; Outcome = 'quit'
+        Runspace = $null; Outcome = 'done'; Finished = $false; CloseAnyway = $false; CloseAsk = $false
+        VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null }
+        Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
     }
     $w = $script:HcWin
+    try { $window.Icon = New-HcLogoImage } catch { }
 
     # The window must fit an old 1366x768 laptop as well as a big screen.
     $area = [Windows.SystemParameters]::WorkArea
@@ -1062,14 +1100,25 @@ function Show-HcWindow {
     $clock.Interval = [TimeSpan]::FromSeconds(20)
     $clock.Add_Tick({ try { Update-HcClock } catch { } })
 
-    # A fix or undo halfway must finish: closing waits for it.
+    # A fix or undo halfway must finish: closing waits for it. And a visit
+    # ends with a document: closing first goes to Afronden, once.
     $window.Add_Closing({
-        $job = $script:HcWin.Job
-        if ($job -and $job.Kind -in @('fix', 'undo')) {
-            $_.Cancel = $true
-            $script:HcWin.Notice = T 'win.busyClose'
-            Update-HcResult
-        }
+        $w = $script:HcWin
+        try {
+            $job = $w.Job
+            if ($job -and $job.Kind -in @('fix', 'undo')) {
+                $_.Cancel = $true
+                $w.Notice = T 'win.busyClose'
+                Update-HcResult
+                return
+            }
+            $worth = $script:HcVisit.Count -gt 0 -or $script:HcChanges.Count -gt 0
+            if ($worth -and -not $w.Finished -and -not $w.CloseAnyway -and $w.Outcome -notin @('console', 'handedoff')) {
+                $_.Cancel = $true
+                $w.CloseAsk = $true
+                Open-HcVisitTab 'finish'
+            }
+        } catch { }
     })
     $window.Add_ContentRendered({ $this.Topmost = $true; $this.Activate(); $this.Topmost = $false })
 
@@ -1094,5 +1143,40 @@ function Complete-HcLoad {
         Update-HcResult
         return
     }
+    # The PC's scrambled id, for the relay, read once while nothing else runs.
+    Add-HcJob @{ Kind = 'pcid'; Done = 'Complete-HcPcId' }
     if ($Job.Start -and ($script:Areas.Values | ForEach-Object { $_ }) -contains $Job.Start) { Open-HcProblem $Job.Start }
+}
+
+function Complete-HcPcId {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $id = @($Output | Where-Object { "$_" -match '^[0-9a-f]{64}$' }) | Select-Object -First 1
+    if ($id) { $script:HcWin.PcId = [string]$id }
+}
+
+# The logo as the window's icon: the white house with its orange waves on
+# a navy tile, the same mark as the business card.
+function New-HcLogoImage {
+    $white = [Windows.Media.Brushes]::White
+    $orange = New-Object Windows.Media.SolidColorBrush([Windows.Media.Color]::FromRgb(0xE8, 0x86, 0x2E))
+    $navy = New-Object Windows.Media.SolidColorBrush([Windows.Media.Color]::FromRgb(0x16, 0x32, 0x3F))
+    $pen = { param($brush, $width)
+        $p = New-Object Windows.Media.Pen($brush, $width)
+        $p.StartLineCap = 'Round'; $p.EndLineCap = 'Round'; $p.LineJoin = 'Round'
+        $p }
+    $mark = New-Object Windows.Media.DrawingGroup
+    foreach ($d in @('M6,33 L28,14 L50,33', 'M13,31 V54 A3,3 0 0 0 16,57 H40 A3,3 0 0 0 43,54 V31')) {
+        [void]$mark.Children.Add((New-Object Windows.Media.GeometryDrawing($null, (& $pen $white 6), [Windows.Media.Geometry]::Parse($d))))
+    }
+    [void]$mark.Children.Add((New-Object Windows.Media.GeometryDrawing($white, $null, (New-Object Windows.Media.RectangleGeometry((New-Object Windows.Rect(23, 41, 10, 16)), 2, 2)))))
+    foreach ($d in @('M46,16 A8,8 0 0 1 52,22', 'M47,7.5 A16,16 0 0 1 60.5,21')) {
+        [void]$mark.Children.Add((New-Object Windows.Media.GeometryDrawing($null, (& $pen $orange 4.5), [Windows.Media.Geometry]::Parse($d))))
+    }
+    $mark.Transform = New-Object Windows.Media.ScaleTransform(0.78, 0.78, 33, 33)
+    $all = New-Object Windows.Media.DrawingGroup
+    [void]$all.Children.Add((New-Object Windows.Media.GeometryDrawing($navy, $null, (New-Object Windows.Media.RectangleGeometry((New-Object Windows.Rect(0, 0, 64, 64)), 14, 14)))))
+    [void]$all.Children.Add($mark)
+    $image = New-Object Windows.Media.DrawingImage($all)
+    $image.Freeze()
+    $image
 }
