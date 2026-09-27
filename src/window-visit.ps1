@@ -721,6 +721,8 @@ function Invoke-HcVisitClick {
                 if (Test-HcUnlocked) { Start-HcSettingsLoad } else { $f.Stage = 'code' }
             } else {
                 $f.Mode = $Tag.Mode
+                # The note needs no code: leave the code slots for the note's form.
+                if ($f.Mode -eq 'note' -and $f.Stage -in @('code', 'new')) { $f.Stage = 'form'; $w.Totp = $null }
             }
             $f.Notice = $null
             Update-HcVisit

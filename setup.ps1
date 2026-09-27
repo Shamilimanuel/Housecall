@@ -40,7 +40,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'b48b9f7df5e0'
+$HcBuild = '6750d4a239c5'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -10651,6 +10651,8 @@ function Invoke-HcVisitClick {
                 if (Test-HcUnlocked) { Start-HcSettingsLoad } else { $f.Stage = 'code' }
             } else {
                 $f.Mode = $Tag.Mode
+                # The note needs no code: leave the code slots for the note's form.
+                if ($f.Mode -eq 'note' -and $f.Stage -in @('code', 'new')) { $f.Stage = 'form'; $w.Totp = $null }
             }
             $f.Notice = $null
             Update-HcVisit
