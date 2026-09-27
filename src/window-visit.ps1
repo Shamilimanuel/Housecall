@@ -267,6 +267,9 @@ function Complete-HcUnlock {
     Update-HcSide
     if ($Job.For -eq 'history') {
         Start-HcHistoryLoad
+    } elseif ($Job.For -eq 'ai') {
+        $w.Ai.Stage = 'ask'
+        Update-HcOther
     } else {
         # Who this PC belongs to, from its earlier visits: the name for the invoice.
         Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcWindowPcId) }; Done = 'Complete-HcKnown' }

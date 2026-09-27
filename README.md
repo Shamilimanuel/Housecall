@@ -7,14 +7,22 @@ PowerShell on the PC with the problem:
 irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex
 ```
 
-Pick a letter for the area and a number for the problem (`A1` = no internet),
-or `?` to describe it in your own words. Housecall checks that part of the PC,
-says what it found in plain English or Dutch, and says what to do about it.
+Housecall opens as a window: click a problem (grouped A to G), or `Alles
+controleren` to check everything at once. Housecall checks that part of the
+PC, says what it found in plain English or Dutch, and says what to do about it.
+The other tabs: **Veiligheid** (scams and remote-access programs), **Bezoek**
+(the note or invoice, and this PC's earlier visits), **Pc-overzicht** (what
+this PC is and whether an upgrade helps) and **AI-hulp** (describe it in your
+own words). Light and dark, Dutch and English.
+
+Without a desktop, or with `-Console`, the same Housecall runs as a text
+menu: a letter for the area and a number for the problem (`A1` = no
+internet), or `?` for the AI.
 
 - **Read-only until you say yes.** Checking never changes anything. After the
   findings, Housecall offers fixes; each one asks first, is checked again
-  afterwards, and can be undone with `U`. Or press `S` for step-by-step
-  instructions to do it by hand.
+  afterwards, and can be undone. Or follow the step-by-step instructions to
+  do it by hand.
 - **Nothing is installed.** Close the window and it's gone.
 - **Works offline, from a USB stick.** The one-liner needs internet to download
   Housecall, but once running, the menu and the checks don't. For a PC with no
@@ -29,6 +37,7 @@ $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
 & ([scriptblock]::Create((irm $s))) -DryRun     # check only, never fix
 & ([scriptblock]::Create((irm $s))) -Lang nl    # Dutch or English (default: the Windows language)
 & ([scriptblock]::Create((irm $s))) -NoAI       # leave the AI chat (?) out of the menu
+& ([scriptblock]::Create((irm $s))) -Console    # the text menu instead of the window
 ```
 
 ## On a USB stick (for a PC without internet)
@@ -54,13 +63,15 @@ date; run `make-usb.ps1` again then.
 |---|---|---|
 | A | Internet & Wi-Fi | A1 no internet, A2 slow or dropping, A3 one website, A4 email: working |
 | B | Sound, screen & video calls | B1 no sound, B2 microphone or camera, B3 screen: working |
-| C | Printer & devices | C1 printer won't print, C2 mouse, keyboard or USB stick, C3 Bluetooth: working |
+| C | Printer & devices | C1 printer won't print, C2 mouse, keyboard or USB stick, C3 Bluetooth, C4 laptop battery: working |
 | D | Slow or freezing | D1 slow, D2 slow start, D3 crashes, D4 disk full: working |
 | E | Windows & updates | E1 updates, E2 error message, E3 won't shut down: working |
 | F | Safety & scams | F1 fake virus pop-up, F2 someone got into my PC (AnyDesk, TeamViewer, …), F3 full check: working |
+| G | Files, desktop & accounts | G1 desktop or taskbar gone, G2 files gone or not everywhere, G3 a file not found or opening wrong: working |
+| | Pc-overzicht | model, processor age, Windows support, memory, disks, battery, with upgrade advice: working |
 | ? | AI chat | working, after a one-time setup (below) |
-| H | Visit history | working, after the same setup; delete a visit with its number |
-| Q | Invoice | at the end of a visit: a short form, then a numbered invoice (print or PDF); details via `tools\setup-invoice.ps1` |
+| H | Visit history | working, after the same setup |
+| Q | Invoice | at the end of a visit (Bezoek > Afronden): the Authenticator code, a form with a live A4 preview, then a numbered invoice (print or PDF); details via `tools\setup-invoice.ps1` |
 
 ## AI chat and visit history: one-time setup
 

@@ -12,6 +12,7 @@
         $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
         & ([scriptblock]::Create((irm $s))) -DryRun      # check, never fix
         & ([scriptblock]::Create((irm $s))) -Lang nl     # force Dutch or English
+        & ([scriptblock]::Create((irm $s))) -Console    # the text menu, not the window
 
     setup.ps1 is built by build.ps1 from dev.ps1 and the files in src\.
     Edit those, never setup.ps1 by hand: the next build overwrites it.
@@ -31,8 +32,9 @@ param(
     # Leave the AI chat (?) out of the menu, e.g. when the client does not
     # want anything sent over the internet.
     [switch]$NoAI,
-    # Open Housecall as a window (phase 6, while it is being built).
-    [switch]$Window
+    # The text menu instead of the window, e.g. when the window does not
+    # show well on a PC. Without a desktop the text menu comes by itself.
+    [switch]$Console
 )
 
 $ErrorActionPreference = 'Stop'
@@ -73,6 +75,7 @@ $HcSource = @(
     'window.ps1'
     'window-visit.ps1'
     'window-pc.ps1'
+    'window-ai.ps1'
     'ai.ps1'
 ) | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $PSScriptRoot 'src') $_)) }
 $HcSource = $HcSource -join "`r`n"
@@ -81,11 +84,11 @@ $HcSource = $HcSource -join "`r`n"
 # The options, saved before the code loads: run as a file (a USB stick),
 # this script's scope is Housecall's script: scope, and loading the code
 # resets $script:Lang -- which is this same $Lang.
-$HcOptions = @{ DryRun = [bool]$DryRun; Lang = $Lang; Start = $Start; NoAI = [bool]$NoAI; Window = [bool]$Window }
+$HcOptions = @{ DryRun = [bool]$DryRun; Lang = $Lang; Start = $Start; NoAI = [bool]$NoAI; Console = [bool]$Console }
 
 . ([scriptblock]::Create($HcSource))
 $script:HcSource = $HcSource
 $script:HcBuild = $HcBuild
 # Run from a file (a USB stick) rather than through irm | iex.
 $script:HcFromFile = [bool]$PSCommandPath
-Start-Housecall -DryRun:$HcOptions.DryRun -Lang $HcOptions.Lang -Start $HcOptions.Start -NoAI:$HcOptions.NoAI -Window:$HcOptions.Window
+Start-Housecall -DryRun:$HcOptions.DryRun -Lang $HcOptions.Lang -Start $HcOptions.Start -NoAI:$HcOptions.NoAI -Console:$HcOptions.Console

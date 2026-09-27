@@ -66,6 +66,9 @@ function Get-HcDefaultTheme {
 function Test-HcWindowPossible {
     if ($null -ne $script:HcInputQueue -or $script:NoConsole) { return $false }
     if (-not [Environment]::UserInteractive -or -not $script:HcSource) { return $false }
+    # A run nobody watches: input from a file or NUL, or -NonInteractive.
+    try { if ([Console]::IsInputRedirected) { return $false } } catch { }
+    if (@([Environment]::GetCommandLineArgs() | Where-Object { $_ -match '^-noni' }).Count) { return $false }
     if ([Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') { return $false }
     try {
         Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase -ErrorAction Stop
@@ -104,6 +107,11 @@ $script:HcWorkerScript = {
         'relay'  { Invoke-HcRelay $Body }
         'pcid'   { Get-HcPcId }
         'overview' { Get-HcOverviewFacts }
+        'ai'     {
+            $script:HcToken = $Body.Token
+            $script:HcTokenExpires = $Body.Expires
+            Invoke-HcAiConversation $Text
+        }
     }
 }.ToString()
 
@@ -135,7 +143,11 @@ function Invoke-HcTick {
     $w = $script:HcWin
     try {
         if ($w.Job) {
-            if (-not $w.Job.Async.IsCompleted) { return }
+            if (-not $w.Job.Async.IsCompleted) {
+                # A long job (the AI) shows what it has done so far.
+                if ($w.Job.Live) { & $w.Job.Live $w.Job }
+                return
+            }
             $job = $w.Job
             $w.Job = $null
             $out = @()
@@ -774,10 +786,7 @@ function Update-HcOther {
         }
         'visit' { Update-HcHistoryPanel $panel }
         'pc' { Update-HcPcPanel $panel }
-        'ai' {
-            & $add (New-HcText (T 'win.ai.soon') 15 'Soft')
-            & $add (New-HcButton (T 'win.console') @{ Do = 'close'; Outcome = 'console' })
-        }
+        'ai' { Update-HcAiPanel $panel }
     }
 }
 
@@ -828,7 +837,7 @@ function Invoke-HcClick {
                 $w.Outcome = $tag.Outcome
                 $w.Window.Close()
             }
-            default    { if (-not (Invoke-HcPcClick $tag)) { Invoke-HcVisitClick $tag } }
+            default    { if (-not (Invoke-HcPcClick $tag) -and -not (Invoke-HcAiClick $tag)) { Invoke-HcVisitClick $tag } }
         }
     } catch {
         $w.Notice = T 'win.error' $_.Exception.Message
@@ -1074,7 +1083,7 @@ function Show-HcWindow {
         Queue = New-Object System.Collections.ArrayList; Job = $null; WasBusy = $false
         Runspace = $null; Outcome = 'done'; Finished = $false; CloseAnyway = $false; CloseAsk = $false
         VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null }
-        Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }
+        Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }; Ai = (New-HcAiState)
         Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
     }
     $w = $script:HcWin

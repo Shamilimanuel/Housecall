@@ -186,14 +186,14 @@ function Start-Housecall {
         [string]$Start,
         # Leave the AI chat out of the menu.
         [switch]$NoAI,
-        # Open the window instead of the text menu (phase 6, while it is built).
-        [switch]$Window,
+        # The text menu instead of the window (the window is the default).
+        [switch]$Console,
         # For tests: answers to feed in instead of reading the keyboard.
         [string[]]$Answers
     )
 
     $script:DryRun = [bool]$DryRun
-    $script:HcWindowMode = [bool]$Window
+    $script:HcWindowMode = -not $Console
     $script:NoAI = [bool]$NoAI
     $script:RestorePointDone = $false
     $script:HcChanges.Clear()
@@ -225,10 +225,14 @@ function Start-Housecall {
     $message = $null    # one-off warning shown under the menu
     if (-not $Start) { $message = Get-HcOutdatedWarning $environment }
 
-    # The window, with the text menu as the way back when it cannot open.
-    if ($Window -and -not $PSBoundParameters.ContainsKey('Answers')) {
+    # The window, with the text menu as the way back: -Console, a scripted
+    # run, no desktop, or a window that could not open.
+    $script:HcWindowMode = $script:HcWindowMode -and -not $PSBoundParameters.ContainsKey('Answers') -and (Test-HcWindowPossible)
+    if ($script:HcWindowMode) {
         Write-Dim (T 'win.opening')
-        switch (Show-HcWindow $environment $Start $message) {
+        $outcome = Show-HcWindow $environment $Start $message
+        if ($outcome -in @('console', 'failed')) { $script:HcWindowMode = $false }
+        switch ($outcome) {
             'handedoff' { Write-Ok (T 'fix.elevated'); return }
             # The window finished the visit itself: note or invoice, and the history.
             'done'      {

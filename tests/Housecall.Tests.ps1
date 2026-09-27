@@ -28,6 +28,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\window.ps1')
 . (Join-Path $root 'src\window-visit.ps1')
 . (Join-Path $root 'src\window-pc.ps1')
+. (Join-Path $root 'src\window-ai.ps1')
 . (Join-Path $root 'src\ai.ps1')
 
 # Housecall's own source, put together the way dev.ps1 does it.
@@ -1371,7 +1372,7 @@ Describe 'The window (phase 6)' {
     }
 
     It 'has every text it shows, in both languages' {
-        $source = [IO.File]::ReadAllText((Join-Path $root 'src\window.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-visit.ps1'))
+        $source = [IO.File]::ReadAllText((Join-Path $root 'src\window.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-visit.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-pc.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-ai.ps1'))
         $keys = @([regex]::Matches($source, "T '(win\.[\w.]+)'") | ForEach-Object { $_.Groups[1].Value }) +
                 @($script:HcTabs | ForEach-Object { "win.tab.$_" }) + @('F1', 'F2', 'F3' | ForEach-Object { "win.safety.$_" })
         $keys.Count | Should BeGreaterThan 20
@@ -1413,9 +1414,24 @@ Describe 'The window (phase 6)' {
         @(Get-HcMentionedCodes 'Nothing to open here.' 'A1').Count | Should Be 0
     }
 
-    It 'never opens a window in a scripted run, even with -Window' {
-        Mock Show-HcWindow { 'quit' }
-        Start-Housecall -Lang nl -Window -Answers @('Q') 6>&1 | Out-Null
+    It 'hands the AI''s chosen fixes to Problemen, from the report the AI''s check made' {
+        $r = New-HcReport
+        Add-HcLine $r problem 'muted'
+        Set-HcFinding $r 'micMuted' @('Mic')
+        Add-HcAction $r 'restartAudio'
+        Add-HcAction $r 'unmute' @{ Label = 'Mic'; Id = 'x' }
+        $script:HcWin = @{ Ai = @{ State = [pscustomobject]@{ Answer = [pscustomobject]@{ problem_code = 'B2'; fix_ids = @('unmute') }; Reports = @{ B2 = $r } } } }
+        Mock Update-HcTabs { }; Mock Update-HcGroups { }; Mock Update-HcResult { }
+        Open-HcAiFixes
+        $script:HcWin.Tab | Should Be 'problems'
+        $script:HcWin.Code | Should Be 'B2'
+        @($script:HcWin.Report.Actions | ForEach-Object { $_.FixId }) | Should Be 'unmute'
+        $script:HcWin = $null
+    }
+
+    It 'never opens a window in a scripted run, though the window is the default' {
+        Mock Show-HcWindow { 'done' }
+        Start-Housecall -Lang nl -Answers @('Q') 6>&1 | Out-Null
         Assert-MockCalled Show-HcWindow -Times 0 -Exactly
         Test-HcWindowPossible | Should Be $false
     }
@@ -1907,6 +1923,8 @@ Describe 'The AI chat' {
         $state = Invoke-HcAiConversation 'my printer does nothing'
         $state.Answer.problem_code | Should Be 'C1'
         $state.Reports.ContainsKey('C1') | Should Be $true
+        # What the AI passed along, so the window can check the same again after a fix.
+        $state.Inputs.ContainsKey('C1') | Should Be $true
         $script:Requests.Count | Should Be 2
         $second = $script:Requests[1] | ConvertFrom-Json
         @($second.messages).Count | Should Be 3
@@ -2213,6 +2231,8 @@ Describe 'Restarting as administrator' {
         $script:HandedOff | Should Be $true
         $boot = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($script:Launched[-1]))
         $boot | Should Match "Start-Housecall -Start 'A1' -Lang 'en'"
+        # Started from the text menu, the admin window is the text menu too.
+        $boot | Should Match ' -Console'
         $boot | Should Match 'Remove-Item -LiteralPath'
         # The mock never ran the new window, so the hand-over file is still here: tidy it.
         $left = @(& $newTemp | Sort-Object LastWriteTime | Select-Object -Last 1)

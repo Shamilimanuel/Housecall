@@ -706,7 +706,7 @@ function Start-HcElevated {
     $options = "-Start '$Code' -Lang '$script:Lang'"
     if ($script:DryRun) { $options += ' -DryRun' }
     if ($script:NoAI) { $options += ' -NoAI' }
-    if ($script:HcWindowMode) { $options += ' -Window' }
+    if (-not $script:HcWindowMode) { $options += ' -Console' }
     $quoted = $file.Replace("'", "''")
     $boot = "`$f = '$quoted'; `$s = [IO.File]::ReadAllText(`$f); Remove-Item -LiteralPath `$f -Force; " +
             "`$ErrorActionPreference = 'Stop'; . ([scriptblock]::Create(`$s)); `$script:HcSource = `$s; Start-Housecall $options"

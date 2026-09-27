@@ -12,6 +12,7 @@
         $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
         & ([scriptblock]::Create((irm $s))) -DryRun      # check, never fix
         & ([scriptblock]::Create((irm $s))) -Lang nl     # force Dutch or English
+        & ([scriptblock]::Create((irm $s))) -Console    # the text menu, not the window
 
     setup.ps1 is built by build.ps1 from dev.ps1 and the files in src\.
     Edit those, never setup.ps1 by hand: the next build overwrites it.
@@ -31,8 +32,9 @@ param(
     # Leave the AI chat (?) out of the menu, e.g. when the client does not
     # want anything sent over the internet.
     [switch]$NoAI,
-    # Open Housecall as a window (phase 6, while it is being built).
-    [switch]$Window
+    # The text menu instead of the window, e.g. when the window does not
+    # show well on a PC. Without a desktop the text menu comes by itself.
+    [switch]$Console
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,7 +42,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = '5a9bd356b279'
+$HcBuild = 'c207a48da780'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -1019,7 +1021,7 @@ $script:Strings = @{
         'win.finish'         = 'Finish'
         'win.noteInvoice'    = 'Note / invoice'
         'win.console'        = 'Text menu'
-        'win.consoleHint'    = 'For now: the AI chat.'
+        'win.consoleHint'    = 'The same menu as text, as a backup.'
         'win.result'         = 'Result'
         'win.pick'           = 'Pick a problem. Housecall only checks; nothing changes on this PC without a yes.'
         'win.check'          = 'Check'
@@ -1042,7 +1044,15 @@ $script:Strings = @{
         'win.safety.F1'      = 'Websites allowed to send notifications, and pop-ups that keep coming back.'
         'win.safety.F2'      = 'AnyDesk, TeamViewer and the like: when they were put on, and whether they run now.'
         'win.safety.F3'      = 'Virus scanner, updates, unknown tasks and more, all at once.'
-        'win.ai.soon'        = 'Describing a problem in your own words is in the text menu for now (the ? key).'
+        'win.ai.codeIntro'           = 'With the code, Housecall can reach the AI. Only the problem and the checks'' results go to it.'
+        'win.ai.ask'                 = 'Ask the AI (Enter)'
+        'win.ai.examples'            = 'For example'
+        'win.ai.example'             = 'My grandson hears nothing on video calls | Since yesterday I cannot get into my email | The screen suddenly became very big | Someone called and said my computer has a virus'
+        'win.ai.openFixes'           = 'See the fixes for {0}  {1}'
+        'win.ai.openCheck'           = 'See the check {0}  {1}'
+        'win.ai.again'               = 'New question'
+        'win.ai.refused'             = 'The AI did not answer this question. Pick a problem under Problemen.'
+        'win.ai.noAnswer'            = 'The AI did not come to an answer. Pick a problem under Problemen.'
         'win.open'                   = 'Open {0}'
         'win.visitView.finish'       = 'Finish'
         'win.visitView.history'      = 'Earlier visits'
@@ -2356,7 +2366,7 @@ $script:Strings = @{
         'win.finish'         = 'Afronden'
         'win.noteInvoice'    = 'Briefje / factuur'
         'win.console'        = 'Tekstmenu'
-        'win.consoleHint'    = 'Voor nu: de AI-chat.'
+        'win.consoleHint'    = 'Hetzelfde menu als tekst, als reserve.'
         'win.result'         = 'Resultaat'
         'win.pick'           = 'Kies een probleem. Housecall controleert alleen; er verandert niets op deze pc zonder uw ja.'
         'win.check'          = 'Controleren'
@@ -2379,7 +2389,15 @@ $script:Strings = @{
         'win.safety.F1'      = 'Websites die meldingen mogen sturen, en pop-ups die steeds terugkomen.'
         'win.safety.F2'      = 'AnyDesk, TeamViewer en dergelijke: wanneer ze erop zijn gezet, en of ze nu draaien.'
         'win.safety.F3'      = 'Virusscanner, updates, onbekende taken en meer, alles in een keer.'
-        'win.ai.soon'        = 'Een probleem in eigen woorden beschrijven kan voor nu in het tekstmenu (de ?-toets).'
+        'win.ai.codeIntro'           = 'Met de code kan Housecall de AI bereiken. Alleen het probleem en de uitkomst van de controles gaan erheen.'
+        'win.ai.ask'                 = 'Vraag het de AI (Enter)'
+        'win.ai.examples'            = 'Bijvoorbeeld'
+        'win.ai.example'             = 'Mijn kleinzoon hoort niets bij het videobellen | Sinds gisteren kom ik niet meer in mijn e-mail | Het scherm is ineens heel groot | Iemand belde en zei dat mijn computer een virus heeft'
+        'win.ai.openFixes'           = 'De oplossingen voor {0} bekijken  {1}'
+        'win.ai.openCheck'           = 'De controle {0} bekijken  {1}'
+        'win.ai.again'               = 'Nieuwe vraag'
+        'win.ai.refused'             = 'De AI heeft deze vraag niet beantwoord. Kies een probleem onder Problemen.'
+        'win.ai.noAnswer'            = 'De AI kwam niet tot een antwoord. Kies een probleem onder Problemen.'
         'win.open'                   = 'Open {0}'
         'win.visitView.finish'       = 'Afronden'
         'win.visitView.history'      = 'Eerdere bezoeken'
@@ -3206,14 +3224,14 @@ function Start-Housecall {
         [string]$Start,
         # Leave the AI chat out of the menu.
         [switch]$NoAI,
-        # Open the window instead of the text menu (phase 6, while it is built).
-        [switch]$Window,
+        # The text menu instead of the window (the window is the default).
+        [switch]$Console,
         # For tests: answers to feed in instead of reading the keyboard.
         [string[]]$Answers
     )
 
     $script:DryRun = [bool]$DryRun
-    $script:HcWindowMode = [bool]$Window
+    $script:HcWindowMode = -not $Console
     $script:NoAI = [bool]$NoAI
     $script:RestorePointDone = $false
     $script:HcChanges.Clear()
@@ -3245,10 +3263,14 @@ function Start-Housecall {
     $message = $null    # one-off warning shown under the menu
     if (-not $Start) { $message = Get-HcOutdatedWarning $environment }
 
-    # The window, with the text menu as the way back when it cannot open.
-    if ($Window -and -not $PSBoundParameters.ContainsKey('Answers')) {
+    # The window, with the text menu as the way back: -Console, a scripted
+    # run, no desktop, or a window that could not open.
+    $script:HcWindowMode = $script:HcWindowMode -and -not $PSBoundParameters.ContainsKey('Answers') -and (Test-HcWindowPossible)
+    if ($script:HcWindowMode) {
         Write-Dim (T 'win.opening')
-        switch (Show-HcWindow $environment $Start $message) {
+        $outcome = Show-HcWindow $environment $Start $message
+        if ($outcome -in @('console', 'failed')) { $script:HcWindowMode = $false }
+        switch ($outcome) {
             'handedoff' { Write-Ok (T 'fix.elevated'); return }
             # The window finished the visit itself: note or invoice, and the history.
             'done'      {
@@ -7616,7 +7638,7 @@ function Start-HcElevated {
     $options = "-Start '$Code' -Lang '$script:Lang'"
     if ($script:DryRun) { $options += ' -DryRun' }
     if ($script:NoAI) { $options += ' -NoAI' }
-    if ($script:HcWindowMode) { $options += ' -Window' }
+    if (-not $script:HcWindowMode) { $options += ' -Console' }
     $quoted = $file.Replace("'", "''")
     $boot = "`$f = '$quoted'; `$s = [IO.File]::ReadAllText(`$f); Remove-Item -LiteralPath `$f -Force; " +
             "`$ErrorActionPreference = 'Stop'; . ([scriptblock]::Create(`$s)); `$script:HcSource = `$s; Start-Housecall $options"
@@ -9265,6 +9287,9 @@ function Get-HcDefaultTheme {
 function Test-HcWindowPossible {
     if ($null -ne $script:HcInputQueue -or $script:NoConsole) { return $false }
     if (-not [Environment]::UserInteractive -or -not $script:HcSource) { return $false }
+    # A run nobody watches: input from a file or NUL, or -NonInteractive.
+    try { if ([Console]::IsInputRedirected) { return $false } } catch { }
+    if (@([Environment]::GetCommandLineArgs() | Where-Object { $_ -match '^-noni' }).Count) { return $false }
     if ([Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') { return $false }
     try {
         Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase -ErrorAction Stop
@@ -9303,6 +9328,11 @@ $script:HcWorkerScript = {
         'relay'  { Invoke-HcRelay $Body }
         'pcid'   { Get-HcPcId }
         'overview' { Get-HcOverviewFacts }
+        'ai'     {
+            $script:HcToken = $Body.Token
+            $script:HcTokenExpires = $Body.Expires
+            Invoke-HcAiConversation $Text
+        }
     }
 }.ToString()
 
@@ -9334,7 +9364,11 @@ function Invoke-HcTick {
     $w = $script:HcWin
     try {
         if ($w.Job) {
-            if (-not $w.Job.Async.IsCompleted) { return }
+            if (-not $w.Job.Async.IsCompleted) {
+                # A long job (the AI) shows what it has done so far.
+                if ($w.Job.Live) { & $w.Job.Live $w.Job }
+                return
+            }
             $job = $w.Job
             $w.Job = $null
             $out = @()
@@ -9973,10 +10007,7 @@ function Update-HcOther {
         }
         'visit' { Update-HcHistoryPanel $panel }
         'pc' { Update-HcPcPanel $panel }
-        'ai' {
-            & $add (New-HcText (T 'win.ai.soon') 15 'Soft')
-            & $add (New-HcButton (T 'win.console') @{ Do = 'close'; Outcome = 'console' })
-        }
+        'ai' { Update-HcAiPanel $panel }
     }
 }
 
@@ -10027,7 +10058,7 @@ function Invoke-HcClick {
                 $w.Outcome = $tag.Outcome
                 $w.Window.Close()
             }
-            default    { if (-not (Invoke-HcPcClick $tag)) { Invoke-HcVisitClick $tag } }
+            default    { if (-not (Invoke-HcPcClick $tag) -and -not (Invoke-HcAiClick $tag)) { Invoke-HcVisitClick $tag } }
         }
     } catch {
         $w.Notice = T 'win.error' $_.Exception.Message
@@ -10273,7 +10304,7 @@ function Show-HcWindow {
         Queue = New-Object System.Collections.ArrayList; Job = $null; WasBusy = $false
         Runspace = $null; Outcome = 'done'; Finished = $false; CloseAnyway = $false; CloseAsk = $false
         VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null }
-        Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }
+        Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }; Ai = (New-HcAiState)
         Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
     }
     $w = $script:HcWin
@@ -10652,6 +10683,9 @@ function Complete-HcUnlock {
     Update-HcSide
     if ($Job.For -eq 'history') {
         Start-HcHistoryLoad
+    } elseif ($Job.For -eq 'ai') {
+        $w.Ai.Stage = 'ask'
+        Update-HcOther
     } else {
         # Who this PC belongs to, from its earlier visits: the name for the invoice.
         Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcWindowPcId) }; Done = 'Complete-HcKnown' }
@@ -11512,6 +11546,226 @@ function Invoke-HcPcClick {
     $true
 }
 
+# ==================================================== src\window-ai.ps1 ==
+<#
+    The window's AI-hulp tab (phase 6, step 4): the problem in the client's
+    own words, and Claude picks which checks to run -- the ? of the text
+    menu. The whole conversation (Invoke-HcAiConversation, src\ai.ps1) runs
+    in the worker, checks included; the tab shows which check the AI is
+    running while it works, then its answer. The fixes it names open in
+    Problemen, through the same Ja/Nee, check again and undo as always.
+#>
+
+function New-HcAiState {
+    @{ Stage = 'new'; Question = ''; Progress = @(); State = $null; Error = $null; Box = $null }
+}
+
+function Start-HcAi {
+    $w = $script:HcWin
+    $a = $w.Ai
+    if ($a.Stage -ne 'new') { return }
+    if (-not $w.Environment.Online) { $a.Stage = 'offline' }
+    elseif (Test-HcUnlocked) { $a.Stage = 'ask' }
+    else { $a.Stage = 'code' }
+}
+
+# The worker runs the conversation with this session's token.
+function Start-HcAiQuestion {
+    $w = $script:HcWin
+    $a = $w.Ai
+    $text = "$($a.Box.Text)".Trim()
+    if (-not $text -or (Test-HcBusy)) { return }
+    if (-not (Test-HcUnlocked)) { $a.Stage = 'code'; Update-HcOther; return }
+    $a.Question = $text
+    $a.Progress = @()
+    $a.State = $null
+    $a.Error = $null
+    $a.Stage = 'running'
+    Add-HcJob @{ Kind = 'ai'; Text = $text; Body = @{ Token = $script:HcToken; Expires = $script:HcTokenExpires }
+                 Seen = 0; Live = 'Update-HcAiProgress'; Done = 'Complete-HcAi' }
+    Update-HcOther
+    Update-HcSide
+}
+
+# While the AI works: what it wrote so far ("De AI controleert: B1 ...").
+function Update-HcAiProgress {
+    param([hashtable]$Job)
+    $lines = @($Job.PS.Streams.Information | ForEach-Object { "$($_.MessageData)".Trim() } | Where-Object { $_ })
+    if ($lines.Count -eq $Job.Seen) { return }
+    $Job.Seen = $lines.Count
+    $script:HcWin.Ai.Progress = @($lines | Where-Object { $_ -ne (T 'ai.thinking') })
+    if ($script:HcWin.Tab -eq 'ai') { Update-HcOther }
+}
+
+function Complete-HcAi {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $w = $script:HcWin
+    $a = $w.Ai
+    $state = @($Output | Where-Object { $_ -and $_.PSObject.Properties['Answer'] -and $_.PSObject.Properties['Reports'] }) | Select-Object -Last 1
+    $a.Progress = @($Info | Where-Object { $_ -ne (T 'ai.thinking') })
+    if ($ErrorText -or -not $state) {
+        $a.Stage = 'answer'
+        $a.Error = T 'win.error' $(if ($ErrorText) { $ErrorText } else { '-' })
+    } else {
+        $a.State = $state
+        $a.Stage = 'answer'
+        if ($state.Error) {
+            if ($state.Error -eq 'locked_out') { $script:HcToken = $null }
+            $a.Error = Get-HcRelayMessage $state.Error
+        } elseif ($state.Refused) { $a.Error = T 'win.ai.refused' }
+        # The checks the AI ran count as opened this visit, as in the text menu.
+        foreach ($code in @($state.Reports.Keys)) {
+            $w.Reports[$code] = $state.Reports[$code]
+            if ($state.Inputs.ContainsKey($code)) { $w.Inputs[$code] = $state.Inputs[$code] }
+        }
+        $pick = if ($state.Answer) { [string]$state.Answer.problem_code } else { '' }
+        if ($state.Reports.ContainsKey($pick)) { Save-HcVisit $pick $state.Reports[$pick] }
+    }
+    Update-HcOther
+    Update-HcSide
+}
+
+# "Show the fixes": the report of the problem the AI points to, in
+# Problemen, with only the fixes it chose (all of them after a re-check).
+function Open-HcAiFixes {
+    $w = $script:HcWin
+    $s = $w.Ai.State
+    $code = [string]$s.Answer.problem_code
+    $report = $s.Reports[$code]
+    if (-not $report) { return }
+    Select-HcActions $report @($s.Answer.fix_ids | ForEach-Object { [string]$_ })
+    $w.Tab = 'problems'
+    $w.Code = $code
+    $w.Report = $report
+    $w.FromAll = $false
+    Clear-HcMessages
+    $w.View = 'report'
+    $script:HcCurrentCode = $code
+    Update-HcTabs
+    Update-HcGroups
+    Update-HcResult
+}
+
+# A chat bubble: the client's words on the right, the AI's on the left.
+function New-HcBubble {
+    param([object[]]$Children, [switch]$Mine)
+    $stack = New-Object Windows.Controls.StackPanel
+    foreach ($c in $Children) { if ($c) { [void]$stack.Children.Add($c) } }
+    $b = New-Object Windows.Controls.Border
+    $b.CornerRadius = New-Object Windows.CornerRadius(14)
+    $b.BorderThickness = New-HcThickness @(1, 1, 1, 1)
+    $b.Padding = New-HcThickness @(16, 12, 16, 8)
+    $b.Margin = New-HcThickness @($(if ($Mine) { 120 } else { 0 }), 0, $(if ($Mine) { 0 } else { 80 }), 12)
+    $b.HorizontalAlignment = if ($Mine) { 'Right' } else { 'Left' }
+    $b.SetResourceReference([Windows.Controls.Border]::BackgroundProperty, $(if ($Mine) { 'HiSoft' } else { 'Panel' }))
+    $b.SetResourceReference([Windows.Controls.Border]::BorderBrushProperty, 'Line')
+    $b.Child = $stack
+    $b
+}
+
+function Update-HcAiPanel {
+    param($Panel)
+    $w = $script:HcWin
+    $a = $w.Ai
+    $add = { param($element) [void]$Panel.Children.Add($element) }
+    Start-HcAi
+
+    switch ($a.Stage) {
+        'offline' { & $add (New-HcText (T 'ai.offline') 15 'Soft'); return }
+        'code'    { & $add (New-HcCodeBox 'ai' (T 'win.ai.codeIntro')); return }
+    }
+    & $add (New-HcText (T 'ai.privacy') 14 'Soft' -Margin @(0, 0, 0, 14))
+
+    if ($a.Stage -eq 'ask') {
+        & $add (New-HcText (T 'ai.title') 15 'Text' -Bold)
+        $box = New-HcTextBox $a.Question
+        $box.AcceptsReturn = $false
+        $box.TextWrapping = 'Wrap'
+        $box.MinHeight = 70
+        $box.VerticalContentAlignment = 'Top'
+        $box.Tag = @{ Do = 'aiAsk' }
+        $box.Add_TextChanged({ $script:HcWin.Ai.Question = $this.Text })
+        $box.Add_KeyDown({ if ($_.Key -eq 'Return') { Invoke-HcClick $this } })
+        $box.Margin = New-HcThickness @(0, 4, 0, 8)
+        $box.Add_Loaded({ [void]$this.Focus() })
+        $a.Box = $box
+        & $add $box
+        $ask = New-HcButton (T 'win.ai.ask') @{ Do = 'aiAsk' } 'HcPrimary'
+        $ask.HorizontalAlignment = 'Left'
+        & $add $ask
+        # Examples, as a client would say it: one click fills the box.
+        & $add (New-HcText (T 'win.ai.examples') 13 'Soft' -Bold -Margin @(0, 14, 0, 6))
+        $chips = New-Object Windows.Controls.WrapPanel
+        foreach ($e in @((T 'win.ai.example') -split '\|' | ForEach-Object { $_.Trim() } | Where-Object { $_ })) {
+            [void]$chips.Children.Add((New-HcChip $e @{ Do = 'aiExample'; Text = $e }))
+        }
+        & $add $chips
+        return
+    }
+
+    & $add (New-HcBubble @(New-HcText $a.Question 15 'Text' -Margin @(0, 0, 0, 4)) -Mine)
+    $lines = @()
+    foreach ($p in @($a.Progress)) { $lines += New-HcLine 'ok' $p 'Soft' }
+    if ($a.Stage -eq 'running') {
+        $lines += New-HcText (T 'ai.thinking') 14.5 'Soft' -Margin @(0, 4, 0, 4)
+        $bar = New-Object Windows.Controls.ProgressBar
+        $bar.IsIndeterminate = $true
+        $bar.Height = 6
+        $bar.Width = 260
+        $bar.HorizontalAlignment = 'Left'
+        $bar.Margin = New-HcThickness @(0, 0, 0, 6)
+        $bar.SetResourceReference([Windows.Controls.Control]::ForegroundProperty, 'Hi')
+        $lines += $bar
+        & $add (New-HcBubble $lines)
+        return
+    }
+
+    # The answer.
+    $s = $a.State
+    if ($a.Error) {
+        $lines += New-HcText $a.Error 15 'Warn' -Bold
+    } elseif ($s -and $s.Answer) {
+        $answer = $s.Answer
+        $lines += New-HcText ([string]$answer.summary) 15.5 'Text' -Margin @(0, 4, 0, 6)
+        $lines += New-HcText (T ('ai.confidence.' + $answer.confidence)) 13 'Soft'
+        $steps = @($answer.steps | Where-Object { $_ })
+        if ($steps.Count) {
+            $lines += New-HcText (T 'ai.steps').TrimEnd(':') 14 'Text' -Bold -Margin @(0, 8, 0, 4)
+            for ($i = 0; $i -lt $steps.Count; $i++) { $lines += New-HcText ("$($i + 1).  " + [string]$steps[$i]) 14.5 'Text' -Margin @(0, 0, 0, 4) }
+        }
+        $code = [string]$answer.problem_code
+        if ($s.Reports.ContainsKey($code)) {
+            $count = @($answer.fix_ids | Where-Object { $_ }).Count
+            $label = if ($count) { T 'win.ai.openFixes' $code (T "problem.$code") } else { T 'win.ai.openCheck' $code (T "problem.$code") }
+            $open = New-HcButton $label @{ Do = 'aiFixes' } 'HcPrimary'
+            $open.Margin = New-HcThickness @(0, 8, 0, 8)
+            $open.HorizontalAlignment = 'Left'
+            $lines += $open
+        }
+    } elseif ($s -and $s.Text) {
+        $lines += New-HcText ([string]$s.Text) 15 'Text'
+    } else {
+        $lines += New-HcText (T 'win.ai.noAnswer') 15 'Warn'
+    }
+    & $add (New-HcBubble $lines)
+    $again = New-HcButton (T 'win.ai.again') @{ Do = 'aiAgain' }
+    $again.HorizontalAlignment = 'Left'
+    & $add $again
+}
+
+function Invoke-HcAiClick {
+    param([hashtable]$Tag)
+    $w = $script:HcWin
+    switch ($Tag.Do) {
+        'aiAsk'     { Start-HcAiQuestion }
+        'aiExample' { $w.Ai.Box.Text = $Tag.Text; $w.Ai.Box.CaretIndex = $Tag.Text.Length; [void]$w.Ai.Box.Focus() }
+        'aiFixes'   { Open-HcAiFixes }
+        'aiAgain'   { $w.Ai.Stage = 'ask'; $w.Ai.Question = ''; Update-HcOther }
+        default     { return $false }
+    }
+    $true
+}
+
 # ==================================================== src\ai.ps1 ==
 <#
     The AI chat (?): the problem in the client's own words, and Claude picks
@@ -11588,7 +11842,9 @@ function Invoke-HcAiConversation {
     $first = @(@{ type = 'text'; text = "[$script:Lang]`n$Problem" })
     [void]$history.Add(@{ role = 'user'; content_json = (ConvertTo-HcContentJson $first) })
 
-    $state = [pscustomobject]@{ Answer = $null; Text = $null; Reports = @{}; Checks = @{}; Error = $null; Refused = $false }
+    # Inputs: the site or email address the AI passed with A3 or A4, so the
+    # window can check the same one again after a fix.
+    $state = [pscustomobject]@{ Answer = $null; Text = $null; Reports = @{}; Checks = @{}; Inputs = @{}; Error = $null; Refused = $false }
     $checksRun = 0
     for ($round = 0; $round -lt $script:AiMaxRounds; $round++) {
         Write-Dim (T 'ai.thinking')
@@ -11618,6 +11874,7 @@ function Invoke-HcAiConversation {
             $report = & $check
             $state.Reports[$code] = $report
             $state.Checks[$code] = $check
+            $state.Inputs[$code] = [string]$block.input.input
             $results += @{ type = 'tool_result'; tool_use_id = $block.id; content = (Format-HcReportForAi $report) }
         }
         if ($state.Answer -or $results.Count -eq 0) { return $state }
@@ -11690,11 +11947,11 @@ function Invoke-HcAi {
 # The options, saved before the code loads: run as a file (a USB stick),
 # this script's scope is Housecall's script: scope, and loading the code
 # resets $script:Lang -- which is this same $Lang.
-$HcOptions = @{ DryRun = [bool]$DryRun; Lang = $Lang; Start = $Start; NoAI = [bool]$NoAI; Window = [bool]$Window }
+$HcOptions = @{ DryRun = [bool]$DryRun; Lang = $Lang; Start = $Start; NoAI = [bool]$NoAI; Console = [bool]$Console }
 
 . ([scriptblock]::Create($HcSource))
 $script:HcSource = $HcSource
 $script:HcBuild = $HcBuild
 # Run from a file (a USB stick) rather than through irm | iex.
 $script:HcFromFile = [bool]$PSCommandPath
-Start-Housecall -DryRun:$HcOptions.DryRun -Lang $HcOptions.Lang -Start $HcOptions.Start -NoAI:$HcOptions.NoAI -Window:$HcOptions.Window
+Start-Housecall -DryRun:$HcOptions.DryRun -Lang $HcOptions.Lang -Start $HcOptions.Start -NoAI:$HcOptions.NoAI -Console:$HcOptions.Console

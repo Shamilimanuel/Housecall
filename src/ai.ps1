@@ -73,7 +73,9 @@ function Invoke-HcAiConversation {
     $first = @(@{ type = 'text'; text = "[$script:Lang]`n$Problem" })
     [void]$history.Add(@{ role = 'user'; content_json = (ConvertTo-HcContentJson $first) })
 
-    $state = [pscustomobject]@{ Answer = $null; Text = $null; Reports = @{}; Checks = @{}; Error = $null; Refused = $false }
+    # Inputs: the site or email address the AI passed with A3 or A4, so the
+    # window can check the same one again after a fix.
+    $state = [pscustomobject]@{ Answer = $null; Text = $null; Reports = @{}; Checks = @{}; Inputs = @{}; Error = $null; Refused = $false }
     $checksRun = 0
     for ($round = 0; $round -lt $script:AiMaxRounds; $round++) {
         Write-Dim (T 'ai.thinking')
@@ -103,6 +105,7 @@ function Invoke-HcAiConversation {
             $report = & $check
             $state.Reports[$code] = $report
             $state.Checks[$code] = $check
+            $state.Inputs[$code] = [string]$block.input.input
             $results += @{ type = 'tool_result'; tool_use_id = $block.id; content = (Format-HcReportForAi $report) }
         }
         if ($state.Answer -or $results.Count -eq 0) { return $state }
