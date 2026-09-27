@@ -2342,10 +2342,12 @@ function T {
     $text
 }
 
-# Dutch when Windows is set to Dutch, English for everything else.
+# Dutch when Windows is set to Dutch or the PC's country is the Netherlands
+# (an English Windows in Almere is still a Dutch client), else English.
 function Get-HcDefaultLanguage {
-    try {
-        if ((Get-UICulture).Name -like 'nl*') { return 'nl' }
-    } catch { }
-    'en'
+    param(
+        [string]$UiCulture = $(try { (Get-UICulture).Name } catch { '' }),
+        [string]$Country = (Get-ItemProperty 'HKCU:\Control Panel\International\Geo' -ErrorAction SilentlyContinue).Name
+    )
+    if ($UiCulture -like 'nl*' -or $Country -eq 'NL') { 'nl' } else { 'en' }
 }

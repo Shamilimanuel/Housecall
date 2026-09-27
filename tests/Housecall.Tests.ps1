@@ -134,6 +134,13 @@ Describe 'Strings' {
         T 'no.such.key' | Should Be '[no.such.key]'
         $script:Lang = 'en'
     }
+
+    It 'starts in Dutch for a Dutch Windows or a PC in the Netherlands (Shamil''s PC)' {
+        Get-HcDefaultLanguage 'nl-NL' 'BE' | Should Be 'nl'
+        Get-HcDefaultLanguage 'en-NL' 'NL' | Should Be 'nl'
+        Get-HcDefaultLanguage 'en-GB' 'GB' | Should Be 'en'
+        Get-HcDefaultLanguage '' '' | Should Be 'en'
+    }
 }
 
 Describe 'A1: Test-HcInternet' {
