@@ -103,6 +103,7 @@ $script:HcWorkerScript = {
         'online' { Test-HcOnline }
         'relay'  { Invoke-HcRelay $Body }
         'pcid'   { Get-HcPcId }
+        'overview' { Get-HcOverviewFacts }
     }
 }.ToString()
 
@@ -337,7 +338,7 @@ function New-HcWindowXaml {
     </Grid>
 
     <ScrollViewer Grid.Row="1" x:Name="OtherTab" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-      <StackPanel x:Name="OtherPanel" Margin="26,22,26,22" MaxWidth="900" HorizontalAlignment="Left"/>
+      <StackPanel x:Name="OtherPanel" Margin="26,22,26,22" MaxWidth="1000" HorizontalAlignment="Left"/>
     </ScrollViewer>
   </Grid>
 </Window>
@@ -385,7 +386,7 @@ function New-HcHeading {
 # [ OK ], [ !! ], [ ! ] and [ -- ] as small framed tags, like the text menu.
 function New-HcTag {
     param([string]$Status)
-    $map = @{ ok = @('OK', 'Ok'); problem = @('!!', 'Bad'); warn = @('!', 'Warn'); skipped = @('--', 'Soft') }
+    $map = @{ ok = @('OK', 'Ok'); problem = @('!!', 'Bad'); warn = @('!', 'Warn'); skipped = @('--', 'Soft'); tip = @('TIP', 'Hi'); info = @('i', 'Soft') }
     $style = $map[$Status]
     if (-not $style) { $style = $map['skipped'] }
     $border = New-Object Windows.Controls.Border
@@ -772,7 +773,7 @@ function Update-HcOther {
             & $add $wrap
         }
         'visit' { Update-HcHistoryPanel $panel }
-        'pc' { & $add (New-HcText (T 'win.pc.soon') 15 'Soft') }
+        'pc' { Update-HcPcPanel $panel }
         'ai' {
             & $add (New-HcText (T 'win.ai.soon') 15 'Soft')
             & $add (New-HcButton (T 'win.console') @{ Do = 'close'; Outcome = 'console' })
@@ -827,7 +828,7 @@ function Invoke-HcClick {
                 $w.Outcome = $tag.Outcome
                 $w.Window.Close()
             }
-            default    { Invoke-HcVisitClick $tag }
+            default    { if (-not (Invoke-HcPcClick $tag)) { Invoke-HcVisitClick $tag } }
         }
     } catch {
         $w.Notice = T 'win.error' $_.Exception.Message
@@ -1073,6 +1074,7 @@ function Show-HcWindow {
         Queue = New-Object System.Collections.ArrayList; Job = $null; WasBusy = $false
         Runspace = $null; Outcome = 'done'; Finished = $false; CloseAnyway = $false; CloseAsk = $false
         VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null }
+        Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }
         Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
     }
     $w = $script:HcWin

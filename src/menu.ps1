@@ -199,6 +199,7 @@ function Start-Housecall {
     $script:HcChanges.Clear()
     $script:HcVisit.Clear()
     $script:HcWork.Clear()
+    $script:HcAdvice.Clear()
     $script:HcAsked = ''
     $script:HandedOff = $false
     $script:HcToken = $null

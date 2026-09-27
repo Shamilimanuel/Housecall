@@ -19,6 +19,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\checks\performance.ps1')
 . (Join-Path $root 'src\checks\updates.ps1')
 . (Join-Path $root 'src\checks\desktop.ps1')
+. (Join-Path $root 'src\checks\overview.ps1')
 . (Join-Path $root 'src\fixes.ps1')
 . (Join-Path $root 'src\note.ps1')
 . (Join-Path $root 'src\relay.ps1')
@@ -26,6 +27,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\invoice-page.ps1')
 . (Join-Path $root 'src\window.ps1')
 . (Join-Path $root 'src\window-visit.ps1')
+. (Join-Path $root 'src\window-pc.ps1')
 . (Join-Path $root 'src\ai.ps1')
 
 # Housecall's own source, put together the way dev.ps1 does it.
@@ -1416,6 +1418,117 @@ Describe 'The window (phase 6)' {
         Start-Housecall -Lang nl -Window -Answers @('Q') 6>&1 | Out-Null
         Assert-MockCalled Show-HcWindow -Times 0 -Exactly
         Test-HcWindowPossible | Should Be $false
+    }
+}
+
+Describe 'Pc-overzicht: what this PC is, and the advice' {
+    $script:Lang = 'nl'
+    $today = [datetime]'2026-09-27'
+    # Shamil's own PC (27 Sep 2026), as read by Get-HcOverviewFacts.
+    $pc = { param([hashtable]$Change = @{})
+        $f = [pscustomobject]@{
+            Name = 'Zelfbouw-pc (ASUS ROG STRIX B550-A GAMING)'; Laptop = $false; Cpu = 'AMD Ryzen 7 5800X 8-Core Processor'; Cores = 8; Gpus = @('AMD Radeon RX 9060 XT')
+            RamGB = 31.9; RamType = 'DDR4'; SlotsUsed = 2; SlotsTotal = 4; Os = 'Windows 11 Home'; Edition = 'Core'; DisplayVersion = '25H2'; Build = 26200
+            Disks = @([pscustomobject]@{ Number = 0; Name = 'ST4000DM004'; Bus = 'SATA'; Kind = 'HDD'; SizeGB = 4001; Health = 'Healthy' },
+                      [pscustomobject]@{ Number = 1; Name = 'CT2000P310SSD8'; Bus = 'NVMe'; Kind = 'SSD'; SizeGB = 2000; Health = 'Healthy' })
+            SystemDisk = 1; SystemSizeGB = 1861.9; SystemFreeGB = 1312.7; HasBattery = $false; BatteryHealth = $null
+        }
+        foreach ($k in $Change.Keys) { $f.$k = $Change[$k] }
+        $f }
+    $ids = { param($f) @(Get-HcOverviewAdvice $f $today | ForEach-Object { $_.Id }) }
+
+    It 'names the PC: brand and model, Lenovo''s readable name, or a self-built PC''s board' {
+        Get-HcPcName 'HP' 'HP Pavilion Laptop 15-eg0xxx' '' '' '' | Should Be 'HP Pavilion Laptop 15-eg0xxx'
+        Get-HcPcName 'Dell Inc.' 'Inspiron 15 3511' '' '' '' | Should Be 'Dell Inspiron 15 3511'
+        Get-HcPcName 'LENOVO' '20L5CTO1WW' 'ThinkPad T480' '' '' | Should Be 'Lenovo ThinkPad T480'
+        Get-HcPcName 'ASUS' 'System Product Name' 'System Version' 'ASUSTeK COMPUTER INC.' 'ROG STRIX B550-A GAMING' | Should Be 'Zelfbouw-pc (ASUS ROG STRIX B550-A GAMING)'
+        Get-HcPcName 'To be filled by O.E.M.' 'To be filled by O.E.M.' '' '' 'Default string' | Should Be 'Onbekend model'
+    }
+
+    It 'dates a processor by its generation, not the BIOS' {
+        Get-HcCpuYear 'AMD Ryzen 7 5800X 8-Core Processor' | Should Be 2020
+        Get-HcCpuYear 'Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz' | Should Be 2017
+        Get-HcCpuYear 'Intel(R) Core(TM) i7-1065G7 CPU @ 1.30GHz' | Should Be 2019
+        Get-HcCpuYear '12th Gen Intel(R) Core(TM) i5-12450H' | Should Be 2021
+        Get-HcCpuYear 'Intel(R) Core(TM) i3-4005U CPU @ 1.70GHz' | Should Be 2013
+        Get-HcCpuYear 'Intel(R) Core(TM) Ultra 7 155H' | Should Be 2023
+        Get-HcCpuYear 'Intel(R) Celeron(R) N4020 CPU @ 1.10GHz' | Should Be 2018
+        Get-HcCpuYear 'Intel(R) N100' | Should Be 2023
+        Get-HcCpuYear 'AMD A6-9225 RADEON R4' | Should Be $null
+    }
+
+    It 'knows which processors Windows 11 takes' {
+        Test-HcCpuWin11 'AMD Ryzen 7 5800X 8-Core Processor' | Should Be $true
+        Test-HcCpuWin11 'Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz' | Should Be $true
+        Test-HcCpuWin11 'Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz' | Should Be $false
+        Test-HcCpuWin11 'Intel(R) Core(TM) i3-4005U CPU @ 1.70GHz' | Should Be $false
+        Test-HcCpuWin11 'AMD Ryzen 5 1600 Six-Core Processor' | Should Be $false
+        Test-HcCpuWin11 'AMD A6-9225 RADEON R4' | Should Be $null
+    }
+
+    It 'knows until when Windows gets updates' {
+        (Get-HcWindowsSupport 26200 '25H2' 'Core' $today).Status | Should Be 'ok'
+        (Get-HcWindowsSupport 26100 '24H2' 'Professional' $today).Status | Should Be 'soon'
+        (Get-HcWindowsSupport 22631 '23H2' 'Core' $today).Status | Should Be 'ended'
+        $ten = Get-HcWindowsSupport 19045 '22H2' 'Core' $today
+        $ten.Major | Should Be 10
+        $ten.Esu | Should Be ([datetime]'2026-10-13')
+        Get-HcWindowsSupport 26100 '24H2' 'Enterprise' $today | Should Be $null
+    }
+
+    It 'tells SSD from HDD, also when Windows says Unspecified' {
+        Get-HcDiskKind 'SSD' 'SATA' 0 | Should Be 'SSD'
+        Get-HcDiskKind 'Unspecified' 'NVMe' 0 | Should Be 'SSD'
+        Get-HcDiskKind 'Unspecified' 'SATA' 5400 | Should Be 'HDD'
+        Get-HcDiskKind 'Unspecified' 'SATA' ([uint32]::MaxValue) | Should Be 'unknown'
+        Format-HcSize 2000 | Should Be '2 TB'
+        Format-HcSize 4001 | Should Be '4 TB'
+        Format-HcSize 512 | Should Be '512 GB'
+    }
+
+    It 'is happy with Shamil''s PC' {
+        & $ids (& $pc) | Should Be 'allGood'
+    }
+
+    It 'gives the classic advice for a 2017 laptop on a hard disk with 4 GB' {
+        $old = & $pc @{ Laptop = $true; Cpu = 'Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz'; RamGB = 3.9
+            Disks = @([pscustomobject]@{ Number = 0; Name = 'WDC WD10SPZX'; Bus = 'SATA'; Kind = 'HDD'; SizeGB = 1000; Health = 'Healthy' })
+            SystemDisk = 0; SystemSizeGB = 931; SystemFreeGB = 60; HasBattery = $true; BatteryHealth = 64 }
+        & $ids $old | Should Be @('ssd', 'diskFull', 'ramLaptop', 'batteryAging', 'oldPc')
+        $a = @(Get-HcOverviewAdvice $old $today)
+        ($a | Where-Object { $_.Id -eq 'ramLaptop' }).Args | Should Be @(4, 8)
+        ($a | Where-Object { $_.Id -eq 'oldPc' }).Args | Should Be @(2017, 9)
+    }
+
+    It 'says a disk in trouble first, and Windows 10 by what the processor allows' {
+        $sick = & $pc @{ Disks = @([pscustomobject]@{ Number = 1; Name = 'SSD'; Bus = 'NVMe'; Kind = 'SSD'; SizeGB = 500; Health = 'Warning' }) }
+        @(& $ids $sick)[0] | Should Be 'diskHealth'
+        & $ids (& $pc @{ Build = 19045; DisplayVersion = '22H2' }) | Should Be 'win11Free'
+        $stuck = & $pc @{ Build = 19045; DisplayVersion = '22H2'; Cpu = 'Intel(R) Core(TM) i3-4005U CPU @ 1.70GHz' }
+        (& $ids $stuck) -contains 'win10Stuck' | Should Be $true
+        @(Get-HcOverviewAdvice $stuck ([datetime]'2026-11-01') | ForEach-Object { $_.Id }) -contains 'win10StuckEnded' | Should Be $true
+        & $ids (& $pc @{ DisplayVersion = '24H2'; Build = 26100 }) | Should Be 'winVersionSoon'
+    }
+
+    It 'puts picked advice on the note and the invoice' {
+        $script:HcVisit.Clear(); $script:HcChanges.Clear(); $script:HcWork.Clear(); $script:HcAdvice.Clear()
+        [void]$script:HcVisit.Add([pscustomobject]@{ Code = 'D1'; FindingId = 'slowOk'; FindingArgs = @() })
+        [void]$script:HcAdvice.Add('Een SSD plaatsen in plaats van de harde schijf: veel sneller opstarten.')
+        @(Get-HcNoteBlocks | ForEach-Object { $_.Text }) -contains 'Advies' | Should Be $true
+        $fin = New-HcFinishState
+        $fin.Minutes = 30
+        $texts = @(Get-HcInvoiceLayout (New-HcDraftInvoice $fin ([pscustomobject]@{ start_fee = 15; start_minutes = 30 }) $today) | ForEach-Object { $_ } | ForEach-Object { $_.Text })
+        $texts -contains 'Advies' | Should Be $true
+        $texts -contains 'Een SSD plaatsen in plaats van de harde schijf: veel sneller opstarten.' | Should Be $true
+        $script:HcVisit.Clear(); $script:HcAdvice.Clear()
+    }
+
+    It 'has every advice in both languages, each with a title and a short line' {
+        foreach ($id in 'diskHealth', 'ssd', 'diskFull', 'ram', 'ramLaptop', 'win11Free', 'win10Stuck', 'win10StuckEnded', 'winVersionSoon', 'winVersionEnded', 'batteryReplace', 'batteryAging', 'oldPc', 'allGood') {
+            foreach ($lang in 'en', 'nl') {
+                foreach ($key in "adv.$id", "adv.$id.title", "adv.$id.short") { $script:Strings[$lang][$key] | Should Not BeNullOrEmpty }
+            }
+        }
     }
 }
 

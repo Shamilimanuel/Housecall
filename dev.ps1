@@ -64,6 +64,7 @@ $HcSource = @(
     'checks\performance.ps1'
     'checks\updates.ps1'
     'checks\desktop.ps1'
+    'checks\overview.ps1'
     'fixes.ps1'
     'note.ps1'
     'relay.ps1'
@@ -71,6 +72,7 @@ $HcSource = @(
     'invoice-page.ps1'
     'window.ps1'
     'window-visit.ps1'
+    'window-pc.ps1'
     'ai.ps1'
 ) | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $PSScriptRoot 'src') $_)) }
 $HcSource = $HcSource -join "`r`n"

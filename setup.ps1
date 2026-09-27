@@ -40,7 +40,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = '6750d4a239c5'
+$HcBuild = '5a9bd356b279'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -1042,7 +1042,6 @@ $script:Strings = @{
         'win.safety.F1'      = 'Websites allowed to send notifications, and pop-ups that keep coming back.'
         'win.safety.F2'      = 'AnyDesk, TeamViewer and the like: when they were put on, and whether they run now.'
         'win.safety.F3'      = 'Virus scanner, updates, unknown tasks and more, all at once.'
-        'win.pc.soon'        = 'Coming soon: this PC''s model and age, Windows support, disk, memory and battery, with advice on upgrades.'
         'win.ai.soon'        = 'Describing a problem in your own words is in the text menu for now (the ? key).'
         'win.open'                   = 'Open {0}'
         'win.visitView.finish'       = 'Finish'
@@ -1102,6 +1101,90 @@ $script:Strings = @{
         'doc.forCap'                 = 'FOR'
         'doc.noteKeep'               = 'Keep this note: it says what was done to your computer.'
         'doc.noPdfPrinter'           = '"Microsoft Print to PDF" is not on this PC.'
+        'doc.adviceTitle'            = 'Advice'
+        'pc.selfBuilt'               = 'Self-built PC ({0})'
+        'pc.unknownModel'            = 'Unknown model'
+        'pc.readOnly'                = 'Read only: nothing changes on this PC.'
+        'pc.refresh'                 = 'Look again'
+        'pc.loading'                 = 'Looking at this PC...'
+        'pc.error'                   = 'The overview could not be read: {0}'
+        'pc.card.pc'                 = 'This PC'
+        'pc.card.ram'                = 'Memory'
+        'pc.card.disk'               = 'Storage'
+        'pc.card.battery'            = 'Battery'
+        'pc.laptop'                  = 'Laptop'
+        'pc.desktop'                 = 'Desktop PC'
+        'pc.cpuYear'                 = 'Processor from around {0}, {1} cores'
+        'pc.cpuCores'                = '{0} cores'
+        'pc.gpu'                     = 'Graphics: {0}'
+        'pc.win.ok'                  = 'Gets updates until {0}'
+        'pc.win.soon'                = 'Updates stop on {0}: update to the newest version'
+        'pc.win.ended'               = 'No more updates since {0}'
+        'pc.win.unknown'             = 'End of updates not known for this edition'
+        'pc.win10'                   = 'Free updates for Windows 10 stopped on {0}'
+        'pc.win10Esu'                = 'With ESU, security updates until {0}'
+        'pc.win11Cpu.true'           = 'The processor can run Windows 11'
+        'pc.win11Cpu.false'          = 'The processor is too old for Windows 11'
+        'pc.win11Cpu.unknown'        = 'Whether Windows 11 fits: check with E1'
+        'pc.ram'                     = '{0} GB {1}'
+        'pc.slots'                   = '{0} of {1} slots used'
+        'pc.ramOk'                   = 'Enough for everyday use'
+        'pc.ramLow'                  = 'Little for Windows and a web browser'
+        'pc.kind.SSD'                = 'SSD'
+        'pc.kind.HDD'                = 'hard disk'
+        'pc.kind.unknown'            = 'disk'
+        'pc.systemDisk'              = 'Windows is on this one'
+        'pc.free'                    = '{0} GB free of {1} GB'
+        'pc.healthOk'                = 'Healthy'
+        'pc.healthBad'               = 'Windows reports: {0}'
+        'pc.noDisks'                 = 'Windows does not list the disks'
+        'pc.battery'                 = '{0}% of its original capacity left'
+        'pc.noBatteryInfo'           = 'Windows does not say how worn the battery is'
+        'pc.advice'                  = 'Advice'
+        'pc.onNote'                  = 'On the note'
+        'pc.onNoteDone'              = 'On the note'
+        'adv.diskHealth.title'       = 'The disk reports problems'
+        'adv.diskHealth'             = 'Windows reports that "{0}" is not healthy. Back up photos and files as soon as possible, and replace the disk.'
+        'adv.diskHealth.short'       = 'Back up, and replace the disk "{0}".'
+        'adv.ssd.title'              = 'An SSD instead of the hard disk'
+        'adv.ssd'                    = 'Windows is on an old-fashioned hard disk. An SSD makes this PC clearly faster: starting in seconds instead of minutes. It is an affordable part, fitted in about an hour, and Windows and the files come along.'
+        'adv.ssd.short'              = 'Fit an SSD instead of the hard disk: much faster starting.'
+        'adv.diskFull.title'         = 'The disk is nearly full'
+        'adv.diskFull'               = 'There is {0} GB free on the disk Windows is on. That makes the PC slow and holds updates back. D4 shows what can be cleared up.'
+        'adv.diskFull.short'         = 'Free up space on the disk.'
+        'adv.ram.title'              = 'More memory'
+        'adv.ram'                    = 'This PC has {0} GB of memory. With {1} GB, more programs and browser tabs can be open at once without it freezing.'
+        'adv.ram.short'              = 'Add memory, to {1} GB.'
+        'adv.ramLaptop.title'        = 'More memory'
+        'adv.ramLaptop'              = 'This laptop has {0} GB of memory. With {1} GB, more programs and browser tabs can be open at once without it freezing. In some laptops the memory is soldered in; check that first.'
+        'adv.ramLaptop.short'        = 'Add memory, to {1} GB, if this laptop allows it.'
+        'adv.win11Free.title'        = 'Move to Windows 11'
+        'adv.win11Free'              = 'Windows 10 no longer gets free updates. This processor can run Windows 11, and moving is free. With the extra security updates (ESU) Windows 10 stays safe until {0}, and not after. E1 checks whether everything is ready.'
+        'adv.win11Free.short'        = 'Move to Windows 11 (free), before {0}.'
+        'adv.win10Stuck.title'       = 'Windows 10, and Windows 11 is not possible'
+        'adv.win10Stuck'             = 'Windows 11 does not support this processor. With the extra security updates (ESU) Windows 10 stays safe until {0}. After that a newer PC is the safe choice, certainly for online banking.'
+        'adv.win10Stuck.short'       = 'Plan a newer PC: Windows 10 gets no security updates after {0}.'
+        'adv.win10StuckEnded.title'  = 'Windows 10 gets no more updates'
+        'adv.win10StuckEnded'        = 'Windows 10 has had no security updates since {0}, and Windows 11 does not support this processor. For online banking and email a newer PC is now the safe choice.'
+        'adv.win10StuckEnded.short'  = 'A newer PC: Windows 10 gets no more security updates.'
+        'adv.winVersionSoon.title'   = 'Update Windows to the newest version'
+        'adv.winVersionSoon'         = 'Windows 11 version {0} gets updates until {1}. Windows Update moves the PC to the newest version for free; E1 checks that Windows Update works.'
+        'adv.winVersionSoon.short'   = 'Update Windows 11 to the newest version (before {1}).'
+        'adv.winVersionEnded.title'  = 'This Windows version gets no more updates'
+        'adv.winVersionEnded'        = 'Windows 11 version {0} has had no updates since {1}. Windows Update moves the PC to the newest version for free; E1 looks at why that has not happened yet.'
+        'adv.winVersionEnded.short'  = 'Update Windows 11 to the newest version.'
+        'adv.batteryReplace.title'   = 'A new battery'
+        'adv.batteryReplace'         = 'The battery holds {0}% of its original capacity. A new battery for exactly this model makes the laptop portable again.'
+        'adv.batteryReplace.short'   = 'A new battery ({0}% capacity left).'
+        'adv.batteryAging.title'     = 'The battery is getting older'
+        'adv.batteryAging'           = '{0}% of its original capacity: fine at home on the charger. Replacing it only matters once it runs out too fast.'
+        'adv.batteryAging.short'     = 'The battery holds {0}%; replace it once it runs out too fast.'
+        'adv.oldPc.title'            = 'A PC from around {0}'
+        'adv.oldPc'                  = 'The processor is from around {0}, some {1} years old. For email, the internet and photos it is still fine with an SSD and enough memory. For a big repair, a newer PC is worth weighing up.'
+        'adv.oldPc.short'            = 'PC from around {0}: for a big repair, weigh up a newer PC.'
+        'adv.allGood.title'          = 'This PC is in good shape'
+        'adv.allGood'                = 'No upgrade needed: the disk, the memory and Windows are all right.'
+        'adv.allGood.short'          = 'PC in good shape; no upgrade needed.'
         'steps.batteryMissing'     = 'Shut the laptop down and unplug it. | If the battery can be taken out (a latch underneath), take it out and put it back firmly. | Still no battery? Note the laptop''s model (sticker underneath) and order a battery for exactly that model, or plan the replacement as a separate job.'
         'steps.notCharging'        = 'Check that the charger is firmly in the laptop and in the wall socket; try another socket. | Look at the charging light on the laptop or the charger, if there is one. | Try a different charger of the same type, if one is available. | Still not charging: the charger or the battery is broken. Note the model (sticker underneath) and order the right part.'
         'steps.batteryWorn'        = 'Note the laptop''s model (sticker underneath) and look up a battery for exactly that model. | Until then, the laptop works normally while plugged in. | Plan replacing the battery as a separate job.'
@@ -2296,7 +2379,6 @@ $script:Strings = @{
         'win.safety.F1'      = 'Websites die meldingen mogen sturen, en pop-ups die steeds terugkomen.'
         'win.safety.F2'      = 'AnyDesk, TeamViewer en dergelijke: wanneer ze erop zijn gezet, en of ze nu draaien.'
         'win.safety.F3'      = 'Virusscanner, updates, onbekende taken en meer, alles in een keer.'
-        'win.pc.soon'        = 'Binnenkort: model en leeftijd van deze pc, Windows-ondersteuning, schijf, geheugen en accu, met advies over upgrades.'
         'win.ai.soon'        = 'Een probleem in eigen woorden beschrijven kan voor nu in het tekstmenu (de ?-toets).'
         'win.open'                   = 'Open {0}'
         'win.visitView.finish'       = 'Afronden'
@@ -2356,6 +2438,90 @@ $script:Strings = @{
         'doc.forCap'                 = 'VOOR'
         'doc.noteKeep'               = 'Bewaar dit briefje: hierop staat wat er aan uw computer is gedaan.'
         'doc.noPdfPrinter'           = '"Microsoft Print to PDF" staat niet op deze pc.'
+        'doc.adviceTitle'            = 'Advies'
+        'pc.selfBuilt'               = 'Zelfbouw-pc ({0})'
+        'pc.unknownModel'            = 'Onbekend model'
+        'pc.readOnly'                = 'Alleen bekijken: er verandert niets op deze pc.'
+        'pc.refresh'                 = 'Opnieuw bekijken'
+        'pc.loading'                 = 'De pc wordt bekeken...'
+        'pc.error'                   = 'Het overzicht kon niet worden gelezen: {0}'
+        'pc.card.pc'                 = 'Deze pc'
+        'pc.card.ram'                = 'Geheugen'
+        'pc.card.disk'               = 'Opslag'
+        'pc.card.battery'            = 'Accu'
+        'pc.laptop'                  = 'Laptop'
+        'pc.desktop'                 = 'Vaste pc'
+        'pc.cpuYear'                 = 'Processor van rond {0}, {1} kernen'
+        'pc.cpuCores'                = '{0} kernen'
+        'pc.gpu'                     = 'Videokaart: {0}'
+        'pc.win.ok'                  = 'Krijgt updates tot {0}'
+        'pc.win.soon'                = 'Updates stoppen op {0}: bijwerken naar de nieuwste versie'
+        'pc.win.ended'               = 'Krijgt sinds {0} geen updates meer'
+        'pc.win.unknown'             = 'Einde van de updates onbekend voor deze editie'
+        'pc.win10'                   = 'Gratis updates voor Windows 10 gestopt op {0}'
+        'pc.win10Esu'                = 'Met ESU nog beveiligingsupdates tot {0}'
+        'pc.win11Cpu.true'           = 'De processor kan Windows 11 aan'
+        'pc.win11Cpu.false'          = 'De processor is te oud voor Windows 11'
+        'pc.win11Cpu.unknown'        = 'Of Windows 11 past: controleren met E1'
+        'pc.ram'                     = '{0} GB {1}'
+        'pc.slots'                   = '{0} van de {1} sleuven gebruikt'
+        'pc.ramOk'                   = 'Genoeg voor gewoon gebruik'
+        'pc.ramLow'                  = 'Weinig voor Windows en een webbrowser'
+        'pc.kind.SSD'                = 'SSD'
+        'pc.kind.HDD'                = 'harde schijf'
+        'pc.kind.unknown'            = 'schijf'
+        'pc.systemDisk'              = 'Windows staat hierop'
+        'pc.free'                    = '{0} GB vrij van {1} GB'
+        'pc.healthOk'                = 'Gezond'
+        'pc.healthBad'               = 'Windows meldt: {0}'
+        'pc.noDisks'                 = 'Windows geeft de schijven niet door'
+        'pc.battery'                 = 'Nog {0}% van de oorspronkelijke capaciteit'
+        'pc.noBatteryInfo'           = 'Windows zegt niet hoe versleten de accu is'
+        'pc.advice'                  = 'Advies'
+        'pc.onNote'                  = 'Op het briefje'
+        'pc.onNoteDone'              = 'Op het briefje'
+        'adv.diskHealth.title'       = 'De schijf geeft problemen aan'
+        'adv.diskHealth'             = 'Windows meldt dat "{0}" niet gezond is. Maak zo snel mogelijk een back-up van foto''s en bestanden, en vervang de schijf.'
+        'adv.diskHealth.short'       = 'Back-up maken en de schijf "{0}" vervangen.'
+        'adv.ssd.title'              = 'Een SSD in plaats van de harde schijf'
+        'adv.ssd'                    = 'Windows staat op een ouderwetse harde schijf. Een SSD maakt deze pc merkbaar sneller: opstarten in seconden in plaats van minuten. Het is een betaalbaar onderdeel, in ongeveer een uur geplaatst, en Windows en de bestanden gaan mee.'
+        'adv.ssd.short'              = 'Een SSD plaatsen in plaats van de harde schijf: veel sneller opstarten.'
+        'adv.diskFull.title'         = 'De schijf is bijna vol'
+        'adv.diskFull'               = 'Er is nog {0} GB vrij op de schijf waar Windows op staat. Dat maakt de pc traag en houdt updates tegen. D4 laat zien wat er opgeruimd kan worden.'
+        'adv.diskFull.short'         = 'Ruimte vrijmaken op de schijf.'
+        'adv.ram.title'              = 'Meer geheugen'
+        'adv.ram'                    = 'Deze pc heeft {0} GB geheugen. Met {1} GB kunnen meer programma''s en tabbladen tegelijk open zonder dat hij vastloopt.'
+        'adv.ram.short'              = 'Geheugen uitbreiden naar {1} GB.'
+        'adv.ramLaptop.title'        = 'Meer geheugen'
+        'adv.ramLaptop'              = 'Deze laptop heeft {0} GB geheugen. Met {1} GB kunnen meer programma''s en tabbladen tegelijk open zonder dat hij vastloopt. Bij sommige laptops zit het geheugen vast; dat eerst controleren.'
+        'adv.ramLaptop.short'        = 'Geheugen uitbreiden naar {1} GB, als deze laptop dat toelaat.'
+        'adv.win11Free.title'        = 'Overstappen op Windows 11'
+        'adv.win11Free'              = 'Windows 10 krijgt geen gratis updates meer. Deze processor kan Windows 11 aan, en overstappen is gratis. Met de extra beveiligingsupdates (ESU) blijft Windows 10 veilig tot {0}, daarna niet meer. E1 controleert of alles klaar is.'
+        'adv.win11Free.short'        = 'Overstappen op Windows 11 (gratis), voor {0}.'
+        'adv.win10Stuck.title'       = 'Windows 10, en Windows 11 kan niet'
+        'adv.win10Stuck'             = 'Windows 11 ondersteunt deze processor niet. Met de extra beveiligingsupdates (ESU) blijft Windows 10 veilig tot {0}. Daarna is een nieuwere pc de veilige keuze, zeker voor internetbankieren.'
+        'adv.win10Stuck.short'       = 'Een nieuwere pc plannen: Windows 10 krijgt na {0} geen beveiligingsupdates meer.'
+        'adv.win10StuckEnded.title'  = 'Windows 10 krijgt geen updates meer'
+        'adv.win10StuckEnded'        = 'Windows 10 krijgt sinds {0} geen beveiligingsupdates meer, en Windows 11 ondersteunt deze processor niet. Voor internetbankieren en e-mail is een nieuwere pc nu de veilige keuze.'
+        'adv.win10StuckEnded.short'  = 'Een nieuwere pc: Windows 10 krijgt geen beveiligingsupdates meer.'
+        'adv.winVersionSoon.title'   = 'Windows bijwerken naar de nieuwste versie'
+        'adv.winVersionSoon'         = 'Windows 11 versie {0} krijgt updates tot {1}. Via Windows Update gaat de pc gratis naar de nieuwste versie; E1 controleert of Windows Update werkt.'
+        'adv.winVersionSoon.short'   = 'Windows 11 bijwerken naar de nieuwste versie (voor {1}).'
+        'adv.winVersionEnded.title'  = 'Deze Windows-versie krijgt geen updates meer'
+        'adv.winVersionEnded'        = 'Windows 11 versie {0} krijgt sinds {1} geen updates meer. Via Windows Update gaat de pc gratis naar de nieuwste versie; E1 kijkt waarom dat nog niet is gebeurd.'
+        'adv.winVersionEnded.short'  = 'Windows 11 bijwerken naar de nieuwste versie.'
+        'adv.batteryReplace.title'   = 'Een nieuwe accu'
+        'adv.batteryReplace'         = 'De accu houdt nog {0}% van zijn oorspronkelijke capaciteit vast. Een nieuwe accu voor precies dit model maakt de laptop weer mobiel.'
+        'adv.batteryReplace.short'   = 'Een nieuwe accu (nog {0}% capaciteit).'
+        'adv.batteryAging.title'     = 'De accu raakt op leeftijd'
+        'adv.batteryAging'           = 'Nog {0}% van de oorspronkelijke capaciteit: prima voor thuis, aan de lader. Vervangen hoeft pas als hij te snel leeg is.'
+        'adv.batteryAging.short'     = 'Accu houdt nog {0}% vast; vervangen als hij te snel leeg is.'
+        'adv.oldPc.title'            = 'Een pc van rond {0}'
+        'adv.oldPc'                  = 'De processor is van rond {0}, zo''n {1} jaar oud. Voor e-mail, internet en foto''s is hij met een SSD en genoeg geheugen nog prima. Bij een grote reparatie is een nieuwere pc het overwegen waard.'
+        'adv.oldPc.short'            = 'Pc van rond {0}: bij een grote reparatie een nieuwere pc overwegen.'
+        'adv.allGood.title'          = 'Deze pc is in goede staat'
+        'adv.allGood'                = 'Geen upgrade nodig: de schijf, het geheugen en Windows zijn in orde.'
+        'adv.allGood.short'          = 'Pc in goede staat; geen upgrade nodig.'
         'steps.batteryMissing'     = 'Sluit de laptop af en haal de stekker eruit. | Kan de accu eruit (een schuifje aan de onderkant)? Haal hem eruit en zet hem stevig terug. | Nog steeds geen accu? Noteer het model van de laptop (sticker aan de onderkant) en bestel een accu voor precies dat model, of plan het vervangen als aparte klus.'
         'steps.notCharging'        = 'Controleer of de lader stevig in de laptop en in het stopcontact zit; probeer een ander stopcontact. | Kijk naar het oplaadlampje op de laptop of de lader, als dat er is. | Probeer een andere lader van hetzelfde type, als die er is. | Laadt hij nog steeds niet: de lader of de accu is kapot. Noteer het model (sticker aan de onderkant) en bestel het juiste onderdeel.'
         'steps.batteryWorn'        = 'Noteer het model van de laptop (sticker aan de onderkant) en zoek een accu voor precies dat model. | Tot die tijd werkt de laptop gewoon met de stekker erin. | Plan het vervangen van de accu als aparte klus.'
@@ -3053,6 +3219,7 @@ function Start-Housecall {
     $script:HcChanges.Clear()
     $script:HcVisit.Clear()
     $script:HcWork.Clear()
+    $script:HcAdvice.Clear()
     $script:HcAsked = ''
     $script:HandedOff = $false
     $script:HcToken = $null
@@ -6479,6 +6646,267 @@ $script:ProblemHandlers['G1'] = 'Invoke-HcG1'
 $script:ProblemHandlers['G2'] = 'Invoke-HcG2'
 $script:ProblemHandlers['G3'] = 'Invoke-HcG3'
 
+# ==================================================== src\checks\overview.ps1 ==
+<#
+    Pc-overzicht (phase 6, step 3): what this PC is, and whether an upgrade
+    makes sense. Read-only, like every check.
+
+    Get-HcOverviewFacts reads the PC; everything after it is pure, so each
+    rule can be tested: the PC's name, how old its processor is, whether
+    Windows still gets updates, and the advice. The advice is where the
+    "building PCs" half of the business shows: an SSD instead of a hard
+    disk, more memory, Windows 11 -- or honestly, time for a newer PC.
+
+    The PC's age comes from its processor, not the BIOS date: a BIOS update
+    moves that date to this year (Shamil's own PC says 2026 for a 2020
+    Ryzen), and Windows' install date only says when it was last reset.
+#>
+
+# When Windows stops getting updates, for Home and Pro (Microsoft's
+# lifecycle pages). Enterprise and Education get longer and are not judged.
+$script:WindowsSupportEnd = @{
+    '11-21H2' = '2023-10-10'; '11-22H2' = '2024-10-08'; '11-23H2' = '2025-11-11'
+    '11-24H2' = '2026-10-13'; '11-25H2' = '2027-10-12'
+}
+$script:Windows10End = '2025-10-14'
+# Extended Security Updates for home users, one extra year of Windows 10.
+$script:Windows10EsuEnd = '2026-10-13'
+# How far ahead a coming end of updates is worth mentioning.
+$script:SupportSoonDays = 60
+
+# The first year a processor was sold, per generation or series.
+$script:IntelYear = @{ 2 = 2011; 3 = 2012; 4 = 2013; 5 = 2015; 6 = 2015; 7 = 2017; 8 = 2017; 9 = 2018; 10 = 2019; 11 = 2020; 12 = 2021; 13 = 2022; 14 = 2023 }
+$script:RyzenYear = @{ 1 = 2017; 2 = 2018; 3 = 2019; 4 = 2020; 5 = 2020; 6 = 2022; 7 = 2022; 8 = 2024; 9 = 2024 }
+
+$script:PlaceholderName = '^\s*(System Product Name|System manufacturer|To be filled.*|Default string|O\.?E\.?M\.?|Not Applicable|None|x\.x|)\s*$'
+
+# ------------------------------------------------------------ pure parts --
+
+# "Dell Inc." -> "Dell", "Hewlett-Packard" -> "HP", "ASUSTeK COMPUTER INC." -> "ASUS".
+function Get-HcMakerName {
+    param([string]$Maker)
+    $m = "$Maker".Trim()
+    switch -Regex ($m) {
+        '^(HP|Hewlett)'  { return 'HP' }
+        '^ASUS'          { return 'ASUS' }
+        '^LENOVO'        { return 'Lenovo' }
+        '^Micro-Star|^MSI' { return 'MSI' }
+        '^Acer'          { return 'Acer' }
+        '^Dell'          { return 'Dell' }
+        '^Microsoft'     { return 'Microsoft' }
+        '^Gigabyte'      { return 'Gigabyte' }
+    }
+    ($m -replace '(?i)[,\s]+(inc\.?|corporation|corp\.?|co\.,? ?ltd\.?|ltd\.?|gmbh)$', '').Trim()
+}
+
+<#
+    What to call this PC: "HP Pavilion 15", "Lenovo ThinkPad T480" (Lenovo
+    keeps the readable name in the product version), or for a self-built
+    PC, which says "System Product Name", its motherboard.
+#>
+function Get-HcPcName {
+    param([string]$Maker, [string]$Model, [string]$Version, [string]$BoardMaker, [string]$Board)
+    $brand = Get-HcMakerName $Maker
+    if ($brand -eq 'Lenovo' -and $Version -notmatch $script:PlaceholderName -and $Version -notmatch '^Lenovo$') {
+        return ($brand + ' ' + ($Version -replace '^(?i)lenovo\s+', '')).Trim()
+    }
+    if ($Model -notmatch $script:PlaceholderName) {
+        if ($Model -match ('^(?i)' + [regex]::Escape($brand))) { return $Model.Trim() }
+        return ($brand + ' ' + $Model).Trim()
+    }
+    if ($Board -notmatch $script:PlaceholderName) {
+        return T 'pc.selfBuilt' ((Get-HcMakerName $BoardMaker) + ' ' + $Board).Trim()
+    }
+    T 'pc.unknownModel'
+}
+
+# The year a processor came out, from its name; $null when unknown.
+function Get-HcCpuYear {
+    param([string]$Name)
+    $n = "$Name"
+    if ($n -match 'Core\(?T?M?\)?\s+Ultra\s+\d\s+(\d)\d\d') { return $(if ($Matches[1] -eq '1') { 2023 } else { 2024 }) }
+    if ($n -match 'Core\(?T?M?\)?\s+i\d-(\d{4,5})([A-Z]\d?)?') {
+        $digits = $Matches[1]
+        $suffix = "$($Matches[2])"
+        $gen = if ($digits.Length -eq 5) { [int]$digits.Substring(0, 2) }
+               elseif ($digits -match '^1[0-4]' -and $suffix -match '^G') { [int]$digits.Substring(0, 2) }
+               else { [int]$digits.Substring(0, 1) }
+        return $script:IntelYear[$gen]
+    }
+    if ($n -match 'Ryzen\s+AI') { return 2024 }
+    if ($n -match 'Ryzen\s+(\d|Threadripper)\s+(PRO\s+)?(\d)\d{3}') { return $script:RyzenYear[[int]$Matches[3]] }
+    if ($n -match '\b[NJ]\d{3}\b') { return 2023 }
+    if ($n -match '\b[NJ][45]\d{3}\b') { return 2018 }
+    if ($n -match '\b[NJ][23]\d{3}\b') { return 2015 }
+    $null
+}
+
+# Whether Windows 11 supports this processor: $true, $false, or $null when
+# the name does not say (then the E1 check and Microsoft's tool decide).
+function Test-HcCpuWin11 {
+    param([string]$Name)
+    $n = "$Name"
+    if ($n -match 'Core\(?T?M?\)?\s+Ultra') { return $true }
+    if ($n -match 'Ryzen\s+AI') { return $true }
+    if ($n -match 'Ryzen\s+(\d|Threadripper)\s+(PRO\s+)?(\d)\d{3}') { return ([int]$Matches[3] -ge 2) }
+    $year = Get-HcCpuYear $n
+    if ($n -match 'Core\(?T?M?\)?\s+i\d-' -and $year) { return ($year -ge 2017 -and $n -notmatch '\bi\d-7\d{3}') }
+    $null
+}
+
+<#
+    Whether this Windows still gets updates: its version, the date that
+    stops, and ok / soon (within $SupportSoonDays) / ended. $null for an
+    edition that is not judged.
+#>
+function Get-HcWindowsSupport {
+    param([int]$Build, [string]$DisplayVersion, [string]$Edition, [datetime]$Today = (Get-Date))
+    $major = if ($Build -ge 22000) { 11 } else { 10 }
+    $invariant = [Globalization.CultureInfo]::InvariantCulture
+    if ($major -eq 10) {
+        $end = [datetime]::Parse($script:Windows10End, $invariant)
+        $esu = [datetime]::Parse($script:Windows10EsuEnd, $invariant)
+        return [pscustomobject]@{ Major = 10; Version = $DisplayVersion; End = $end; Esu = $esu; Status = 'ended' }
+    }
+    if ($Edition -match 'Enterprise|Education|IoT|Server') { return $null }
+    $date = $script:WindowsSupportEnd["11-$DisplayVersion"]
+    if (-not $date) { return $null }
+    $end = [datetime]::Parse($date, $invariant)
+    $status = if ($Today -ge $end) { 'ended' } elseif (($end - $Today).TotalDays -le $script:SupportSoonDays) { 'soon' } else { 'ok' }
+    [pscustomobject]@{ Major = 11; Version = $DisplayVersion; End = $end; Esu = $null; Status = $status }
+}
+
+# SSD or HDD, from what Windows reports, falling back on the bus and the
+# spin speed (older drivers report "Unspecified").
+function Get-HcDiskKind {
+    param([string]$MediaType, [string]$BusType, $SpindleSpeed)
+    if ($MediaType -eq 'SSD' -or $BusType -eq 'NVMe') { return 'SSD' }
+    if ($MediaType -eq 'HDD' -or ($SpindleSpeed -and [uint32]$SpindleSpeed -gt 0 -and [uint32]$SpindleSpeed -lt [uint32]::MaxValue)) { return 'HDD' }
+    'unknown'
+}
+
+# "2 TB" or "512 GB", the way disks are sold (decimal).
+function Format-HcSize {
+    param([double]$GB)
+    $sep = if ($script:Lang -eq 'nl') { ',' } else { '.' }
+    if ($GB -ge 1000) { return ('{0:0.#} TB' -f ([Math]::Round($GB / 1000 * 2) / 2)).Replace('.', $sep) }
+    '{0:0} GB' -f $GB
+}
+
+<#
+    The advice, most important first. Each has an Id (adv.<id> in the
+    strings, with .short for the note), its Args, a Level (problem, upgrade,
+    warn, info or ok) and the problem Code that goes deeper, if any.
+#>
+function Get-HcOverviewAdvice {
+    param([pscustomobject]$Facts, [datetime]$Today = (Get-Date))
+    $list = New-Object System.Collections.ArrayList
+    $add = { param($id, $level, $code, [object[]]$params = @())
+        [void]$list.Add([pscustomobject]@{ Id = $id; Level = $level; Code = $code; Args = $params }) }
+    $date = { param($d) Format-HcLongDate $d }
+
+    foreach ($d in @($Facts.Disks | Where-Object { $_.Health -and $_.Health -ne 'Healthy' })) {
+        & $add 'diskHealth' 'problem' $null @($d.Name)
+    }
+    $system = @($Facts.Disks | Where-Object { $_.Number -eq $Facts.SystemDisk }) | Select-Object -First 1
+    if ($system -and $system.Kind -eq 'HDD') { & $add 'ssd' 'upgrade' $null @() }
+    if ($Facts.SystemSizeGB -gt 0) {
+        $used = 1 - ($Facts.SystemFreeGB / $Facts.SystemSizeGB)
+        if ($used -ge 0.9 -or $Facts.SystemFreeGB -lt 10) { & $add 'diskFull' 'warn' 'D4' @([Math]::Round($Facts.SystemFreeGB)) }
+    }
+    if ($Facts.RamGB -and $Facts.RamGB -lt 7.5) {
+        # 4 GB goes to 8, which is enough for everyday use; 6 GB goes to 16.
+        $target = if ($Facts.RamGB -le 4.5) { 8 } else { 16 }
+        $id = if ($Facts.Laptop) { 'ramLaptop' } else { 'ram' }
+        & $add $id 'upgrade' $null @([Math]::Round($Facts.RamGB), $target)
+    }
+
+    $support = Get-HcWindowsSupport $Facts.Build $Facts.DisplayVersion $Facts.Edition $Today
+    if ($support -and $support.Major -eq 10) {
+        $cpuOk = Test-HcCpuWin11 $Facts.Cpu
+        if ($cpuOk -eq $false) {
+            $id = if ($Today -lt $support.Esu) { 'win10Stuck' } else { 'win10StuckEnded' }
+            & $add $id 'problem' 'E1' @((& $date $support.Esu))
+        } else {
+            & $add 'win11Free' 'upgrade' 'E1' @((& $date $support.Esu))
+        }
+    } elseif ($support -and $support.Status -ne 'ok') {
+        $id = if ($support.Status -eq 'soon') { 'winVersionSoon' } else { 'winVersionEnded' }
+        & $add $id 'warn' 'E1' @($support.Version, (& $date $support.End))
+    }
+
+    if ($Facts.BatteryHealth) {
+        if ($Facts.BatteryHealth -lt 50) { & $add 'batteryReplace' 'upgrade' 'C4' @($Facts.BatteryHealth) }
+        elseif ($Facts.BatteryHealth -lt 70) { & $add 'batteryAging' 'info' 'C4' @($Facts.BatteryHealth) }
+    }
+
+    $year = Get-HcCpuYear $Facts.Cpu
+    if ($year -and ($Today.Year - $year) -ge 8) { & $add 'oldPc' 'info' $null @($year, ($Today.Year - $year)) }
+
+    if ($list.Count -eq 0) { & $add 'allGood' 'ok' $null @() }
+    $list
+}
+
+# ------------------------------------------------------------ reading --
+
+function Get-HcOverviewFacts {
+    $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue
+    $product = Get-CimInstance Win32_ComputerSystemProduct -ErrorAction SilentlyContinue
+    $board = Get-CimInstance Win32_BaseBoard -ErrorAction SilentlyContinue | Select-Object -First 1
+    $os = Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue
+    $cpu = Get-CimInstance Win32_Processor -ErrorAction SilentlyContinue | Select-Object -First 1
+    $current = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction SilentlyContinue
+    $chassis = @((Get-CimInstance Win32_SystemEnclosure -ErrorAction SilentlyContinue).ChassisTypes)
+
+    $modules = @(Get-CimInstance Win32_PhysicalMemory -ErrorAction SilentlyContinue)
+    $slots = (@(Get-CimInstance Win32_PhysicalMemoryArray -ErrorAction SilentlyContinue) | Measure-Object MemoryDevices -Sum).Sum
+    $ramType = switch (@($modules | ForEach-Object { [int]$_.SMBIOSMemoryType }) | Select-Object -First 1) {
+        20 { 'DDR' } 21 { 'DDR2' } 24 { 'DDR3' } 26 { 'DDR4' } 29 { 'LPDDR3' } 30 { 'LPDDR4' } 34 { 'DDR5' } 35 { 'LPDDR5' } default { $null }
+    }
+
+    $systemDisk = $null
+    try { $systemDisk = [int](Get-Partition -DriveLetter $env:SystemDrive.Substring(0, 1) -ErrorAction Stop | Get-Disk -ErrorAction Stop).Number } catch { }
+    $disks = @()
+    try {
+        $disks = @(Get-PhysicalDisk -ErrorAction Stop | Where-Object { $_.BusType -notin @('USB', 'SD', 'MMC', 'File Backed Virtual') } | ForEach-Object {
+            [pscustomobject]@{
+                Number = [int]$_.DeviceId; Name = "$($_.FriendlyName)".Trim(); Bus = "$($_.BusType)"
+                Kind = Get-HcDiskKind "$($_.MediaType)" "$($_.BusType)" $_.SpindleSpeed
+                # Decimal, as disks are sold: a "2 TB" disk is 1863 GB to Windows.
+                SizeGB = [Math]::Round($_.Size / 1e9); Health = "$($_.HealthStatus)"
+            }
+        } | Sort-Object Number)
+    } catch { }
+    $volume = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$env:SystemDrive'" -ErrorAction SilentlyContinue
+
+    $batteryHealth = $null
+    $battery = $null
+    try { $battery = Get-HcBatteryFacts } catch { }
+    if ($battery -and $battery.HasBattery) { $batteryHealth = Get-HcBatteryHealth $battery.DesignMWh $battery.FullMWh }
+
+    [pscustomobject]@{
+        Name           = Get-HcPcName "$($cs.Manufacturer)" "$($cs.Model)" "$($product.Version)" "$($board.Manufacturer)" "$($board.Product)"
+        Laptop         = [bool]@($chassis | Where-Object { $_ -in $script:LaptopChassis }).Count
+        Cpu            = "$($cpu.Name)".Trim() -replace '\s+', ' '
+        Cores          = [int]$cpu.NumberOfCores
+        Gpus           = @(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | ForEach-Object { "$($_.Name)".Trim() } | Where-Object { $_ -and $_ -notmatch 'Basic Display|Remote Display|Virtual' })
+        RamGB          = [Math]::Round($cs.TotalPhysicalMemory / 1GB, 1)
+        RamType        = $ramType
+        SlotsUsed      = $modules.Count
+        SlotsTotal     = [int]$slots
+        Os             = ("$($os.Caption)" -replace '^Microsoft\s+', '').Trim()
+        Edition        = "$($current.EditionID)"
+        DisplayVersion = $(if ($current.DisplayVersion) { "$($current.DisplayVersion)" } else { "$($current.ReleaseId)" })
+        Build          = [int]$os.BuildNumber
+        Disks          = $disks
+        SystemDisk     = $systemDisk
+        SystemSizeGB   = $(if ($volume) { [Math]::Round($volume.Size / 1GB, 1) } else { 0 })
+        SystemFreeGB   = $(if ($volume) { [Math]::Round($volume.FreeSpace / 1GB, 1) } else { 0 })
+        HasBattery     = [bool]($battery -and $battery.HasBattery)
+        BatteryHealth  = $batteryHealth
+    }
+}
+
 # ==================================================== src\fixes.ps1 ==
 <#
     Fixes: the only code in Housecall that changes the PC.
@@ -7278,6 +7706,10 @@ $script:HcAsked = ''
 # for fixed, $false for not fixed).
 $script:HcWork = New-Object System.Collections.ArrayList
 
+# Advice picked in the window's Pc-overzicht ("an SSD would make it
+# faster"), for the note and the invoice: short sentences, in order.
+$script:HcAdvice = New-Object System.Collections.ArrayList
+
 # The ready-made options for that list; any other text can be typed.
 function Get-HcWorkPresets {
     @((T 'work.presets') -split '\|' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
@@ -7368,6 +7800,10 @@ function Get-HcVisitBlocks {
     if ($open.Count) {
         & $block 'heading' (T 'note.notFixed')
         foreach ($w in $open) { & $block 'text' $w.Text }
+    }
+    if ($script:HcAdvice.Count) {
+        & $block 'heading' (T 'doc.adviceTitle')
+        foreach ($a in $script:HcAdvice) { & $block 'text' $a }
     }
 }
 
@@ -8495,6 +8931,23 @@ function Get-HcInvoiceLayout {
         & $line $y
         $y += 8
     }
+    # Advice from the Pc-overzicht, under the work: what would help next.
+    $advice = @($script:HcAdvice)
+    if ($advice.Count) {
+        & $room 30
+        & $text (T 'doc.adviceTitle') 'bodyBold' $P.Left $y $descW
+        $y += (& $measure 'x' 'bodyBold' $descW) + 2
+        foreach ($a in $advice) {
+            $h = & $measure $a 'item' ($descW - 24)
+            & $room $h
+            & $text ([string][char]0x2192) 'item' ($P.Left + 2) $y 20 'open'
+            & $text $a 'item' ($P.Left + 24) $y ($descW - 24)
+            $y += $h + 1
+        }
+        $y += 6
+        & $line $y
+        $y += 8
+    }
     if ($Note) {
         if ($work.Count -eq 0) {
             & $text (T 'note.nothingChanged') 'item' $P.Left $y $descW 'muted'
@@ -8849,6 +9302,7 @@ $script:HcWorkerScript = {
         'online' { Test-HcOnline }
         'relay'  { Invoke-HcRelay $Body }
         'pcid'   { Get-HcPcId }
+        'overview' { Get-HcOverviewFacts }
     }
 }.ToString()
 
@@ -9083,7 +9537,7 @@ function New-HcWindowXaml {
     </Grid>
 
     <ScrollViewer Grid.Row="1" x:Name="OtherTab" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-      <StackPanel x:Name="OtherPanel" Margin="26,22,26,22" MaxWidth="900" HorizontalAlignment="Left"/>
+      <StackPanel x:Name="OtherPanel" Margin="26,22,26,22" MaxWidth="1000" HorizontalAlignment="Left"/>
     </ScrollViewer>
   </Grid>
 </Window>
@@ -9131,7 +9585,7 @@ function New-HcHeading {
 # [ OK ], [ !! ], [ ! ] and [ -- ] as small framed tags, like the text menu.
 function New-HcTag {
     param([string]$Status)
-    $map = @{ ok = @('OK', 'Ok'); problem = @('!!', 'Bad'); warn = @('!', 'Warn'); skipped = @('--', 'Soft') }
+    $map = @{ ok = @('OK', 'Ok'); problem = @('!!', 'Bad'); warn = @('!', 'Warn'); skipped = @('--', 'Soft'); tip = @('TIP', 'Hi'); info = @('i', 'Soft') }
     $style = $map[$Status]
     if (-not $style) { $style = $map['skipped'] }
     $border = New-Object Windows.Controls.Border
@@ -9518,7 +9972,7 @@ function Update-HcOther {
             & $add $wrap
         }
         'visit' { Update-HcHistoryPanel $panel }
-        'pc' { & $add (New-HcText (T 'win.pc.soon') 15 'Soft') }
+        'pc' { Update-HcPcPanel $panel }
         'ai' {
             & $add (New-HcText (T 'win.ai.soon') 15 'Soft')
             & $add (New-HcButton (T 'win.console') @{ Do = 'close'; Outcome = 'console' })
@@ -9573,7 +10027,7 @@ function Invoke-HcClick {
                 $w.Outcome = $tag.Outcome
                 $w.Window.Close()
             }
-            default    { Invoke-HcVisitClick $tag }
+            default    { if (-not (Invoke-HcPcClick $tag)) { Invoke-HcVisitClick $tag } }
         }
     } catch {
         $w.Notice = T 'win.error' $_.Exception.Message
@@ -9819,6 +10273,7 @@ function Show-HcWindow {
         Queue = New-Object System.Collections.ArrayList; Job = $null; WasBusy = $false
         Runspace = $null; Outcome = 'done'; Finished = $false; CloseAnyway = $false; CloseAsk = $false
         VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null }
+        Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }
         Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
     }
     $w = $script:HcWin
@@ -10857,6 +11312,204 @@ function Update-HcHistoryPanel {
             }
         }
     }
+}
+
+# ==================================================== src\window-pc.ps1 ==
+<#
+    The window's Pc-overzicht tab (phase 6, step 3): cards for this PC,
+    Windows, memory, storage and the battery, and the advice under them.
+    Read-only: the facts come from the worker (Get-HcOverviewFacts), the
+    rules are the pure ones in src\checks\overview.ps1. A piece of advice
+    can go on the note or invoice with one click ($script:HcAdvice).
+#>
+
+function Start-HcPcLoad {
+    $p = $script:HcWin.Pc
+    $p.Stage = 'loading'
+    Add-HcJob @{ Kind = 'overview'; Done = 'Complete-HcPcLoad' }
+}
+
+function Complete-HcPcLoad {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $p = $script:HcWin.Pc
+    $facts = @($Output | Where-Object { $_ -and $_.PSObject.Properties['Disks'] }) | Select-Object -Last 1
+    if ($ErrorText -or -not $facts) {
+        $p.Stage = 'error'
+        $p.Error = $(if ($ErrorText) { $ErrorText } else { '-' })
+    } else {
+        $p.Facts = $facts
+        $p.Advice = @(Get-HcOverviewAdvice $facts)
+        $p.Stage = 'ready'
+    }
+    Update-HcOther
+}
+
+# A card: a title, then its lines.
+function New-HcCard {
+    param([string]$Title, [object[]]$Children)
+    $stack = New-Object Windows.Controls.StackPanel
+    [void]$stack.Children.Add((New-HcText $Title.ToUpperInvariant() 12 'Soft' -Bold -Margin @(0, 0, 0, 8)))
+    foreach ($c in $Children) { if ($c) { [void]$stack.Children.Add($c) } }
+    $card = New-Object Windows.Controls.Border
+    $card.Width = 300
+    $card.CornerRadius = New-Object Windows.CornerRadius(12)
+    $card.BorderThickness = New-HcThickness @(1, 1, 1, 1)
+    $card.Padding = New-HcThickness @(16, 14, 16, 10)
+    $card.Margin = New-HcThickness @(0, 0, 14, 14)
+    $card.SetResourceReference([Windows.Controls.Border]::BackgroundProperty, 'Panel')
+    $card.SetResourceReference([Windows.Controls.Border]::BorderBrushProperty, 'Line')
+    $card.Child = $stack
+    $card
+}
+
+function New-HcBar {
+    param([double]$Percent, [string]$Brush = 'Hi')
+    $bar = New-Object Windows.Controls.ProgressBar
+    $bar.Minimum = 0
+    $bar.Maximum = 100
+    $bar.Value = [Math]::Max(0, [Math]::Min(100, $Percent))
+    $bar.Height = 8
+    $bar.BorderThickness = New-HcThickness @(0, 0, 0, 0)
+    $bar.Margin = New-HcThickness @(0, 2, 0, 4)
+    $bar.SetResourceReference([Windows.Controls.Control]::ForegroundProperty, $Brush)
+    $bar.SetResourceReference([Windows.Controls.Control]::BackgroundProperty, 'Line')
+    $bar
+}
+
+function Update-HcPcPanel {
+    param($Panel)
+    $w = $script:HcWin
+    $p = $w.Pc
+    $add = { param($element) [void]$Panel.Children.Add($element) }
+    $head = New-Object Windows.Controls.DockPanel
+    $head.Margin = New-HcThickness @(0, 0, 0, 14)
+    $refresh = New-HcButton (T 'pc.refresh') @{ Do = 'pcRefresh' }
+    $refresh.IsEnabled = $p.Stage -ne 'loading' -and -not (Test-HcBusy)
+    [Windows.Controls.DockPanel]::SetDock($refresh, 'Right')
+    [void]$head.Children.Add($refresh)
+    [void]$head.Children.Add((New-HcText (T 'pc.readOnly') 15 'Soft' -Margin @(0, 8, 0, 0)))
+    & $add $head
+
+    if ($p.Stage -eq 'new') { Start-HcPcLoad }
+    switch ($p.Stage) {
+        'loading' {
+            & $add (New-HcText (T 'pc.loading') 15 'Soft')
+            $bar = New-Object Windows.Controls.ProgressBar
+            $bar.IsIndeterminate = $true
+            $bar.Height = 6
+            $bar.MaxWidth = 400
+            $bar.HorizontalAlignment = 'Left'
+            $bar.SetResourceReference([Windows.Controls.Control]::ForegroundProperty, 'Hi')
+            & $add $bar
+            return
+        }
+        'error' { & $add (New-HcText (T 'pc.error' $p.Error) 15 'Warn' -Bold); return }
+    }
+    $f = $p.Facts
+    $today = Get-Date
+    $cards = New-Object Windows.Controls.WrapPanel
+
+    # This PC.
+    $lines = @((New-HcText $f.Name 17 'Text' -Bold -Margin @(0, 0, 0, 4)))
+    $lines += New-HcText $(if ($f.Laptop) { T 'pc.laptop' } else { T 'pc.desktop' }) 14 'Soft'
+    $lines += New-HcText $f.Cpu 14.5 'Text' -Margin @(0, 0, 0, 2)
+    $year = Get-HcCpuYear $f.Cpu
+    $lines += New-HcText $(if ($year) { T 'pc.cpuYear' $year $f.Cores } else { T 'pc.cpuCores' $f.Cores }) 13.5 'Soft'
+    foreach ($g in @($f.Gpus)) { $lines += New-HcText (T 'pc.gpu' $g) 13.5 'Soft' -Margin @(0, 0, 0, 2) }
+    [void]$cards.Children.Add((New-HcCard (T 'pc.card.pc') $lines))
+
+    # Windows, and until when it gets updates.
+    $support = Get-HcWindowsSupport $f.Build $f.DisplayVersion $f.Edition $today
+    $lines = @((New-HcText (($f.Os + ' ' + $f.DisplayVersion).Trim()) 16 'Text' -Bold))
+    if (-not $support) {
+        $lines += New-HcLine 'skipped' (T 'pc.win.unknown')
+    } elseif ($support.Major -eq 10) {
+        $lines += New-HcLine 'problem' (T 'pc.win10' (Format-HcLongDate $support.End))
+        $lines += New-HcLine $(if ($today -lt $support.Esu) { 'warn' } else { 'problem' }) (T 'pc.win10Esu' (Format-HcLongDate $support.Esu))
+        $cpuOk = Test-HcCpuWin11 $f.Cpu
+        $lines += New-HcLine $(if ($cpuOk -eq $true) { 'ok' } elseif ($cpuOk -eq $false) { 'problem' } else { 'skipped' }) (T "pc.win11Cpu.$(if ($null -eq $cpuOk) { 'unknown' } else { "$cpuOk".ToLower() })")
+    } else {
+        $status = @{ ok = 'ok'; soon = 'warn'; ended = 'problem' }[$support.Status]
+        $lines += New-HcLine $status (T "pc.win.$($support.Status)" (Format-HcLongDate $support.End))
+    }
+    [void]$cards.Children.Add((New-HcCard 'Windows' $lines))
+
+    # Memory.
+    $lines = @((New-HcText ((T 'pc.ram' ([Math]::Round($f.RamGB)) "$($f.RamType)")).Trim() 16 'Text' -Bold))
+    if ($f.SlotsTotal -gt 0) { $lines += New-HcText (T 'pc.slots' $f.SlotsUsed $f.SlotsTotal) 13.5 'Soft' }
+    $lines += New-HcLine $(if ($f.RamGB -ge 7.5) { 'ok' } else { 'warn' }) $(if ($f.RamGB -ge 7.5) { T 'pc.ramOk' } else { T 'pc.ramLow' })
+    [void]$cards.Children.Add((New-HcCard (T 'pc.card.ram') $lines))
+
+    # Storage: every disk, and how full the one with Windows is.
+    $lines = @()
+    foreach ($d in @($f.Disks)) {
+        $lines += New-HcText ((Format-HcSize $d.SizeGB) + ' ' + (T "pc.kind.$($d.Kind)") + $(if ($d.Bus -eq 'NVMe') { ' (NVMe)' } else { '' })) 15 'Text' -Bold -Margin @(0, 4, 0, 0)
+        $lines += New-HcText $d.Name 12.5 'Soft' -Margin @(0, 0, 0, 2)
+        if ($d.Number -eq $f.SystemDisk -and $f.SystemSizeGB -gt 0) {
+            $used = 100 * (1 - $f.SystemFreeGB / $f.SystemSizeGB)
+            $lines += New-HcText (T 'pc.systemDisk') 13.5 'Text'
+            $lines += New-HcBar $used $(if ($used -ge 90) { 'Warn' } else { 'Hi' })
+            $lines += New-HcText (T 'pc.free' ([Math]::Round($f.SystemFreeGB)) ([Math]::Round($f.SystemSizeGB))) 13 'Soft'
+        }
+        $lines += New-HcLine $(if ($d.Health -eq 'Healthy') { 'ok' } elseif ($d.Health) { 'problem' } else { 'skipped' }) $(if ($d.Health -eq 'Healthy') { T 'pc.healthOk' } else { T 'pc.healthBad' $d.Health })
+    }
+    if (-not $lines.Count) { $lines = @(New-HcLine 'skipped' (T 'pc.noDisks')) }
+    [void]$cards.Children.Add((New-HcCard (T 'pc.card.disk') $lines))
+
+    # The battery, on a laptop.
+    if ($f.HasBattery) {
+        $lines = if ($f.BatteryHealth) {
+            @((New-HcText "$($f.BatteryHealth)%" 20 'Text' -Bold), (New-HcBar $f.BatteryHealth $(if ($f.BatteryHealth -lt 70) { 'Warn' } else { 'Ok' })), (New-HcText (T 'pc.battery' $f.BatteryHealth) 13.5 'Soft'))
+        } else { @(New-HcLine 'skipped' (T 'pc.noBatteryInfo')) }
+        [void]$cards.Children.Add((New-HcCard (T 'pc.card.battery') $lines))
+    }
+    & $add $cards
+
+    # The advice.
+    & $add (New-HcText (T 'pc.advice') 20 'Text' -Bold -Margin @(0, 6, 0, 10))
+    foreach ($a in @($p.Advice)) {
+        $short = Get-HcAdviceText $a '.short'
+        $stack = New-Object Windows.Controls.StackPanel
+        $status = @{ problem = 'problem'; warn = 'warn'; upgrade = 'tip'; info = 'info'; ok = 'ok' }[$a.Level]
+        [void]$stack.Children.Add((New-HcLine $status (Get-HcAdviceText $a '.title') 'Text'))
+        $body = New-HcText (Get-HcAdviceText $a) 14.5 'Text' -Margin @(36, 0, 0, 8)
+        [void]$stack.Children.Add($body)
+        $buttons = New-Object Windows.Controls.WrapPanel
+        $buttons.Margin = New-HcThickness @(36, 0, 0, 0)
+        if ($a.Level -ne 'ok') {
+            $on = $script:HcAdvice -contains $short
+            $label = if ($on) { [string][char]0x2713 + ' ' + (T 'pc.onNoteDone') } else { T 'pc.onNote' }
+            [void]$buttons.Children.Add((New-HcChip $label @{ Do = 'adviceNote'; Text = $short } -On:$on))
+        }
+        if ($a.Code) { [void]$buttons.Children.Add((New-HcChip ((T 'win.open' $a.Code) + '  ' + (T "problem.$($a.Code)")) @{ Do = 'problem'; Code = $a.Code })) }
+        if ($buttons.Children.Count) { [void]$stack.Children.Add($buttons) }
+        $box = New-HcBox '' @($stack) $(if ($a.Level -in @('problem', 'upgrade')) { 'HiSoft' } else { 'Panel' })
+        $box.Padding = New-HcThickness @(14, 12, 14, 6)
+        $box.MaxWidth = 940
+        $box.HorizontalAlignment = 'Left'
+        & $add $box
+    }
+}
+
+# One piece of advice in words: its sentence, or with a suffix its .title or .short.
+function Get-HcAdviceText {
+    param([pscustomobject]$Advice, [string]$Suffix = '')
+    $all = @("adv.$($Advice.Id)$Suffix") + @($Advice.Args)
+    T @all
+}
+
+function Invoke-HcPcClick {
+    param([hashtable]$Tag)
+    $w = $script:HcWin
+    switch ($Tag.Do) {
+        'pcRefresh' { if (-not (Test-HcBusy)) { $w.Pc.Stage = 'new'; Update-HcOther } }
+        'adviceNote' {
+            if ($script:HcAdvice -contains $Tag.Text) { $script:HcAdvice.Remove($Tag.Text) } else { [void]$script:HcAdvice.Add($Tag.Text) }
+            Update-HcOther
+        }
+        default { return $false }
+    }
+    $true
 }
 
 # ==================================================== src\ai.ps1 ==

@@ -28,6 +28,10 @@ $script:HcAsked = ''
 # for fixed, $false for not fixed).
 $script:HcWork = New-Object System.Collections.ArrayList
 
+# Advice picked in the window's Pc-overzicht ("an SSD would make it
+# faster"), for the note and the invoice: short sentences, in order.
+$script:HcAdvice = New-Object System.Collections.ArrayList
+
 # The ready-made options for that list; any other text can be typed.
 function Get-HcWorkPresets {
     @((T 'work.presets') -split '\|' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
@@ -118,6 +122,10 @@ function Get-HcVisitBlocks {
     if ($open.Count) {
         & $block 'heading' (T 'note.notFixed')
         foreach ($w in $open) { & $block 'text' $w.Text }
+    }
+    if ($script:HcAdvice.Count) {
+        & $block 'heading' (T 'doc.adviceTitle')
+        foreach ($a in $script:HcAdvice) { & $block 'text' $a }
     }
 }
 

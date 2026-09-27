@@ -144,6 +144,23 @@ function Get-HcInvoiceLayout {
         & $line $y
         $y += 8
     }
+    # Advice from the Pc-overzicht, under the work: what would help next.
+    $advice = @($script:HcAdvice)
+    if ($advice.Count) {
+        & $room 30
+        & $text (T 'doc.adviceTitle') 'bodyBold' $P.Left $y $descW
+        $y += (& $measure 'x' 'bodyBold' $descW) + 2
+        foreach ($a in $advice) {
+            $h = & $measure $a 'item' ($descW - 24)
+            & $room $h
+            & $text ([string][char]0x2192) 'item' ($P.Left + 2) $y 20 'open'
+            & $text $a 'item' ($P.Left + 24) $y ($descW - 24)
+            $y += $h + 1
+        }
+        $y += 6
+        & $line $y
+        $y += 8
+    }
     if ($Note) {
         if ($work.Count -eq 0) {
             & $text (T 'note.nothingChanged') 'item' $P.Left $y $descW 'muted'
