@@ -1,12 +1,12 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 86%** `█████████████████░░░` 59 of 68 done · 0 in progress · 9 open · 0 blocked · 0 waiting on a decision
+**Progress: 79%** `████████████████░░░░` 59 of 75 done · 0 in progress · 16 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/9) |
+| Next up | `░░░░░░░░░░` | 0% (0/16) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (44/44) |
 | Found in testing | `██████████` | 100% (10/10) |
@@ -160,7 +160,7 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Next up
 
-**Proposal: more problems from Shamil's research (27 Sep), not decided yet**
+**Phase 5b: more problems (decided 27 Sep, before the window)**
 Shamil researched common problems of 65+ Windows users and proposed 15 new
 codes and an area G. Compared against the code (no changes made yet):
 
@@ -179,7 +179,15 @@ codes and an area G. Compared against the code (no changes made yet):
 | C4 battery | No | yes (Win32_Battery, design vs full capacity) | new; shares code with Pc-overzicht |
 | G1 cannot sign in | No | barely: Housecall can't run on a locked-out account | **not a check**; a step-by-step guide |
 
-Suggested outcome: **area G with 3 codes** (desktop/taskbar/profile · files missing or OneDrive · file won't open or can't be found), **C4 battery**, and extensions to **B3, C2, E2**. Sign-in stays a guide.
+**Decided:** built before the window, so the window gets them straight away:
+- [ ] **G1** "Mijn scherm doet raar": desktop icons, taskbar or search gone, Explorer frozen, temporary profile. Fixes: restart Explorer, show icons (reversible); temp profile = steps
+- [ ] **G2** "Mijn bestanden zijn weg of staan niet overal": OneDrive running/signed in/folders moved, temporary profile. Fix: start OneDrive
+- [ ] **G3** "Ik kan mijn bestand niet vinden of het opent verkeerd": newest downloads, which program opens the type. Fix: open the folder / Default apps + steps (UserChoice can't be set by script)
+- [ ] **C4** battery: capacity left vs new, charging, power plan; code shared with Pc-overzicht
+- [ ] **B3** flag a large scale / text size / low resolution ("everything is huge")
+- [ ] **C2** keyboard layout (extra layouts, Alt+Shift switching); fix = remove the extra layout (reversible)
+- [ ] **E2** time zone and automatic time, next to the clock check
+Not adopted: sign-in (G1 in the research) as a guide, and nothing new for E5/D5 (already in E2/D2).
 
 **Phase 6: Housecall as a window (decided 27 Sep)**
 Mockup: <https://claude.ai/artifact/A6UPo4oH3LQjrxN5RcKLQJ>. A WPF window built by
