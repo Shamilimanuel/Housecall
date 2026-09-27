@@ -1,12 +1,12 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 87%** `█████████████████░░░` 66 of 76 done · 0 in progress · 10 open · 0 blocked · 0 waiting on a decision
+**Progress: 88%** `██████████████████░░` 67 of 76 done · 0 in progress · 9 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `████░░░░░░` | 41% (7/17) |
+| Next up | `█████░░░░░` | 47% (8/17) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (44/44) |
 | Found in testing | `██████████` | 100% (10/10) |
@@ -187,7 +187,7 @@ codes and an area G. Compared against the code (no changes made yet):
 - [x] **C4** "Laptopaccu laadt niet op of is snel leeg" (27 Sep): laptop or desktop (chassis type), battery found, wear (full vs design capacity from root/wmi: < 50% worn, < 70% ageing), plugged in / charging / charge, **a stop at 55-85% while plugged in counts as the maker's battery care, not a fault**, time left, power plan. Fix: open battery settings; the rest is advice (a battery is hardware). 5 tests (275 in total). On Shamil's desktop it says "no battery (desktop)". **Needs a real laptop to test** (father's laptop or a client). The AI does not know C4 yet: add it to CODES with the next relay deploy (visit_save already accepts it)
 - [x] **B3** "Scherm te groot of klein, te donker of verkeerd" (27 Sep): now also the resolution against each screen's own preferred mode (WmiMonitorListedSupportedSourceModes; below 80% of the smallest screen = huge and blurry, so a smaller second screen does not count), scale >= 200% and text size >= 150% as warnings ("ask first: some clients like it big"). Steps only, on purpose: changing the resolution by script can leave a screen black. Read correctly on Shamil's two screens (2560x1440 + 1920x1080). 276 tests
 - [x] **C2** keyboard types wrong characters (27 Sep): keyboard layouts (the language list's own, else the session's via GetKeyboardLayoutList; names via the layout's display name), **the "Nederlands" layout that swaps keys on Dutch-sold US-style keyboards**, several layouts (Alt+Shift / Win+Space switching), US-International dead keys, Sticky Keys and Filter Keys (both switched on by accident with Shift), NumLock off. Fixes: remove an extra layout (never a language's last one: that would remove the language and can change the display language; undo restores the whole list), switch NumLock on (+ undo). 5 tests (281 in total). On Shamil's PC: one US layout, NumLock off; the NumLock fix and its undo verified for real. Remove layout not tested for real (only one layout on his PC)
-- [ ] **E2** time zone and automatic time, next to the clock check
+- [x] **E2** time zone and automatic time (27 Sep): the zone is compared with the country (Geo) **by offset and summer time, not by name** (Berlin is fine for NL; unknown countries are not judged), because the existing clock check compares universal time and so missed a wrong zone. Automatic time off (W32Time NoSync) = warning. Fix: set the right zone, undoable. **Found in the real test:** Set-TimeZone needs admin ("a required privilege is not held"), so the fix is Admin; his zone never changed. Also cleaned crash names ("userinit" instead of the full path, in D3 and E2). E2 found userinit crashing 14 times in 3 days on Shamil's PC. 282 tests
 Not adopted: sign-in (G1 in the research) as a guide, and nothing new for E5/D5 (already in E2/D2).
 
 **Phase 6: Housecall as a window (decided 27 Sep)**

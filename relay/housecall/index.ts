@@ -35,7 +35,7 @@ const TOKEN_HOURS = 4;
 const MAX_FAILED_PER_IP = 5;
 const MAX_FAILED_TOTAL = 50;
 const CODES = [
-  "A1", "A2", "A3", "A4", "B1", "B2", "B3", "C1", "C2", "C3",
+  "A1", "A2", "A3", "A4", "B1", "B2", "B3", "C1", "C2", "C3", "C4",
   "D1", "D2", "D3", "D4", "E1", "E2", "E3", "F1", "F2", "F3",
   "G1", "G2", "G3",
 ];
@@ -153,10 +153,10 @@ const TOOLS = [
     description: `Runs one of Housecall's read-only checks on the client's PC and returns the result lines, Housecall's finding and advice, and the fixes it offers (as "fixId: label").
 Codes:
 A1 no internet at all | A2 Wi-Fi slow or drops | A3 one website or app will not load (input: the web address) | A4 email will not send or arrive (input: the email address or its domain)
-B1 no sound | B2 microphone or camera for video calls | B3 screen too small, dark, grey or turned
-C1 printer will not print | C2 mouse, keyboard or USB stick | C3 Bluetooth
+B1 no sound | B2 microphone or camera for video calls | B3 screen suddenly huge (low resolution, scale, text size), too small, dark, grey or turned
+C1 printer will not print | C2 mouse, keyboard (wrong characters: layouts, Sticky/Filter Keys, NumLock) or USB stick | C3 Bluetooth | C4 laptop battery will not charge or runs out fast
 D1 whole PC slow | D2 slow to start | D3 program freezes or crashes, blue screens | D4 disk full
-E1 Windows Update stuck or failing, Windows 10 support | E2 error message on screen (activation, clock, recent crashes) | E3 will not shut down or restart
+E1 Windows Update stuck or failing, Windows 10 support | E2 error message on screen (activation, clock and time zone, recent crashes) | E3 will not shut down or restart
 F1 pop-up says there is a virus | F2 someone called and got into the PC (remote-access programs) | F3 full security check
 G1 desktop icons, taskbar or search gone, File Explorer stuck, temporary profile | G2 files gone or not on every device (OneDrive, Desktop/Documents/Pictures, Recycle Bin) | G3 a file cannot be found (Downloads, where the browser saves, Windows Search) or opens in the wrong program`,
     strict: true,
