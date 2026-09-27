@@ -30,7 +30,9 @@ param(
     [string]$Start,
     # Leave the AI chat (?) out of the menu, e.g. when the client does not
     # want anything sent over the internet.
-    [switch]$NoAI
+    [switch]$NoAI,
+    # Open Housecall as a window (phase 6, while it is being built).
+    [switch]$Window
 )
 
 $ErrorActionPreference = 'Stop'
@@ -67,6 +69,7 @@ $HcSource = @(
     'relay.ps1'
     'invoice.ps1'
     'invoice-page.ps1'
+    'window.ps1'
     'ai.ps1'
 ) | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $PSScriptRoot 'src') $_)) }
 $HcSource = $HcSource -join "`r`n"
@@ -75,11 +78,11 @@ $HcSource = $HcSource -join "`r`n"
 # The options, saved before the code loads: run as a file (a USB stick),
 # this script's scope is Housecall's script: scope, and loading the code
 # resets $script:Lang -- which is this same $Lang.
-$HcOptions = @{ DryRun = [bool]$DryRun; Lang = $Lang; Start = $Start; NoAI = [bool]$NoAI }
+$HcOptions = @{ DryRun = [bool]$DryRun; Lang = $Lang; Start = $Start; NoAI = [bool]$NoAI; Window = [bool]$Window }
 
 . ([scriptblock]::Create($HcSource))
 $script:HcSource = $HcSource
 $script:HcBuild = $HcBuild
 # Run from a file (a USB stick) rather than through irm | iex.
 $script:HcFromFile = [bool]$PSCommandPath
-Start-Housecall -DryRun:$HcOptions.DryRun -Lang $HcOptions.Lang -Start $HcOptions.Start -NoAI:$HcOptions.NoAI
+Start-Housecall -DryRun:$HcOptions.DryRun -Lang $HcOptions.Lang -Start $HcOptions.Start -NoAI:$HcOptions.NoAI -Window:$HcOptions.Window

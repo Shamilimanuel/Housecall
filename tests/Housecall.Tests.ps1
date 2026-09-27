@@ -24,6 +24,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\relay.ps1')
 . (Join-Path $root 'src\invoice.ps1')
 . (Join-Path $root 'src\invoice-page.ps1')
+. (Join-Path $root 'src\window.ps1')
 . (Join-Path $root 'src\ai.ps1')
 
 # Housecall's own source, put together the way dev.ps1 does it.
@@ -1342,6 +1343,73 @@ Describe 'Relay: unlock and visit memory' {
         $script:Saved = $null
         Start-Housecall -Lang nl -DryRun -Answers @('A1', '', 'Q')
         $script:Saved | Should Be $null
+    }
+}
+
+Describe 'The window (phase 6)' {
+    $script:Lang = 'en'
+    $report = { param([string[]]$Statuses)
+        $r = New-HcReport
+        foreach ($s in $Statuses) { Add-HcLine $r $s 'x' }
+        $r }
+
+    It 'colours a report by its worst line' {
+        Get-HcReportLevel (& $report @('ok', 'warn', 'problem')) | Should Be 'problem'
+        Get-HcReportLevel (& $report @('ok', 'warn', 'skipped')) | Should Be 'warn'
+        Get-HcReportLevel (& $report @('ok', 'skipped')) | Should Be 'ok'
+        Get-HcReportLevel (& $report @()) | Should Be 'ok'
+    }
+
+    It 'checks everything except what needs an address, and F1/F2 (inside F3)' {
+        $codes = Get-HcCheckAllCodes
+        foreach ($skip in 'A3', 'A4', 'F1', 'F2') { $codes -contains $skip | Should Be $false }
+        foreach ($code in 'A1', 'C4', 'F3', 'G3') { $codes -contains $code | Should Be $true }
+        $codes.Count | Should Be 20
+    }
+
+    It 'has every text it shows, in both languages' {
+        $source = [IO.File]::ReadAllText((Join-Path $root 'src\window.ps1'))
+        $keys = @([regex]::Matches($source, "T '(win\.[\w.]+)'") | ForEach-Object { $_.Groups[1].Value }) +
+                @($script:HcTabs | ForEach-Object { "win.tab.$_" }) + @('F1', 'F2', 'F3' | ForEach-Object { "win.safety.$_" })
+        $keys.Count | Should BeGreaterThan 20
+        foreach ($lang in 'en', 'nl') {
+            foreach ($key in ($keys | Sort-Object -Unique)) { $script:Strings[$lang][$key] | Should Not BeNullOrEmpty }
+        }
+    }
+
+    It 'builds a window that WPF can read' {
+        if ([Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') { return }
+        Add-Type -AssemblyName PresentationFramework
+        $window = [Windows.Markup.XamlReader]::Parse((New-HcWindowXaml))
+        foreach ($name in 'Tabs', 'Status', 'ProblemsTab', 'SidePanel', 'GroupsPanel', 'ResultPanel', 'ResultScroll', 'OtherTab', 'OtherPanel') {
+            $window.FindName($name) | Should Not BeNullOrEmpty
+        }
+        foreach ($style in 'HcButton', 'HcPrimary', 'HcGroup', 'HcTab', 'HcTabOn', 'HcPill') { $window.FindResource($style) | Should Not BeNullOrEmpty }
+        foreach ($theme in $script:HcThemes.Values) { $theme.Keys.Count | Should Be $script:HcThemes['light'].Keys.Count }
+    }
+
+    It 'runs a check in the worker, with Housecall loaded there from its own source' {
+        $rs = [runspacefactory]::CreateRunspace()
+        $rs.Open()
+        try {
+            $run = { param([hashtable]$p)
+                $ps = [powershell]::Create(); $ps.Runspace = $rs
+                [void]$ps.AddScript($script:HcWorkerScript)
+                foreach ($k in $p.Keys) { [void]$ps.AddParameter($k, $p[$k]) }
+                try { @($ps.Invoke()) } finally { $ps.Dispose() } }
+            & $run @{ Kind = 'load'; Source = (Get-HcTestSource) } | Out-Null
+            $out = & $run @{ Kind = 'check'; Code = 'G1'; Lang = 'nl'; IsAdmin = $false; DryRun = $true }
+            $r = Get-HcJobReport $out
+            $r.FindingId | Should Not BeNullOrEmpty
+            @($r.Results).Count | Should BeGreaterThan 0
+        } finally { $rs.Close() }
+    }
+
+    It 'never opens a window in a scripted run, even with -Window' {
+        Mock Show-HcWindow { 'quit' }
+        Start-Housecall -Lang nl -Window -Answers @('Q') 6>&1 | Out-Null
+        Assert-MockCalled Show-HcWindow -Times 0 -Exactly
+        Test-HcWindowPossible | Should Be $false
     }
 }
 

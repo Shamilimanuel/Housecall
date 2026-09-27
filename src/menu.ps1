@@ -186,11 +186,14 @@ function Start-Housecall {
         [string]$Start,
         # Leave the AI chat out of the menu.
         [switch]$NoAI,
+        # Open the window instead of the text menu (phase 6, while it is built).
+        [switch]$Window,
         # For tests: answers to feed in instead of reading the keyboard.
         [string[]]$Answers
     )
 
     $script:DryRun = [bool]$DryRun
+    $script:HcWindowMode = [bool]$Window
     $script:NoAI = [bool]$NoAI
     $script:RestorePointDone = $false
     $script:HcChanges.Clear()
@@ -221,6 +224,16 @@ function Start-Housecall {
     $message = $null    # one-off warning shown under the menu
     if (-not $Start) { $message = Get-HcOutdatedWarning $environment }
 
+    # The window, with the text menu as the way back when it cannot open.
+    if ($Window -and -not $PSBoundParameters.ContainsKey('Answers')) {
+        Write-Dim (T 'win.opening')
+        switch (Show-HcWindow $environment $Start $message) {
+            'handedoff' { Write-Ok (T 'fix.elevated'); return }
+            'quit'      { Stop-HcVisit $environment; return }
+            'console'   { $Start = $null; $message = $null }
+        }
+    }
+
     $first = Resolve-HcChoice $Start
     if ($first.Kind -eq 'problem') {
         $area = $first.Value.Substring(0, 1)
@@ -235,7 +248,7 @@ function Start-Housecall {
         if ($script:NoAI -and $choice.Kind -in @('ai', 'freetext')) {
             $choice = [pscustomobject]@{ Kind = 'unknown'; Value = $(if ($choice.Value) { $choice.Value } else { '?' }) }
         }
-        if ($choice.Kind -in @('ai', 'freetext', 'history', 'quit')) { Update-HcOnline $environment }
+        if ($choice.Kind -in @('ai', 'freetext', 'history')) { Update-HcOnline $environment }
         switch ($choice.Kind) {
             'area'     { $area = $choice.Value }
             'problem'  {
@@ -251,16 +264,20 @@ function Start-Housecall {
             'undo'     { $message = Invoke-HcUndo }
             'history'  { Show-HcHistory $environment }
             'unknown'  { $message = T 'menu.unknown' $choice.Value }
-            'quit'     {
-                # The invoice (or, without one, the plain note), and the visit saved with it.
-                $invoice = Invoke-HcInvoice $environment
-                Save-HcVisitRecord $environment $invoice
-                if ($invoice) { Show-HcInvoice $invoice } else { Show-HcNote }
-                Write-Host ''
-                if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
-                Write-Host ''
-                return
-            }
+            'quit'     { Stop-HcVisit $environment; return }
         }
     }
+}
+
+# Q, or Afronden in the window: the invoice (or, without one, the plain
+# note), and the visit saved with it.
+function Stop-HcVisit {
+    param([pscustomobject]$Environment)
+    Update-HcOnline $Environment
+    $invoice = Invoke-HcInvoice $Environment
+    Save-HcVisitRecord $Environment $invoice
+    if ($invoice) { Show-HcInvoice $invoice } else { Show-HcNote }
+    Write-Host ''
+    if ($script:HcChanges.Count -gt 0) { Write-Ok (T 'goodbyeChanged' $script:HcChanges.Count) } else { Write-Ok (T 'goodbye') }
+    Write-Host ''
 }

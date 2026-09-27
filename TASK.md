@@ -203,6 +203,7 @@ PowerShell itself (like WinUtil), no install. Decisions:
   upgrade advice such as an SSD), **AI-hulp** (the ? chat)
 - Every check, fix, undo, note and invoice stays the same code; only the front changes
 - [ ] Step 1: the window shell (XAML, tabs, theme switch, clock) + Problemen with results and fixes
+      **Built 27 Sep, waiting for Shamil's test** (`.\dev.ps1 -Window`; opt-in until phase 6 is done, then it becomes the default and `-Console` the way back). `src/window.ps1`: WPF from XAML, brand light/dark (follows Windows, moon/sun switch), NL/EN switch, the A-G groups (fold open/closed), result on the right with the same lines, finding, advice, fixes (Ja/Nee in the window, admin restarts as administrator *in window mode*), step-by-step, undo, A3/A4 with an address box, **Alles controleren** (20 checks, problems first, click a row for its fixes; only non-green results go on the note), Veiligheid tab (F2/F1/F3 cards), Bezoek tab (clock, what was done, Afronden). Checks, fixes and undo run in a **worker runspace** that loads Housecall's own source (0.2 s), so D1's 10 s never freezes the window; the visit's state stays in the window. Afronden = the Q flow (note/invoice, still in the console for now); Tekstmenu = carry on in the text menu (history, AI). Driven headless with screenshots in both themes and languages. 291 tests
 - [ ] Step 2: Veiligheid and Bezoek (history, note, invoice window reused)
 - [ ] Step 3: Pc-overzicht: new read-only checks + advice rules, with tests
 - [ ] Step 4: AI-hulp tab (once there is credit)
