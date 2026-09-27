@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'de840318bcb8'
+$HcBuild = 'cd26700124d6'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -110,6 +110,7 @@ $script:Strings = @{
         'area.D'  = 'Slow or freezing'
         'area.E'  = 'Windows & updates'
         'area.F'  = 'Safety & scams'
+        'area.G'  = 'Files, desktop & accounts'
 
         'looks.A' = 'network adapter, address from the router, router, DNS, internet, proxy, Wi-Fi signal'
         'looks.B' = 'default sound device, mute and volume, audio service, camera and microphone access, screen scale'
@@ -117,6 +118,7 @@ $script:Strings = @{
         'looks.D' = 'free disk space, programs using memory and CPU, startup programs, recent crashes, time since restart'
         'looks.E' = 'Windows Update service, last successful update, waiting restart'
         'looks.F' = 'remote-access programs such as AnyDesk, sites allowed to send pop-ups, Microsoft Defender, unknown scheduled tasks'
+        'looks.G' = 'temporary profile, File Explorer, desktop icons, taskbar and search, OneDrive, downloads, which program opens a file'
 
         'problem.A1' = 'No internet at all'
         'problem.A2' = 'Wi-Fi slow or keeps dropping'
@@ -138,6 +140,9 @@ $script:Strings = @{
         'problem.F1' = 'A pop-up says I have a virus'
         'problem.F2' = 'Someone called me and got into my computer'
         'problem.F3' = 'Full security check'
+        'problem.G1' = 'The desktop, taskbar or folders act strange'
+        'problem.G2' = 'My files are gone or not everywhere'
+        'problem.G3' = 'I cannot find a file, or it opens wrong'
 
         # ---- running a check
         'run.checking' = 'Checking... nothing changes on this PC.'
@@ -818,6 +823,69 @@ $script:Strings = @{
         # ---- fixes added later
         'fix.note.restartNeeded'     = '(works after a restart of the PC)'
         'fix.note.uninstaller'       = '(opens the program''s own uninstaller)'
+
+        # ---- G: check lines
+        'shell.profileOk'          = 'Signed in with the normal user profile'
+        'shell.tempProfile'        = 'Windows signed in with a TEMPORARY profile: the client''s own desktop and files are not loaded'
+        'shell.explorerOk'         = 'File Explorer (desktop, taskbar, folders) is running and responding'
+        'shell.explorerMissing'    = 'File Explorer is not running, so there is no taskbar or desktop'
+        'shell.explorerHung'       = 'File Explorer has stopped responding'
+        'shell.iconsShown'         = 'Desktop icons are shown ({0} items on the desktop)'
+        'shell.iconsHidden'        = 'Desktop icons are switched off, so the desktop looks empty'
+        'shell.desktopOneDrive'    = 'The desktop is kept in OneDrive, and OneDrive is running'
+        'shell.desktopOneDriveOff' = 'The desktop is kept in OneDrive, but OneDrive is not running'
+        'shell.recycleHidden'      = 'The Recycle Bin is hidden from the desktop'
+        'shell.taskbarShown'       = 'The taskbar stays visible'
+        'shell.taskbarAutoHide'    = 'The taskbar hides itself until the mouse touches the bottom of the screen'
+        'shell.searchHidden'       = 'The search box is hidden from the taskbar'
+        'shell.tabletMode'         = 'Tablet mode is on: bigger tiles, no desktop icons'
+
+        # ---- G: findings, and what to do about each
+        'finding.tempProfile'      = 'Windows could not load the client''s own profile and signed in with an empty, temporary one. The files are almost certainly still there, but this session does not show them, and anything saved now is lost at sign-out.'
+        'advice.tempProfile'       = 'Do not let the client save anything now. Restart the PC first; the steps below go further if that does not help.'
+        'finding.explorerMissing'  = 'File Explorer is not running. It draws the desktop, the taskbar and the folders, so they are all gone.'
+        'advice.explorerMissing'   = 'Housecall can start it again below. It is harmless.'
+        'finding.explorerHung'     = 'File Explorer is stuck. That is why the taskbar, the desktop or the folders do not react.'
+        'advice.explorerHung'      = 'Housecall can restart it below. Open folder windows close; files are not touched.'
+        'finding.iconsHidden'      = 'The desktop icons are switched off. The files are still there, only hidden. This often happens by accident with a right-click on the desktop.'
+        'advice.iconsHidden'       = 'Housecall can show them again below (it can be undone).'
+        'finding.desktopOneDrive'  = 'The client''s desktop is kept in OneDrive, but OneDrive is not running. That can make desktop files seem missing or out of date.'
+        'advice.desktopOneDrive'   = 'Choose G2 to check OneDrive.'
+        'finding.tabletMode'       = 'Tablet mode is on. It makes Windows 10 look different: big tiles, and no icons on the desktop.'
+        'advice.tabletMode'        = 'Switch it off with the steps below.'
+        'finding.taskbarAutoHide'  = 'The taskbar hides itself: it only appears when the mouse touches the bottom of the screen.'
+        'advice.taskbarAutoHide'   = 'Housecall can make it stay visible below (it can be undone).'
+        'finding.searchHidden'     = 'The search box is hidden from the taskbar, so there is nowhere to type a search.'
+        'advice.searchHidden'      = 'Housecall can show it again below (it can be undone).'
+        'finding.recycleHidden'    = 'The Recycle Bin is hidden from the desktop. Deleted files are still in it.'
+        'advice.recycleHidden'     = 'Housecall can show it again below (it can be undone).'
+        'finding.shellOk'          = 'The desktop, the taskbar and File Explorer are set normally.'
+        'advice.shellOk'           = 'Still acting strange? Restarting File Explorer below is harmless and often helps.'
+
+        # ---- G: fixes
+        'fix.note.explorer'        = '(the taskbar is gone for a few seconds, open folder windows close)'
+        'fix.restartExplorer'      = 'Restart File Explorer'
+        'fix.restartExplorer.done' = 'Restarted File Explorer'
+        'fix.showDesktopIcons'     = 'Show the desktop icons again'
+        'fix.showDesktopIcons.done' = 'Showed the desktop icons again'
+        'fix.showRecycleBin'       = 'Show the Recycle Bin on the desktop'
+        'fix.showRecycleBin.done'  = 'Showed the Recycle Bin on the desktop'
+        'fix.showSearch'           = 'Show the search box on the taskbar'
+        'fix.showSearch.done'      = 'Showed the search box on the taskbar'
+        'fix.taskbarStay'          = 'Keep the taskbar visible'
+        'fix.taskbarStay.done'     = 'The taskbar stays visible'
+
+        # ---- G: step-by-step guides
+        'steps.tempProfile'        = 'Do not save anything now: it would be lost at sign-out. | Restart the PC (Start > Power > Restart) and sign in again. Often that is enough. | Still a temporary profile? Check that the disk is not full (D4); a full disk is a common cause. | Still not? The profile needs repairing in the registry, with admin rights. Do this only with a backup, or plan it as a separate job. | The client''s files are normally still in C:\Users\<name>: open that folder to reassure the client.'
+        'steps.explorerMissing'    = 'Choose the fix above to start it, or do it by hand. | Press Ctrl + Shift + Esc to open Task Manager. | Click Run new task, type explorer and press Enter. | The taskbar and the desktop come back.'
+        'steps.explorerHung'       = 'Choose the fix above to restart it, or do it by hand. | Press Ctrl + Shift + Esc to open Task Manager. | Find Windows Explorer in the list, right-click it and choose Restart. | Happens often? Choose D1 or D3 to look for the cause.'
+        'steps.iconsHidden'        = 'Choose the fix above (it can be undone), or do it by hand. | Right-click an empty spot on the desktop. | Choose View, then click Show desktop icons so it gets a tick.'
+        'steps.desktopOneDrive'    = 'Choose G2 to check OneDrive. | Or start OneDrive by hand: type OneDrive in Start and open it. | Wait until the cloud icon at the bottom right no longer shows arrows.'
+        'steps.tabletMode'         = 'Click the speech-bubble icon at the bottom right, next to the clock (the Action Center). | Click the Tablet mode tile so it is no longer blue. | Or: Settings (Windows key + I) > System > Tablet, and choose "Don''t use tablet mode".'
+        'steps.taskbarAutoHide'    = 'Choose the fix above (it can be undone), or do it by hand. | Move the mouse to the bottom of the screen so the taskbar appears, right-click it and choose Taskbar settings. | Switch off "Automatically hide the taskbar" (Windows 11: under Taskbar behaviours).'
+        'steps.searchHidden'       = 'Choose the fix above (it can be undone), or do it by hand. | Right-click the taskbar and choose Taskbar settings. | Under Search, choose Search box (Windows 10: right-click the taskbar > Search > Show search box).'
+        'steps.recycleHidden'      = 'Choose the fix above (it can be undone), or do it by hand. | Open Settings (Windows key + I) > Personalisation > Themes > Desktop icon settings. | Tick Recycle Bin and click OK.'
+        'steps.shellOk'            = 'Choose the fix above to restart File Explorer; it is harmless. | Desktop looks empty? Right-click the desktop > View > Show desktop icons. | Files seem gone? Choose G2 to check OneDrive, or search for the file name in File Explorer. | Everything suddenly big? Choose B3.'
         'fix.resetWinsock'           = 'Reset Windows'' network settings'
         'fix.resetWinsock.done'      = 'Reset Windows'' network settings (restart needed)'
         'fix.restartAdapter'         = 'Restart network adapter "{0}"'
@@ -1004,6 +1072,7 @@ $script:Strings = @{
         'area.D'  = 'Traag of vastlopen'
         'area.E'  = 'Windows en updates'
         'area.F'  = 'Veiligheid en oplichting'
+        'area.G'  = 'Bestanden, bureaublad en accounts'
 
         'looks.A' = 'netwerkadapter, adres van de router, router, DNS, internet, proxy, wifi-signaal'
         'looks.B' = 'standaard geluidsapparaat, dempen en volume, audioservice, toegang tot camera en microfoon, schermschaal'
@@ -1011,6 +1080,7 @@ $script:Strings = @{
         'looks.D' = 'vrije schijfruimte, programma''s die geheugen en processor gebruiken, opstartprogramma''s, recente crashes, tijd sinds herstart'
         'looks.E' = 'Windows Update-service, laatste geslaagde update, wachtende herstart'
         'looks.F' = 'programma''s voor overname op afstand zoals AnyDesk, sites die meldingen mogen sturen, Microsoft Defender, onbekende geplande taken'
+        'looks.G' = 'tijdelijk profiel, Verkenner, pictogrammen op het bureaublad, taakbalk en zoeken, OneDrive, downloads, welk programma een bestand opent'
 
         'problem.A1' = 'Helemaal geen internet'
         'problem.A2' = 'Wifi is traag of valt steeds weg'
@@ -1032,6 +1102,9 @@ $script:Strings = @{
         'problem.F1' = 'Een pop-up zegt dat ik een virus heb'
         'problem.F2' = 'Iemand belde mij en kwam in mijn computer'
         'problem.F3' = 'Volledige veiligheidscontrole'
+        'problem.G1' = 'Bureaublad, taakbalk of mappen doen raar'
+        'problem.G2' = 'Mijn bestanden zijn weg of staan niet overal'
+        'problem.G3' = 'Ik kan een bestand niet vinden, of het opent verkeerd'
 
         # ---- running a check
         'run.checking' = 'Bezig met controleren... er verandert niets op deze pc.'
@@ -1712,6 +1785,69 @@ $script:Strings = @{
         # ---- fixes added later
         'fix.note.restartNeeded'     = '(werkt na een herstart van de pc)'
         'fix.note.uninstaller'       = '(opent het eigen verwijderprogramma)'
+
+        # ---- G: controleregels
+        'shell.profileOk'          = 'Aangemeld met het normale gebruikersprofiel'
+        'shell.tempProfile'        = 'Windows heeft aangemeld met een TIJDELIJK profiel: het eigen bureaublad en de bestanden van de klant zijn niet geladen'
+        'shell.explorerOk'         = 'Verkenner (bureaublad, taakbalk, mappen) draait en reageert'
+        'shell.explorerMissing'    = 'Verkenner draait niet, dus er is geen taakbalk en geen bureaublad'
+        'shell.explorerHung'       = 'Verkenner reageert niet meer'
+        'shell.iconsShown'         = 'Pictogrammen op het bureaublad worden getoond ({0} items op het bureaublad)'
+        'shell.iconsHidden'        = 'De pictogrammen op het bureaublad staan uit, dus het bureaublad lijkt leeg'
+        'shell.desktopOneDrive'    = 'Het bureaublad staat in OneDrive, en OneDrive draait'
+        'shell.desktopOneDriveOff' = 'Het bureaublad staat in OneDrive, maar OneDrive draait niet'
+        'shell.recycleHidden'      = 'De Prullenbak is verborgen op het bureaublad'
+        'shell.taskbarShown'       = 'De taakbalk blijft zichtbaar'
+        'shell.taskbarAutoHide'    = 'De taakbalk verbergt zichzelf tot de muis de onderkant van het scherm raakt'
+        'shell.searchHidden'       = 'Het zoekvak is verborgen op de taakbalk'
+        'shell.tabletMode'         = 'De tabletmodus staat aan: grote tegels, geen pictogrammen op het bureaublad'
+
+        # ---- G: bevindingen, en wat eraan te doen
+        'finding.tempProfile'      = 'Windows kon het eigen profiel van de klant niet laden en heeft aangemeld met een leeg, tijdelijk profiel. De bestanden zijn vrijwel zeker nog aanwezig, maar deze sessie laat ze niet zien, en wat nu wordt opgeslagen gaat verloren bij het afmelden.'
+        'advice.tempProfile'       = 'Laat de klant nu niets opslaan. Start eerst de pc opnieuw op; de stappen hieronder gaan verder als dat niet helpt.'
+        'finding.explorerMissing'  = 'Verkenner draait niet. Die tekent het bureaublad, de taakbalk en de mappen, dus die zijn allemaal weg.'
+        'advice.explorerMissing'   = 'Housecall kan hem hieronder weer starten. Dat is onschuldig.'
+        'finding.explorerHung'     = 'Verkenner is vastgelopen. Daarom reageren de taakbalk, het bureaublad of de mappen niet.'
+        'advice.explorerHung'      = 'Housecall kan hem hieronder herstarten. Open mapvensters gaan dicht; bestanden blijven onaangeroerd.'
+        'finding.iconsHidden'      = 'De pictogrammen op het bureaublad staan uit. De bestanden zijn er nog, ze zijn alleen verborgen. Dit gebeurt vaak per ongeluk met een rechtermuisklik op het bureaublad.'
+        'advice.iconsHidden'       = 'Housecall kan ze hieronder weer tonen (kan worden teruggedraaid).'
+        'finding.desktopOneDrive'  = 'Het bureaublad van de klant staat in OneDrive, maar OneDrive draait niet. Daardoor kunnen bestanden op het bureaublad lijken te ontbreken of verouderd zijn.'
+        'advice.desktopOneDrive'   = 'Kies G2 om OneDrive te controleren.'
+        'finding.tabletMode'       = 'De tabletmodus staat aan. Die laat Windows 10 er anders uitzien: grote tegels en geen pictogrammen op het bureaublad.'
+        'advice.tabletMode'        = 'Zet hem uit met de stappen hieronder.'
+        'finding.taskbarAutoHide'  = 'De taakbalk verbergt zichzelf: hij verschijnt pas als de muis de onderkant van het scherm raakt.'
+        'advice.taskbarAutoHide'   = 'Housecall kan hem hieronder zichtbaar laten blijven (kan worden teruggedraaid).'
+        'finding.searchHidden'     = 'Het zoekvak is verborgen op de taakbalk, dus er is geen plek om een zoekopdracht te typen.'
+        'advice.searchHidden'      = 'Housecall kan het hieronder weer tonen (kan worden teruggedraaid).'
+        'finding.recycleHidden'    = 'De Prullenbak is verborgen op het bureaublad. Verwijderde bestanden zitten er nog in.'
+        'advice.recycleHidden'     = 'Housecall kan hem hieronder weer tonen (kan worden teruggedraaid).'
+        'finding.shellOk'          = 'Het bureaublad, de taakbalk en Verkenner staan normaal ingesteld.'
+        'advice.shellOk'           = 'Doet het toch raar? Verkenner hieronder herstarten is onschuldig en helpt vaak.'
+
+        # ---- G: oplossingen
+        'fix.note.explorer'        = '(de taakbalk is een paar seconden weg, open mapvensters gaan dicht)'
+        'fix.restartExplorer'      = 'Verkenner herstarten'
+        'fix.restartExplorer.done' = 'Verkenner herstart'
+        'fix.showDesktopIcons'     = 'De pictogrammen op het bureaublad weer tonen'
+        'fix.showDesktopIcons.done' = 'Pictogrammen op het bureaublad weer getoond'
+        'fix.showRecycleBin'       = 'De Prullenbak op het bureaublad tonen'
+        'fix.showRecycleBin.done'  = 'Prullenbak op het bureaublad getoond'
+        'fix.showSearch'           = 'Het zoekvak op de taakbalk tonen'
+        'fix.showSearch.done'      = 'Zoekvak op de taakbalk getoond'
+        'fix.taskbarStay'          = 'De taakbalk zichtbaar laten blijven'
+        'fix.taskbarStay.done'     = 'De taakbalk blijft zichtbaar'
+
+        # ---- G: stap-voor-stap
+        'steps.tempProfile'        = 'Sla nu niets op: dat gaat verloren bij het afmelden. | Start de pc opnieuw op (Start > Aan/uit > Opnieuw opstarten) en meld opnieuw aan. Vaak is dat genoeg. | Nog steeds een tijdelijk profiel? Controleer of de schijf niet vol is (D4); een volle schijf is een veelvoorkomende oorzaak. | Nog steeds? Dan moet het profiel in het register worden hersteld, met beheerdersrechten. Doe dit alleen met een back-up, of plan het als aparte klus. | De bestanden van de klant staan normaal nog in C:\Users\<naam>: open die map om de klant gerust te stellen.'
+        'steps.explorerMissing'    = 'Kies hierboven de oplossing om hem te starten, of doe het met de hand. | Druk op Ctrl + Shift + Esc om Taakbeheer te openen. | Klik op Nieuwe taak uitvoeren, typ explorer en druk op Enter. | De taakbalk en het bureaublad komen terug.'
+        'steps.explorerHung'       = 'Kies hierboven de oplossing om hem te herstarten, of doe het met de hand. | Druk op Ctrl + Shift + Esc om Taakbeheer te openen. | Zoek Windows Verkenner in de lijst, klik er met rechts op en kies Opnieuw opstarten. | Gebeurt het vaak? Kies D1 of D3 om de oorzaak te zoeken.'
+        'steps.iconsHidden'        = 'Kies hierboven de oplossing (kan worden teruggedraaid), of doe het met de hand. | Klik met rechts op een lege plek op het bureaublad. | Kies Beeld en klik op Bureaubladpictogrammen weergeven, zodat er een vinkje voor staat.'
+        'steps.desktopOneDrive'    = 'Kies G2 om OneDrive te controleren. | Of start OneDrive met de hand: typ OneDrive in Start en open het. | Wacht tot het wolkje rechtsonder geen pijltjes meer laat zien.'
+        'steps.tabletMode'         = 'Klik op het tekstballon-pictogram rechtsonder, naast de klok (het Actiecentrum). | Klik op de tegel Tabletmodus, zodat die niet meer blauw is. | Of: Instellingen (Windows-toets + I) > Systeem > Tablet, en kies "Tabletmodus niet gebruiken".'
+        'steps.taskbarAutoHide'    = 'Kies hierboven de oplossing (kan worden teruggedraaid), of doe het met de hand. | Beweeg de muis naar de onderkant van het scherm zodat de taakbalk verschijnt, klik er met rechts op en kies Taakbalkinstellingen. | Zet "De taakbalk automatisch verbergen" uit (Windows 11: onder Taakbalkgedrag).'
+        'steps.searchHidden'       = 'Kies hierboven de oplossing (kan worden teruggedraaid), of doe het met de hand. | Klik met rechts op de taakbalk en kies Taakbalkinstellingen. | Kies onder Zoeken voor Zoekvak (Windows 10: rechtermuisklik op de taakbalk > Zoeken > Zoekvak weergeven).'
+        'steps.recycleHidden'      = 'Kies hierboven de oplossing (kan worden teruggedraaid), of doe het met de hand. | Open Instellingen (Windows-toets + I) > Persoonlijke instellingen > Thema''s > Instellingen voor bureaubladpictogrammen. | Vink Prullenbak aan en klik op OK.'
+        'steps.shellOk'            = 'Kies hierboven de oplossing om Verkenner te herstarten; dat is onschuldig. | Lijkt het bureaublad leeg? Rechtermuisklik op het bureaublad > Beeld > Bureaubladpictogrammen weergeven. | Lijken bestanden weg? Kies G2 om OneDrive te controleren, of zoek de bestandsnaam op in Verkenner. | Alles ineens groot? Kies B3.'
         'fix.resetWinsock'           = 'De netwerkinstellingen van Windows herstellen'
         'fix.resetWinsock.done'      = 'Netwerkinstellingen van Windows hersteld (herstart nodig)'
         'fix.restartAdapter'         = 'Netwerkadapter "{0}" herstarten'
@@ -2144,6 +2280,7 @@ $script:Areas = [ordered]@{
     D = @('D1', 'D2', 'D3', 'D4')
     E = @('E1', 'E2', 'E3')
     F = @('F1', 'F2', 'F3')
+    G = @('G1', 'G2', 'G3')
 }
 
 <#
@@ -4955,6 +5092,167 @@ $script:ProblemHandlers['E1'] = 'Invoke-HcE1'
 $script:ProblemHandlers['E2'] = 'Invoke-HcE2'
 $script:ProblemHandlers['E3'] = 'Invoke-HcE3'
 
+# ==================================================== src\checks\desktop.ps1 ==
+<#
+    Area G: files, desktop & accounts.
+
+      G1  the desktop, taskbar or folders act strange
+                                  temporary profile, File Explorer running and
+                                  responding, desktop icons and Recycle Bin
+                                  shown, Desktop moved into OneDrive, taskbar
+                                  auto-hide, search box, tablet mode (Windows 10)
+      G2  files gone or not everywhere      (not built yet)
+      G3  a file cannot be found or opens wrong  (not built yet)
+
+    What an older client says on the phone: "my desktop is empty", "the bar at
+    the bottom is gone", "my folders won't open", "everything suddenly looks
+    different". One check looks at all of it, because the client cannot tell
+    these apart. Everything here reads the current user's own settings; only
+    the fixes in src\fixes.ps1 change them, and each can be undone.
+#>
+
+$script:ExplorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer'
+$script:RecycleBinId = '{645FF040-5081-101B-9F08-00AA002F954E}'
+
+# ------------------------------------------------------------------- facts --
+
+# A temporary profile: Windows could not load the user's own profile and
+# signed in with an empty one, so the desktop and files seem gone.
+function Test-HcTempProfile {
+    if ("$env:USERPROFILE" -match '\\TEMP(\.[^\\]*)?$') { return $true }
+    try {
+        $mine = Get-CimInstance Win32_UserProfile -ErrorAction Stop | Where-Object { $_.LocalPath -eq $env:USERPROFILE } | Select-Object -First 1
+        if ($mine -and ([int]$mine.Status -band 1)) { return $true }
+    } catch { }
+    $false
+}
+
+function Get-HcShellFacts {
+    $advanced = Get-ItemProperty "$script:ExplorerKey\Advanced" -ErrorAction SilentlyContinue
+    $icons = Get-ItemProperty "$script:ExplorerKey\HideDesktopIcons\NewStartPanel" -ErrorAction SilentlyContinue
+    $taskbar = (Get-ItemProperty "$script:ExplorerKey\StuckRects3" -ErrorAction SilentlyContinue).Settings
+    $search = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' -ErrorAction SilentlyContinue).SearchboxTaskbarMode
+    $tablet = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ImmersiveShell' -ErrorAction SilentlyContinue).TabletMode
+    # The shell's explorer has a window (the taskbar); a folder window's
+    # explorer may not. Frozen = a windowed explorer that stopped responding.
+    $explorer = @(Get-Process -Name explorer -ErrorAction SilentlyContinue)
+    $desktop = [Environment]::GetFolderPath('Desktop')
+    $items = 0
+    foreach ($folder in @($desktop, [Environment]::GetFolderPath('CommonDesktopDirectory'))) {
+        if ($folder -and (Test-Path -LiteralPath $folder)) {
+            $items += @(Get-ChildItem -LiteralPath $folder -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }).Count
+        }
+    }
+    [pscustomobject]@{
+        TempProfile      = Test-HcTempProfile
+        ExplorerRunning  = ($explorer.Count -gt 0)
+        ExplorerHung     = [bool]@($explorer | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero -and -not $_.Responding }).Count
+        IconsHidden      = ($advanced -and $advanced.HideIcons -eq 1)
+        RecycleBinHidden = ($icons -and $icons.$script:RecycleBinId -eq 1)
+        DesktopItems     = $items
+        DesktopInOneDrive = ("$desktop" -match '\\OneDrive[^\\]*\\')
+        OneDriveRunning  = [bool](Get-Process -Name OneDrive -ErrorAction SilentlyContinue)
+        TaskbarAutoHide  = (Test-HcTaskbarAutoHide $taskbar)
+        SearchHidden     = ($null -ne $search -and [int]$search -eq 0)
+        TabletMode       = ($tablet -eq 1)
+        Windows10        = ([Environment]::OSVersion.Version.Build -lt 22000)
+    }
+}
+
+# The taskbar's settings are a binary blob; byte 8 is 3 when it hides itself
+# and 2 when it stays. Pure, so the tests can check both ways.
+function Test-HcTaskbarAutoHide {
+    param([byte[]]$Settings)
+    [bool]($Settings -and $Settings.Count -gt 8 -and ($Settings[8] -band 1))
+}
+
+function ConvertTo-HcTaskbarSetting {
+    param([byte[]]$Settings, [bool]$AutoHide)
+    $copy = [byte[]]$Settings.Clone()
+    if ($AutoHide) { $copy[8] = [byte]($copy[8] -bor 1) } else { $copy[8] = [byte]($copy[8] -band 0xFE) }
+    , $copy
+}
+
+# ------------------------------------------------------------------ verdict --
+
+# G1.
+function Test-HcShell {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if ($Facts.TempProfile) {
+        Add-HcLine $r problem (T 'shell.tempProfile')
+        $found['tempProfile'] = @()
+    } else {
+        Add-HcLine $r ok (T 'shell.profileOk')
+    }
+
+    if (-not $Facts.ExplorerRunning) {
+        Add-HcLine $r problem (T 'shell.explorerMissing')
+        $found['explorerMissing'] = @()
+    } elseif ($Facts.ExplorerHung) {
+        Add-HcLine $r problem (T 'shell.explorerHung')
+        $found['explorerHung'] = @()
+    } else {
+        Add-HcLine $r ok (T 'shell.explorerOk')
+    }
+    # Restarting Explorer is first when it is the cause.
+    $explorerCause = $found.ContainsKey('explorerMissing') -or $found.ContainsKey('explorerHung')
+    if ($explorerCause) { Add-HcAction $r 'restartExplorer' }
+
+    if ($Facts.IconsHidden) {
+        Add-HcLine $r problem (T 'shell.iconsHidden')
+        Add-HcAction $r 'showDesktopIcons'
+        $found['iconsHidden'] = @()
+    } else {
+        Add-HcLine $r ok (T 'shell.iconsShown' $Facts.DesktopItems)
+    }
+    if ($Facts.DesktopInOneDrive) {
+        if ($Facts.OneDriveRunning) {
+            Add-HcLine $r ok (T 'shell.desktopOneDrive')
+        } else {
+            Add-HcLine $r warn (T 'shell.desktopOneDriveOff')
+            $found['desktopOneDrive'] = @()
+        }
+    }
+    if ($Facts.RecycleBinHidden) {
+        Add-HcLine $r warn (T 'shell.recycleHidden')
+        Add-HcAction $r 'showRecycleBin'
+        $found['recycleHidden'] = @()
+    }
+
+    if ($Facts.TaskbarAutoHide) {
+        Add-HcLine $r warn (T 'shell.taskbarAutoHide')
+        Add-HcAction $r 'taskbarStay'
+        $found['taskbarAutoHide'] = @()
+    } else {
+        Add-HcLine $r ok (T 'shell.taskbarShown')
+    }
+    if ($Facts.SearchHidden) {
+        Add-HcLine $r warn (T 'shell.searchHidden')
+        Add-HcAction $r 'showSearch'
+        $found['searchHidden'] = @()
+    }
+    if ($Facts.Windows10 -and $Facts.TabletMode) {
+        Add-HcLine $r warn (T 'shell.tabletMode')
+        $found['tabletMode'] = @()
+    }
+
+    # Nothing wrong in the settings, yet the client says it acts strange:
+    # restarting Explorer is still the harmless first thing to try.
+    if (-not $explorerCause) { Add-HcAction $r 'restartExplorer' }
+
+    Select-HcFinding $r $found @('tempProfile', 'explorerMissing', 'explorerHung', 'iconsHidden', 'desktopOneDrive', 'tabletMode', 'taskbarAutoHide', 'searchHidden', 'recycleHidden') 'shellOk'
+    $r
+}
+
+# ---------------------------------------------------------------- handlers --
+
+function Invoke-HcG1 { { Test-HcShell (Get-HcShellFacts) } }
+
+$script:ProblemHandlers['G1'] = 'Invoke-HcG1'
+
 # ==================================================== src\fixes.ps1 ==
 <#
     Fixes: the only code in Housecall that changes the PC.
@@ -5358,6 +5656,78 @@ $script:Fixes = @{
         }
         Undo = $null
     }
+
+    # ---- G: desktop, taskbar and folders
+    # Explorer draws the desktop, the taskbar and the folder windows.
+    # Restarting it is harmless: the taskbar is gone for a few seconds, open
+    # folder windows close, and files are untouched.
+    restartExplorer = @{
+        Note = 'explorer'; Admin = $false
+        Apply = { param($t) Restart-HcExplorer }
+        Undo  = $null
+    }
+    # The settings below only take effect once Explorer restarts, so each
+    # one restarts it, and so does its undo.
+    showDesktopIcons = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Set-HcShellValue $t "$script:ExplorerKey\Advanced" 'HideIcons' 0 }
+        Undo  = { param($t) Undo-HcShellValue $t }
+    }
+    showRecycleBin = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Set-HcShellValue $t "$script:ExplorerKey\HideDesktopIcons\NewStartPanel" $script:RecycleBinId 0 }
+        Undo  = { param($t) Undo-HcShellValue $t }
+    }
+    showSearch = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Set-HcShellValue $t 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'SearchboxTaskbarMode' 2 }
+        Undo  = { param($t) Undo-HcShellValue $t }
+    }
+    taskbarStay = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            $key = "$script:ExplorerKey\StuckRects3"
+            $t.Saved = [byte[]](Get-ItemProperty $key -ErrorAction Stop).Settings
+            Set-ItemProperty $key -Name Settings -Value (ConvertTo-HcTaskbarSetting $t.Saved $false) -Type Binary -ErrorAction Stop
+            Restart-HcExplorer
+        }
+        Undo = {
+            param($t)
+            Set-ItemProperty "$script:ExplorerKey\StuckRects3" -Name Settings -Value ([byte[]]$t.Saved) -Type Binary -ErrorAction Stop
+            Restart-HcExplorer
+        }
+    }
+}
+
+# Stops Explorer and waits for Windows to start it again (it does so by
+# itself); starts it when it does not come back within five seconds.
+function Restart-HcExplorer {
+    Get-Process -Name explorer -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction Stop
+    for ($i = 0; $i -lt 20; $i++) {
+        Start-Sleep -Milliseconds 250
+        if (Get-Process -Name explorer -ErrorAction SilentlyContinue) { return }
+    }
+    Start-Process explorer.exe
+}
+
+# One DWORD in the user's Explorer settings, remembered for undo, then
+# Explorer restarted so it shows.
+function Set-HcShellValue {
+    param([hashtable]$Target, [string]$Key, [string]$Name, [int]$Value)
+    $Target.Key = $Key
+    $Target.Name = $Name
+    $Target.Saved = (Get-ItemProperty $Key -ErrorAction SilentlyContinue).$Name
+    if (-not (Test-Path $Key)) { New-Item $Key -Force | Out-Null }
+    New-ItemProperty $Key -Name $Name -Value $Value -PropertyType DWord -Force -ErrorAction Stop | Out-Null
+    Restart-HcExplorer
+}
+
+function Undo-HcShellValue {
+    param([hashtable]$Target)
+    if ($null -eq $Target.Saved) { Remove-ItemProperty $Target.Key -Name $Target.Name -ErrorAction Stop }
+    else { New-ItemProperty $Target.Key -Name $Target.Name -Value $Target.Saved -PropertyType DWord -Force -ErrorAction Stop | Out-Null }
+    Restart-HcExplorer
 }
 
 # "Disable scheduled task "X" (can be undone)" -- the label with its note.

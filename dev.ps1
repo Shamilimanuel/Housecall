@@ -61,6 +61,7 @@ $HcSource = @(
     'checks\sound.ps1'
     'checks\performance.ps1'
     'checks\updates.ps1'
+    'checks\desktop.ps1'
     'fixes.ps1'
     'note.ps1'
     'relay.ps1'

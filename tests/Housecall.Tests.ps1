@@ -18,6 +18,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\checks\sound.ps1')
 . (Join-Path $root 'src\checks\performance.ps1')
 . (Join-Path $root 'src\checks\updates.ps1')
+. (Join-Path $root 'src\checks\desktop.ps1')
 . (Join-Path $root 'src\fixes.ps1')
 . (Join-Path $root 'src\note.ps1')
 . (Join-Path $root 'src\relay.ps1')
@@ -785,6 +786,92 @@ Describe 'E: Windows and updates' {
             }
         }
         $script:Lang = 'en'
+    }
+}
+
+Describe 'G1: desktop, taskbar and folders' {
+    $script:Lang = 'en'
+    $shell = { param([hashtable]$Change = @{})
+        $f = [pscustomobject]@{
+            TempProfile = $false; ExplorerRunning = $true; ExplorerHung = $false; IconsHidden = $false
+            RecycleBinHidden = $false; DesktopItems = 12; DesktopInOneDrive = $false; OneDriveRunning = $false
+            TaskbarAutoHide = $false; SearchHidden = $false; TabletMode = $false; Windows10 = $false
+        }
+        foreach ($k in $Change.Keys) { $f.$k = $Change[$k] }
+        $f }
+    $fixIds = { param($r) @($r.Actions | ForEach-Object { $_.FixId }) }
+
+    It 'finds nothing on a normal PC, and still offers the harmless Explorer restart' {
+        $r = Test-HcShell (& $shell)
+        $r.FindingId | Should Be 'shellOk'
+        @($r.Results | Where-Object { $_.Status -ne 'ok' }).Count | Should Be 0
+        (& $fixIds $r) | Should Be @('restartExplorer')
+    }
+
+    It 'puts a temporary profile first, whatever else is wrong' {
+        $r = Test-HcShell (& $shell @{ TempProfile = $true; IconsHidden = $true; TaskbarAutoHide = $true })
+        $r.FindingId | Should Be 'tempProfile'
+        $r.Results[0].Status | Should Be 'problem'
+    }
+
+    It 'restarts Explorer first when it is not running or frozen' {
+        $r = Test-HcShell (& $shell @{ ExplorerRunning = $false; IconsHidden = $true })
+        $r.FindingId | Should Be 'explorerMissing'
+        (& $fixIds $r)[0] | Should Be 'restartExplorer'
+        @((& $fixIds $r) | Where-Object { $_ -eq 'restartExplorer' }).Count | Should Be 1
+        (Test-HcShell (& $shell @{ ExplorerHung = $true })).FindingId | Should Be 'explorerHung'
+    }
+
+    It 'shows hidden desktop icons, a hidden search box, the taskbar and the Recycle Bin, each with its own fix' {
+        $r = Test-HcShell (& $shell @{ IconsHidden = $true; SearchHidden = $true; TaskbarAutoHide = $true; RecycleBinHidden = $true })
+        $r.FindingId | Should Be 'iconsHidden'
+        (& $fixIds $r) | Should Be @('showDesktopIcons', 'showRecycleBin', 'taskbarStay', 'showSearch', 'restartExplorer')
+        (Test-HcShell (& $shell @{ TaskbarAutoHide = $true })).FindingId | Should Be 'taskbarAutoHide'
+        (Test-HcShell (& $shell @{ SearchHidden = $true })).FindingId | Should Be 'searchHidden'
+    }
+
+    It 'points to OneDrive only when the desktop lives there and OneDrive is off' {
+        (Test-HcShell (& $shell @{ DesktopInOneDrive = $true; OneDriveRunning = $false })).FindingId | Should Be 'desktopOneDrive'
+        (Test-HcShell (& $shell @{ DesktopInOneDrive = $true; OneDriveRunning = $true })).FindingId | Should Be 'shellOk'
+    }
+
+    It 'only mentions tablet mode on Windows 10' {
+        (Test-HcShell (& $shell @{ TabletMode = $true; Windows10 = $true })).FindingId | Should Be 'tabletMode'
+        (Test-HcShell (& $shell @{ TabletMode = $true; Windows10 = $false })).FindingId | Should Be 'shellOk'
+    }
+
+    It 'reads and flips only the auto-hide bit of the taskbar setting' {
+        $on = [byte[]](0x30, 0, 0, 0, 0xFE, 0xFF, 0xFF, 0xFF, 0x03, 0x08, 0, 0)
+        Test-HcTaskbarAutoHide $on | Should Be $true
+        $off = ConvertTo-HcTaskbarSetting $on $false
+        $off[8] | Should Be 2
+        Test-HcTaskbarAutoHide $off | Should Be $false
+        $on[8] | Should Be 3                                   # the original is left alone, for undo
+        (ConvertTo-HcTaskbarSetting $off $true)[8] | Should Be 3
+        @(Compare-Object ($on | Select-Object -First 8) ($off | Select-Object -First 8)).Count | Should Be 0
+        Test-HcTaskbarAutoHide $null | Should Be $false
+    }
+
+    It 'shows the icons again, remembers the old value, and puts it back on undo' {
+        Mock Restart-HcExplorer { }
+        Mock Get-ItemProperty { [pscustomobject]@{ HideIcons = 1 } }
+        Mock Test-Path { $true }
+        $script:ShellSet = New-Object System.Collections.ArrayList
+        Mock New-ItemProperty { [void]$script:ShellSet.Add("$Name=$Value") }
+        $t = @{}
+        & $script:Fixes.showDesktopIcons.Apply $t
+        $script:ShellSet[0] | Should Be 'HideIcons=0'
+        $t.Saved | Should Be 1
+        & $script:Fixes.showDesktopIcons.Undo $t
+        $script:ShellSet[1] | Should Be 'HideIcons=1'
+        Assert-MockCalled Restart-HcExplorer -Times 2 -Exactly
+    }
+
+    It 'is on the menu as area G, with G1 built and G2, G3 still to come' {
+        (Resolve-HcChoice 'G').Kind | Should Be 'area'
+        (Resolve-HcChoice 'g1').Value | Should Be 'G1'
+        $script:ProblemHandlers['G1'] | Should Be 'Invoke-HcG1'
+        $script:ProblemHandlers.ContainsKey('G2') | Should Be $false
     }
 }
 
@@ -1622,7 +1709,7 @@ Describe 'Findings' {
         $ids += @($script:SecurityChecks.Values | ForEach-Object { $_.Clean })
         # Area C names its findings as $found['id'], Set-HcFinding $r 'id', or the clean id last on Select-HcFinding.
         $ids += @('spaceFull', 'spaceLow')      # D4 renames diskFull / diskLow
-        $ids += @(Get-Content (Join-Path $root 'src\checks\devices.ps1'), (Join-Path $root 'src\checks\sound.ps1'), (Join-Path $root 'src\checks\performance.ps1'), (Join-Path $root 'src\checks\updates.ps1'), (Join-Path $root 'src\checks\email.ps1') | ForEach-Object {
+        $ids += @(Get-Content (Join-Path $root 'src\checks\devices.ps1'), (Join-Path $root 'src\checks\sound.ps1'), (Join-Path $root 'src\checks\performance.ps1'), (Join-Path $root 'src\checks\updates.ps1'), (Join-Path $root 'src\checks\email.ps1'), (Join-Path $root 'src\checks\desktop.ps1') | ForEach-Object {
             [regex]::Matches($_, "\`$found\['(\w+)'\]|Set-HcFinding \`$r '(\w+)'|Select-HcFinding .* '(\w+)'\s*$") | ForEach-Object {
                 @($_.Groups[1].Value, $_.Groups[2].Value, $_.Groups[3].Value) | Where-Object { $_ }
             }

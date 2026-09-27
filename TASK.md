@@ -1,12 +1,12 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 79%** `████████████████░░░░` 59 of 75 done · 0 in progress · 16 open · 0 blocked · 0 waiting on a decision
+**Progress: 80%** `████████████████░░░░` 60 of 75 done · 0 in progress · 15 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/16) |
+| Next up | `█░░░░░░░░░` | 6% (1/16) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (44/44) |
 | Found in testing | `██████████` | 100% (10/10) |
@@ -180,7 +180,7 @@ codes and an area G. Compared against the code (no changes made yet):
 | G1 cannot sign in | No | barely: Housecall can't run on a locked-out account | **not a check**; a step-by-step guide |
 
 **Decided:** built before the window, so the window gets them straight away:
-- [ ] **G1** "Mijn scherm doet raar": desktop icons, taskbar or search gone, Explorer frozen, temporary profile. Fixes: restart Explorer, show icons (reversible); temp profile = steps
+- [x] **G1** "Bureaublad, taakbalk of mappen doen raar" (27 Sep): `src/checks/desktop.ps1`. Reads the temporary profile, Explorer running/responding, desktop icons and Recycle Bin, Desktop in OneDrive with OneDrive off, taskbar auto-hide, search box, tablet mode (Win10). Fixes: restart Explorer (always offered, first when it is the cause), show icons / Recycle Bin / search box, keep the taskbar visible, each undoable and each restarting Explorer; temp profile and tablet mode = steps. 9 tests (257 in total). Ran read-only on Shamil's PC: it found his own icons-off, auto-hide and hidden search. **Not pushed yet**; the AI relay does not know G1 yet (add G1-G3 to CODES in one redeploy)
 - [ ] **G2** "Mijn bestanden zijn weg of staan niet overal": OneDrive running/signed in/folders moved, temporary profile. Fix: start OneDrive
 - [ ] **G3** "Ik kan mijn bestand niet vinden of het opent verkeerd": newest downloads, which program opens the type. Fix: open the folder / Default apps + steps (UserChoice can't be set by script)
 - [ ] **C4** battery: capacity left vs new, charging, power plan; code shared with Pc-overzicht

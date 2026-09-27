@@ -400,6 +400,78 @@ $script:Fixes = @{
         }
         Undo = $null
     }
+
+    # ---- G: desktop, taskbar and folders
+    # Explorer draws the desktop, the taskbar and the folder windows.
+    # Restarting it is harmless: the taskbar is gone for a few seconds, open
+    # folder windows close, and files are untouched.
+    restartExplorer = @{
+        Note = 'explorer'; Admin = $false
+        Apply = { param($t) Restart-HcExplorer }
+        Undo  = $null
+    }
+    # The settings below only take effect once Explorer restarts, so each
+    # one restarts it, and so does its undo.
+    showDesktopIcons = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Set-HcShellValue $t "$script:ExplorerKey\Advanced" 'HideIcons' 0 }
+        Undo  = { param($t) Undo-HcShellValue $t }
+    }
+    showRecycleBin = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Set-HcShellValue $t "$script:ExplorerKey\HideDesktopIcons\NewStartPanel" $script:RecycleBinId 0 }
+        Undo  = { param($t) Undo-HcShellValue $t }
+    }
+    showSearch = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) Set-HcShellValue $t 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'SearchboxTaskbarMode' 2 }
+        Undo  = { param($t) Undo-HcShellValue $t }
+    }
+    taskbarStay = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            $key = "$script:ExplorerKey\StuckRects3"
+            $t.Saved = [byte[]](Get-ItemProperty $key -ErrorAction Stop).Settings
+            Set-ItemProperty $key -Name Settings -Value (ConvertTo-HcTaskbarSetting $t.Saved $false) -Type Binary -ErrorAction Stop
+            Restart-HcExplorer
+        }
+        Undo = {
+            param($t)
+            Set-ItemProperty "$script:ExplorerKey\StuckRects3" -Name Settings -Value ([byte[]]$t.Saved) -Type Binary -ErrorAction Stop
+            Restart-HcExplorer
+        }
+    }
+}
+
+# Stops Explorer and waits for Windows to start it again (it does so by
+# itself); starts it when it does not come back within five seconds.
+function Restart-HcExplorer {
+    Get-Process -Name explorer -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction Stop
+    for ($i = 0; $i -lt 20; $i++) {
+        Start-Sleep -Milliseconds 250
+        if (Get-Process -Name explorer -ErrorAction SilentlyContinue) { return }
+    }
+    Start-Process explorer.exe
+}
+
+# One DWORD in the user's Explorer settings, remembered for undo, then
+# Explorer restarted so it shows.
+function Set-HcShellValue {
+    param([hashtable]$Target, [string]$Key, [string]$Name, [int]$Value)
+    $Target.Key = $Key
+    $Target.Name = $Name
+    $Target.Saved = (Get-ItemProperty $Key -ErrorAction SilentlyContinue).$Name
+    if (-not (Test-Path $Key)) { New-Item $Key -Force | Out-Null }
+    New-ItemProperty $Key -Name $Name -Value $Value -PropertyType DWord -Force -ErrorAction Stop | Out-Null
+    Restart-HcExplorer
+}
+
+function Undo-HcShellValue {
+    param([hashtable]$Target)
+    if ($null -eq $Target.Saved) { Remove-ItemProperty $Target.Key -Name $Target.Name -ErrorAction Stop }
+    else { New-ItemProperty $Target.Key -Name $Target.Name -Value $Target.Saved -PropertyType DWord -Force -ErrorAction Stop | Out-Null }
+    Restart-HcExplorer
 }
 
 # "Disable scheduled task "X" (can be undone)" -- the label with its note.
