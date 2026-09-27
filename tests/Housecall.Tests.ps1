@@ -880,12 +880,67 @@ Describe 'G1: desktop, taskbar and folders' {
         Assert-MockCalled Restart-HcExplorer -Times 2 -Exactly
     }
 
-    It 'is on the menu as area G, with G1 and G2 built and G3 still to come' {
+    It 'is on the menu as area G, with G1, G2 and G3 built' {
         (Resolve-HcChoice 'G').Kind | Should Be 'area'
         (Resolve-HcChoice 'g1').Value | Should Be 'G1'
-        $script:ProblemHandlers['G1'] | Should Be 'Invoke-HcG1'
-        $script:ProblemHandlers['G2'] | Should Be 'Invoke-HcG2'
-        $script:ProblemHandlers.ContainsKey('G3') | Should Be $false
+        foreach ($code in 'G1', 'G2', 'G3') { $script:ProblemHandlers[$code] | Should Be "Invoke-Hc$code" }
+    }
+}
+
+Describe 'G3: a file cannot be found or opens wrong' {
+    $script:Lang = 'en'
+    $now = [datetime]'2026-09-27 15:00'
+    $find = { param([hashtable]$Change = @{})
+        $f = [pscustomobject]@{
+            Now = $now; Downloads = 'C:\Users\x\Downloads'; Count = 20; NewestAt = $now.AddMinutes(-12); NewestType = '.pdf'
+            Browsers = @([pscustomobject]@{ Name = 'Microsoft Edge'; Folder = $null; Ask = $false })
+            Types = @(
+                [pscustomobject]@{ Extension = '.pdf'; Name = 'Microsoft Edge' }
+                [pscustomobject]@{ Extension = '.jpg'; Name = 'Photos' }
+                [pscustomobject]@{ Extension = '.docx'; Name = 'Microsoft Word' }
+                [pscustomobject]@{ Extension = '.mp4'; Name = 'Media Player' })
+            SearchOn = $true; SearchOff = $false
+        }
+        foreach ($k in $Change.Keys) { $f.$k = $Change[$k] }
+        $f }
+    $fixIds = { param($r) @($r.Actions | ForEach-Object { $_.FixId }) }
+
+    It 'is happy when search works and everything has a program, and never shows a file name' {
+        $r = Test-HcFind (& $find)
+        $r.FindingId | Should Be 'findOk'
+        @($r.Results | Where-Object { $_.Status -ne 'ok' }).Count | Should Be 0
+        ($r.Results | Where-Object { $_.Text -like 'Downloads:*' }).Text | Should Be 'Downloads: 20 files, the newest 12 minutes ago (.pdf)'
+        (& $fixIds $r) | Should Be @('openFolder', 'openDefaultApps')
+        $r.Actions[0].Target.Path | Should Be 'C:\Users\x\Downloads'
+    }
+
+    It 'names a type that has no program (Word files on Shamil''s PC)' {
+        $types = @([pscustomobject]@{ Extension = '.pdf'; Name = 'Microsoft Edge' }, [pscustomobject]@{ Extension = '.docx'; Name = $null })
+        $r = Test-HcFind (& $find @{ Types = $types })
+        $r.FindingId | Should Be 'noProgram'
+        $r.FindingArgs | Should Be @('Word files (.docx)')
+    }
+
+    It 'puts switched-off search first, with a fix' {
+        $r = Test-HcFind (& $find @{ SearchOn = $false; Types = @([pscustomobject]@{ Extension = '.docx'; Name = $null }) })
+        $r.FindingId | Should Be 'searchOff'
+        (& $fixIds $r)[0] | Should Be 'startSearch'
+    }
+
+    It 'finds a browser that saves elsewhere, opens that folder, and notices one that asks every time' {
+        $edge = [pscustomobject]@{ Name = 'Microsoft Edge'; Folder = 'D:\Spul'; Ask = $false }
+        $r = Test-HcFind (& $find @{ Browsers = @($edge) })
+        $r.FindingId | Should Be 'downloadsElsewhere'
+        $r.FindingArgs | Should Be @('Microsoft Edge', 'D:\Spul')
+        @($r.Actions | Where-Object { $_.FixId -eq 'openFolder' } | ForEach-Object { $_.Target.Path }) | Should Be @('C:\Users\x\Downloads', 'D:\Spul')
+        $same = [pscustomobject]@{ Name = 'Google Chrome'; Folder = 'C:\Users\x\Downloads\'; Ask = $true }
+        (Test-HcFind (& $find @{ Browsers = @($same) })).FindingId | Should Be 'browserAsks'
+    }
+
+    It 'tells the age as minutes, hours or a date' {
+        Format-HcAge $now.AddMinutes(-5) $now | Should Be '5 minutes ago'
+        Format-HcAge $now.AddHours(-3) $now | Should Be '3 hours ago'
+        Format-HcAge ([datetime]'2026-09-18 21:59') $now | Should Be (Format-HcDate ([datetime]'2026-09-18'))
     }
 }
 

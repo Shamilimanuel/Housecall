@@ -11,7 +11,11 @@
                                   Pictures (where, whether they exist, how
                                   many items), OneDrive installed, signed in
                                   and running, free disk space, Recycle Bin
-      G3  a file cannot be found or opens wrong  (not built yet)
+      G3  a file cannot be found or opens wrong
+                                  Downloads (count, newest: when and what type,
+                                  never names), where Edge and Chrome save and
+                                  whether they ask, which program opens PDFs,
+                                  photos, Word files and videos, Windows Search
 
     What an older client says on the phone: "my desktop is empty", "the bar at
     the bottom is gone", "my folders won't open", "everything suddenly looks
@@ -329,10 +333,154 @@ function Test-HcFiles {
     $r
 }
 
+# ------------------------------------------------------------ G3: facts --
+
+# The file types an older client opens most, in the order they are shown.
+$script:FindTypes = @('.pdf', '.jpg', '.docx', '.mp4')
+
+# "@{Microsoft.Windows.Photos_...?ms-resource://...}" -> "Photos": Windows'
+# own call for app names stored that way. $null when it cannot say.
+function Get-HcIndirectString {
+    param([string]$Text)
+    try {
+        if (-not ('Housecall.Indirect' -as [type])) {
+            Add-Type -Namespace Housecall -Name Indirect -MemberDefinition @"
+[DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
+public static extern int SHLoadIndirectString(string source, System.Text.StringBuilder output, int size, System.IntPtr reserved);
+public static string Load(string source) { System.Text.StringBuilder sb = new System.Text.StringBuilder(512); return SHLoadIndirectString(source, sb, sb.Capacity, System.IntPtr.Zero) == 0 ? sb.ToString() : null; }
+"@
+        }
+        return [Housecall.Indirect]::Load($Text)
+    } catch { return $null }
+}
+
+# Which program opens a file type: the user's own choice, else Windows'
+# default. Name is $null when no program is set up for it at all.
+function Get-HcTypeProgram {
+    param([string]$Extension)
+    $progId = (Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\$Extension\UserChoice" -ErrorAction SilentlyContinue).ProgId
+    if (-not $progId) { $progId = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\$Extension" -ErrorAction SilentlyContinue).'(default)' }
+    $name = $null
+    if ($progId) {
+        $app = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\$progId\Application" -ErrorAction SilentlyContinue).ApplicationName
+        if ($app) { $name = if ($app -like '@*') { Get-HcIndirectString $app } else { $app } }
+        if (-not $name) {
+            $command = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\$progId\shell\open\command" -ErrorAction SilentlyContinue).'(default)'
+            if ($command -and $command -match '^\s*"?([^"]+?\.exe)') {
+                $exe = [Environment]::ExpandEnvironmentVariables($Matches[1])
+                if (Test-Path -LiteralPath $exe) {
+                    $name = (Get-Item -LiteralPath $exe).VersionInfo.FileDescription
+                    if (-not $name) { $name = [IO.Path]::GetFileNameWithoutExtension($exe) }
+                }
+            }
+        }
+    }
+    [pscustomobject]@{ Extension = $Extension; Name = $name }
+}
+
+# Where a browser saves downloads and whether it asks each time; $null when
+# the browser has no profile on this PC. Read from its own settings file.
+function Get-HcBrowserDownloads {
+    param([string]$Name, [string]$Preferences)
+    if (-not (Test-Path -LiteralPath $Preferences)) { return $null }
+    try { $d = (Get-Content -LiteralPath $Preferences -Raw -ErrorAction Stop | ConvertFrom-Json).download } catch { return $null }
+    [pscustomobject]@{ Name = $Name; Folder = $d.default_directory; Ask = [bool]$d.prompt_for_download }
+}
+
+function Get-HcFindFacts {
+    $downloads = @(Get-HcDownloadFolders | Where-Object { $_ -notlike ([Environment]::GetFolderPath('Desktop') + '*') }) | Select-Object -First 1
+    $files = @()
+    if ($downloads) { $files = @(Get-ChildItem -LiteralPath $downloads -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }) }
+    $newest = $files | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $search = Get-Service WSearch -ErrorAction SilentlyContinue
+    [pscustomobject]@{
+        Now        = Get-Date
+        Downloads  = $downloads
+        Count      = $files.Count
+        NewestAt   = $(if ($newest) { $newest.LastWriteTime })
+        NewestType = $(if ($newest) { $newest.Extension })
+        Browsers   = @(
+            Get-HcBrowserDownloads 'Microsoft Edge' (Join-Path $env:LOCALAPPDATA 'Microsoft\Edge\User Data\Default\Preferences')
+            Get-HcBrowserDownloads 'Google Chrome' (Join-Path $env:LOCALAPPDATA 'Google\Chrome\User Data\Default\Preferences')
+        ) | Where-Object { $_ }
+        Types      = @($script:FindTypes | ForEach-Object { Get-HcTypeProgram $_ })
+        SearchOn   = [bool]($search -and [string]$search.Status -eq 'Running')
+        SearchOff  = [bool]($search -and [string]$search.StartType -eq 'Disabled')
+    }
+}
+
+# "12 minutes ago", "3 hours ago", or the date.
+function Format-HcAge {
+    param([datetime]$When, [datetime]$Now)
+    $minutes = [int][Math]::Max(0, ($Now - $When).TotalMinutes)
+    if ($minutes -lt 60) { return (T 'find.ageMinutes' $minutes) }
+    if ($minutes -lt 24 * 60) { return (T 'find.ageHours' ([int][Math]::Floor($minutes / 60))) }
+    Format-HcDate $When
+}
+
+# ---------------------------------------------------------- G3: verdict --
+
+function Test-HcFind {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if (-not $Facts.SearchOn) {
+        Add-HcLine $r problem (T 'find.searchOff')
+        Add-HcAction $r 'startSearch'
+        $found['searchOff'] = @()
+    } else {
+        Add-HcLine $r ok (T 'find.searchOn')
+    }
+
+    if ($Facts.Downloads) {
+        Add-HcAction $r 'openFolder' @{ Label = (T 'find.downloadsName'); Path = $Facts.Downloads }
+        if ($Facts.Count -and $Facts.NewestAt) {
+            Add-HcLine $r ok (T 'find.downloads' $Facts.Count (Format-HcAge $Facts.NewestAt $Facts.Now) $Facts.NewestType)
+        } else {
+            Add-HcLine $r ok (T 'find.downloadsEmpty')
+        }
+    } else {
+        Add-HcLine $r problem (T 'find.noDownloads')
+        $found['noDownloads'] = @()
+    }
+
+    foreach ($b in @($Facts.Browsers)) {
+        if ($b.Folder -and $Facts.Downloads -and ($b.Folder.TrimEnd('\') -ne $Facts.Downloads.TrimEnd('\'))) {
+            Add-HcLine $r warn (T 'find.browserElsewhere' $b.Name $b.Folder)
+            Add-HcAction $r 'openFolder' @{ Label = $b.Folder; Path = $b.Folder }
+            if (-not $found['downloadsElsewhere']) { $found['downloadsElsewhere'] = @($b.Name, $b.Folder) }
+        } elseif ($b.Ask) {
+            Add-HcLine $r warn (T 'find.browserAsks' $b.Name)
+            if (-not $found['browserAsks']) { $found['browserAsks'] = @($b.Name) }
+        } else {
+            Add-HcLine $r ok (T 'find.browserDownloads' $b.Name)
+        }
+    }
+
+    foreach ($t in @($Facts.Types)) {
+        $type = T ('find.type' + $t.Extension)
+        if ($t.Name) {
+            Add-HcLine $r ok (T 'find.opensWith' $type $t.Name)
+        } else {
+            Add-HcLine $r problem (T 'find.noProgram' $type)
+            if (-not $found['noProgram']) { $found['noProgram'] = @($type) }
+        }
+    }
+    # Which program opens a type is the user's own protected choice: Windows
+    # lets no script change it, so this opens the page where the client can.
+    Add-HcAction $r 'openDefaultApps'
+
+    Select-HcFinding $r $found @('searchOff', 'noDownloads', 'downloadsElsewhere', 'noProgram', 'browserAsks') 'findOk'
+    $r
+}
+
 # ---------------------------------------------------------------- handlers --
 
 function Invoke-HcG1 { { Test-HcShell (Get-HcShellFacts) } }
 function Invoke-HcG2 { { Test-HcFiles (Get-HcFilesFacts) } }
+function Invoke-HcG3 { { Test-HcFind (Get-HcFindFacts) } }
 
 $script:ProblemHandlers['G1'] = 'Invoke-HcG1'
 $script:ProblemHandlers['G2'] = 'Invoke-HcG2'
+$script:ProblemHandlers['G3'] = 'Invoke-HcG3'

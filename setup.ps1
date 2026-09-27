@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'd6795bd02c6e'
+$HcBuild = '38bf3d297fcd'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -916,6 +916,55 @@ $script:Strings = @{
         'fix.startOneDrive.done'   = 'Started OneDrive'
         'fix.openRecycleBin'       = 'Open the Recycle Bin'
         'fix.openRecycleBin.done'  = 'Opened the Recycle Bin'
+
+        # ---- G3: check lines
+        'find.searchOn'            = 'Windows Search is running'
+        'find.searchOff'           = 'Windows Search is switched off, so searching finds nothing'
+        'find.downloadsName'       = 'Downloads'
+        'find.downloads'           = 'Downloads: {0} files, the newest {1} ({2})'
+        'find.downloadsEmpty'      = 'Downloads is empty'
+        'find.noDownloads'         = 'There is no Downloads folder'
+        'find.ageMinutes'          = '{0} minutes ago'
+        'find.ageHours'            = '{0} hours ago'
+        'find.browserDownloads'    = '{0} saves downloads in Downloads'
+        'find.browserElsewhere'    = '{0} saves downloads in another folder: {1}'
+        'find.browserAsks'         = '{0} asks where to save each download'
+        'find.type.pdf'            = 'PDF files'
+        'find.type.jpg'            = 'Photos (.jpg)'
+        'find.type.docx'           = 'Word files (.docx)'
+        'find.type.mp4'            = 'Videos (.mp4)'
+        'find.opensWith'           = '{0} open with {1}'
+        'find.noProgram'           = 'There is no program for {0}'
+
+        # ---- G3: findings, and what to do about each
+        'finding.searchOff'        = 'Windows Search is switched off. That is why searching in Start or in File Explorer finds nothing.'
+        'advice.searchOff'         = 'Housecall can start it again below (needs admin). The first searches may take a while.'
+        'finding.noDownloads'      = 'This PC has no Downloads folder, so downloads end up somewhere unexpected.'
+        'advice.noDownloads'       = 'The steps below show how to find where downloads go.'
+        'finding.downloadsElsewhere' = '{0} saves downloads in {1}, not in Downloads. That is why the client cannot find them.'
+        'advice.downloadsElsewhere' = 'Open that folder below. To make it simpler, set the browser back to Downloads with the steps below.'
+        'finding.noProgram'        = 'There is no program on this PC that opens {0}. That is why such a file will not open, or Windows asks what to open it with.'
+        'advice.noProgram'         = 'Install a program for it (see the steps), or open the file in the browser or on the web.'
+        'finding.browserAsks'      = '{0} asks where to save every download. Clients often click Save without looking and then cannot find the file.'
+        'advice.browserAsks'       = 'Switch the question off with the steps below, so everything goes to Downloads.'
+        'finding.findOk'           = 'Search works, downloads go to Downloads, and there is a program for every common file type.'
+        'advice.findOk'            = 'Open Downloads below and sort by date, or change which program opens a file type.'
+
+        # ---- G3: fixes
+        'fix.openFolder'           = 'Open {0}'
+        'fix.openFolder.done'      = 'Opened {0}'
+        'fix.openDefaultApps'      = 'Open Default apps in Settings (to choose which program opens a file)'
+        'fix.openDefaultApps.done' = 'Opened Default apps'
+        'fix.startSearch'          = 'Start Windows Search again'
+        'fix.startSearch.done'     = 'Started Windows Search again'
+
+        # ---- G3: step-by-step guides
+        'steps.searchOff'          = 'Choose the fix above (needs admin), or do it by hand. | Type Services in Start and open it. | Find Windows Search, double-click it, set Startup type to Automatic and click Start. | Give it some time: the first searches can be slow while Windows builds its index.'
+        'steps.noDownloads'        = 'Open the browser and press Ctrl + J: the list of downloads opens. | Click Show in folder next to the file: File Explorer shows where it is. | Set the browser to save in a folder the client knows (the steps for Downloads are in G3 when a browser saves elsewhere).'
+        'steps.downloadsElsewhere' = 'Choose the fix above to open that folder: the file is probably there. | To go back to Downloads: in the browser press Ctrl + J, then the three dots > Download settings (Edge) or Settings > Downloads (Chrome). | Under Location, click Change and choose Downloads.'
+        'steps.noProgram'          = 'Word files: open them for free at office.com in the browser, or install LibreOffice (free) or Microsoft Word. | PDF: Microsoft Edge opens PDF files; set it under Default apps. | Photos and videos: the Photos app and Media Player come with Windows; set them under Default apps. | Choose the Default apps fix above to pick the program for a file type.'
+        'steps.browserAsks'        = 'In the browser press Ctrl + J, then the three dots > Download settings (Edge) or Settings > Downloads (Chrome). | Switch off "Ask me what to do with each download" / "Ask where to save each file". | Everything now goes straight to Downloads.'
+        'steps.findOk'             = 'Downloaded it just now? Choose the fix above to open Downloads, and sort by Date modified. | In the browser, Ctrl + J shows the latest downloads with Show in folder. | Search by name: open File Explorer, click This PC and type part of the name in the search box. | Opens in the wrong program? Right-click the file > Open with > Choose another app, and tick Always.'
 
         # ---- G2: step-by-step guides
         'steps.oneDriveRemoved'    = 'Reassure the client: the files are all still on this PC. | To use OneDrive again: press Windows key + R, type %SystemRoot%\System32\OneDriveSetup.exe and press Enter (or install OneDrive from the Microsoft Store). | Sign in with the client''s Microsoft account and keep the same OneDrive folder. | Or, to stop using OneDrive: make a backup of the folders to a USB drive first, then plan moving them back to C:\Users\<name> as a separate job.'
@@ -1930,6 +1979,55 @@ $script:Strings = @{
         'fix.startOneDrive.done'   = 'OneDrive gestart'
         'fix.openRecycleBin'       = 'De Prullenbak openen'
         'fix.openRecycleBin.done'  = 'Prullenbak geopend'
+
+        # ---- G3: controleregels
+        'find.searchOn'            = 'Windows Zoeken draait'
+        'find.searchOff'           = 'Windows Zoeken staat uit, dus zoeken vindt niets'
+        'find.downloadsName'       = 'Downloads'
+        'find.downloads'           = 'Downloads: {0} bestanden, de nieuwste {1} ({2})'
+        'find.downloadsEmpty'      = 'Downloads is leeg'
+        'find.noDownloads'         = 'Er is geen map Downloads'
+        'find.ageMinutes'          = '{0} minuten geleden'
+        'find.ageHours'            = '{0} uur geleden'
+        'find.browserDownloads'    = '{0} slaat downloads op in Downloads'
+        'find.browserElsewhere'    = '{0} slaat downloads op in een andere map: {1}'
+        'find.browserAsks'         = '{0} vraagt bij elke download waar hij moet worden opgeslagen'
+        'find.type.pdf'            = 'PDF-bestanden'
+        'find.type.jpg'            = 'Foto''s (.jpg)'
+        'find.type.docx'           = 'Word-bestanden (.docx)'
+        'find.type.mp4'            = 'Video''s (.mp4)'
+        'find.opensWith'           = '{0} openen met {1}'
+        'find.noProgram'           = 'Er is geen programma voor {0}'
+
+        # ---- G3: bevindingen, en wat eraan te doen
+        'finding.searchOff'        = 'Windows Zoeken staat uit. Daarom vindt zoeken in Start of in Verkenner niets.'
+        'advice.searchOff'         = 'Housecall kan het hieronder weer starten (beheerder nodig). De eerste zoekopdrachten kunnen even duren.'
+        'finding.noDownloads'      = 'Deze pc heeft geen map Downloads, dus downloads komen op een onverwachte plek terecht.'
+        'advice.noDownloads'       = 'De stappen hieronder laten zien hoe u vindt waar downloads naartoe gaan.'
+        'finding.downloadsElsewhere' = '{0} slaat downloads op in {1}, niet in Downloads. Daarom kan de klant ze niet vinden.'
+        'advice.downloadsElsewhere' = 'Open die map hieronder. Maak het eenvoudiger door de browser weer op Downloads te zetten met de stappen hieronder.'
+        'finding.noProgram'        = 'Er is geen programma op deze pc dat {0} opent. Daarom gaat zo''n bestand niet open, of vraagt Windows waarmee het moet worden geopend.'
+        'advice.noProgram'         = 'Installeer er een programma voor (zie de stappen), of open het bestand in de browser of online.'
+        'finding.browserAsks'      = '{0} vraagt bij elke download waar hij moet worden opgeslagen. Klanten klikken vaak op Opslaan zonder te kijken en vinden het bestand dan niet terug.'
+        'advice.browserAsks'       = 'Zet die vraag uit met de stappen hieronder, zodat alles in Downloads komt.'
+        'finding.findOk'           = 'Zoeken werkt, downloads gaan naar Downloads, en er is een programma voor elk gewoon bestandstype.'
+        'advice.findOk'            = 'Open hieronder Downloads en sorteer op datum, of verander welk programma een bestandstype opent.'
+
+        # ---- G3: oplossingen
+        'fix.openFolder'           = '{0} openen'
+        'fix.openFolder.done'      = '{0} geopend'
+        'fix.openDefaultApps'      = 'Standaard-apps openen in Instellingen (om te kiezen welk programma een bestand opent)'
+        'fix.openDefaultApps.done' = 'Standaard-apps geopend'
+        'fix.startSearch'          = 'Windows Zoeken weer starten'
+        'fix.startSearch.done'     = 'Windows Zoeken weer gestart'
+
+        # ---- G3: stap-voor-stap
+        'steps.searchOff'          = 'Kies hierboven de oplossing (beheerder nodig), of doe het met de hand. | Typ Services in Start en open het. | Zoek Windows Search, dubbelklik erop, zet Opstarttype op Automatisch en klik op Starten. | Geef het even de tijd: de eerste zoekopdrachten kunnen traag zijn terwijl Windows zijn index opbouwt.'
+        'steps.noDownloads'        = 'Open de browser en druk op Ctrl + J: de lijst met downloads opent. | Klik op Weergeven in map naast het bestand: Verkenner laat zien waar het staat. | Zet de browser op een map die de klant kent (de stappen voor Downloads staan bij G3 als een browser ergens anders opslaat).'
+        'steps.downloadsElsewhere' = 'Kies hierboven de oplossing om die map te openen: het bestand staat er waarschijnlijk. | Terug naar Downloads: druk in de browser op Ctrl + J, dan de drie puntjes > Downloadinstellingen (Edge) of Instellingen > Downloads (Chrome). | Klik bij Locatie op Wijzigen en kies Downloads.'
+        'steps.noProgram'          = 'Word-bestanden: gratis openen op office.com in de browser, of LibreOffice (gratis) of Microsoft Word installeren. | PDF: Microsoft Edge opent PDF-bestanden; stel dat in bij Standaard-apps. | Foto''s en video''s: de app Foto''s en Mediaspeler zitten in Windows; stel ze in bij Standaard-apps. | Kies hierboven de oplossing Standaard-apps om het programma voor een bestandstype te kiezen.'
+        'steps.browserAsks'        = 'Druk in de browser op Ctrl + J, dan de drie puntjes > Downloadinstellingen (Edge) of Instellingen > Downloads (Chrome). | Zet "Vragen wat er met elke download moet gebeuren" / "Vragen waar elk bestand moet worden opgeslagen" uit. | Alles gaat nu meteen naar Downloads.'
+        'steps.findOk'             = 'Net gedownload? Kies hierboven de oplossing om Downloads te openen, en sorteer op Gewijzigd op. | In de browser laat Ctrl + J de laatste downloads zien, met Weergeven in map. | Zoeken op naam: open Verkenner, klik op Deze pc en typ een deel van de naam in het zoekvak. | Opent het in het verkeerde programma? Rechtermuisklik op het bestand > Openen met > Andere app kiezen, en vink Altijd aan.'
 
         # ---- G2: stap-voor-stap
         'steps.oneDriveRemoved'    = 'Stel de klant gerust: de bestanden staan allemaal nog op deze pc. | Om OneDrive weer te gebruiken: druk op Windows-toets + R, typ %SystemRoot%\System32\OneDriveSetup.exe en druk op Enter (of installeer OneDrive uit de Microsoft Store). | Meld aan met het Microsoft-account van de klant en houd dezelfde OneDrive-map aan. | Of, om te stoppen met OneDrive: maak eerst een back-up van de mappen op een USB-schijf, en plan het terugzetten naar C:\Users\<naam> als aparte klus.'
@@ -5210,7 +5308,11 @@ $script:ProblemHandlers['E3'] = 'Invoke-HcE3'
                                   Pictures (where, whether they exist, how
                                   many items), OneDrive installed, signed in
                                   and running, free disk space, Recycle Bin
-      G3  a file cannot be found or opens wrong  (not built yet)
+      G3  a file cannot be found or opens wrong
+                                  Downloads (count, newest: when and what type,
+                                  never names), where Edge and Chrome save and
+                                  whether they ask, which program opens PDFs,
+                                  photos, Word files and videos, Windows Search
 
     What an older client says on the phone: "my desktop is empty", "the bar at
     the bottom is gone", "my folders won't open", "everything suddenly looks
@@ -5528,13 +5630,157 @@ function Test-HcFiles {
     $r
 }
 
+# ------------------------------------------------------------ G3: facts --
+
+# The file types an older client opens most, in the order they are shown.
+$script:FindTypes = @('.pdf', '.jpg', '.docx', '.mp4')
+
+# "@{Microsoft.Windows.Photos_...?ms-resource://...}" -> "Photos": Windows'
+# own call for app names stored that way. $null when it cannot say.
+function Get-HcIndirectString {
+    param([string]$Text)
+    try {
+        if (-not ('Housecall.Indirect' -as [type])) {
+            Add-Type -Namespace Housecall -Name Indirect -MemberDefinition @"
+[DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
+public static extern int SHLoadIndirectString(string source, System.Text.StringBuilder output, int size, System.IntPtr reserved);
+public static string Load(string source) { System.Text.StringBuilder sb = new System.Text.StringBuilder(512); return SHLoadIndirectString(source, sb, sb.Capacity, System.IntPtr.Zero) == 0 ? sb.ToString() : null; }
+"@
+        }
+        return [Housecall.Indirect]::Load($Text)
+    } catch { return $null }
+}
+
+# Which program opens a file type: the user's own choice, else Windows'
+# default. Name is $null when no program is set up for it at all.
+function Get-HcTypeProgram {
+    param([string]$Extension)
+    $progId = (Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\$Extension\UserChoice" -ErrorAction SilentlyContinue).ProgId
+    if (-not $progId) { $progId = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\$Extension" -ErrorAction SilentlyContinue).'(default)' }
+    $name = $null
+    if ($progId) {
+        $app = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\$progId\Application" -ErrorAction SilentlyContinue).ApplicationName
+        if ($app) { $name = if ($app -like '@*') { Get-HcIndirectString $app } else { $app } }
+        if (-not $name) {
+            $command = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\$progId\shell\open\command" -ErrorAction SilentlyContinue).'(default)'
+            if ($command -and $command -match '^\s*"?([^"]+?\.exe)') {
+                $exe = [Environment]::ExpandEnvironmentVariables($Matches[1])
+                if (Test-Path -LiteralPath $exe) {
+                    $name = (Get-Item -LiteralPath $exe).VersionInfo.FileDescription
+                    if (-not $name) { $name = [IO.Path]::GetFileNameWithoutExtension($exe) }
+                }
+            }
+        }
+    }
+    [pscustomobject]@{ Extension = $Extension; Name = $name }
+}
+
+# Where a browser saves downloads and whether it asks each time; $null when
+# the browser has no profile on this PC. Read from its own settings file.
+function Get-HcBrowserDownloads {
+    param([string]$Name, [string]$Preferences)
+    if (-not (Test-Path -LiteralPath $Preferences)) { return $null }
+    try { $d = (Get-Content -LiteralPath $Preferences -Raw -ErrorAction Stop | ConvertFrom-Json).download } catch { return $null }
+    [pscustomobject]@{ Name = $Name; Folder = $d.default_directory; Ask = [bool]$d.prompt_for_download }
+}
+
+function Get-HcFindFacts {
+    $downloads = @(Get-HcDownloadFolders | Where-Object { $_ -notlike ([Environment]::GetFolderPath('Desktop') + '*') }) | Select-Object -First 1
+    $files = @()
+    if ($downloads) { $files = @(Get-ChildItem -LiteralPath $downloads -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }) }
+    $newest = $files | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $search = Get-Service WSearch -ErrorAction SilentlyContinue
+    [pscustomobject]@{
+        Now        = Get-Date
+        Downloads  = $downloads
+        Count      = $files.Count
+        NewestAt   = $(if ($newest) { $newest.LastWriteTime })
+        NewestType = $(if ($newest) { $newest.Extension })
+        Browsers   = @(
+            Get-HcBrowserDownloads 'Microsoft Edge' (Join-Path $env:LOCALAPPDATA 'Microsoft\Edge\User Data\Default\Preferences')
+            Get-HcBrowserDownloads 'Google Chrome' (Join-Path $env:LOCALAPPDATA 'Google\Chrome\User Data\Default\Preferences')
+        ) | Where-Object { $_ }
+        Types      = @($script:FindTypes | ForEach-Object { Get-HcTypeProgram $_ })
+        SearchOn   = [bool]($search -and [string]$search.Status -eq 'Running')
+        SearchOff  = [bool]($search -and [string]$search.StartType -eq 'Disabled')
+    }
+}
+
+# "12 minutes ago", "3 hours ago", or the date.
+function Format-HcAge {
+    param([datetime]$When, [datetime]$Now)
+    $minutes = [int][Math]::Max(0, ($Now - $When).TotalMinutes)
+    if ($minutes -lt 60) { return (T 'find.ageMinutes' $minutes) }
+    if ($minutes -lt 24 * 60) { return (T 'find.ageHours' ([int][Math]::Floor($minutes / 60))) }
+    Format-HcDate $When
+}
+
+# ---------------------------------------------------------- G3: verdict --
+
+function Test-HcFind {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if (-not $Facts.SearchOn) {
+        Add-HcLine $r problem (T 'find.searchOff')
+        Add-HcAction $r 'startSearch'
+        $found['searchOff'] = @()
+    } else {
+        Add-HcLine $r ok (T 'find.searchOn')
+    }
+
+    if ($Facts.Downloads) {
+        Add-HcAction $r 'openFolder' @{ Label = (T 'find.downloadsName'); Path = $Facts.Downloads }
+        if ($Facts.Count -and $Facts.NewestAt) {
+            Add-HcLine $r ok (T 'find.downloads' $Facts.Count (Format-HcAge $Facts.NewestAt $Facts.Now) $Facts.NewestType)
+        } else {
+            Add-HcLine $r ok (T 'find.downloadsEmpty')
+        }
+    } else {
+        Add-HcLine $r problem (T 'find.noDownloads')
+        $found['noDownloads'] = @()
+    }
+
+    foreach ($b in @($Facts.Browsers)) {
+        if ($b.Folder -and $Facts.Downloads -and ($b.Folder.TrimEnd('\') -ne $Facts.Downloads.TrimEnd('\'))) {
+            Add-HcLine $r warn (T 'find.browserElsewhere' $b.Name $b.Folder)
+            Add-HcAction $r 'openFolder' @{ Label = $b.Folder; Path = $b.Folder }
+            if (-not $found['downloadsElsewhere']) { $found['downloadsElsewhere'] = @($b.Name, $b.Folder) }
+        } elseif ($b.Ask) {
+            Add-HcLine $r warn (T 'find.browserAsks' $b.Name)
+            if (-not $found['browserAsks']) { $found['browserAsks'] = @($b.Name) }
+        } else {
+            Add-HcLine $r ok (T 'find.browserDownloads' $b.Name)
+        }
+    }
+
+    foreach ($t in @($Facts.Types)) {
+        $type = T ('find.type' + $t.Extension)
+        if ($t.Name) {
+            Add-HcLine $r ok (T 'find.opensWith' $type $t.Name)
+        } else {
+            Add-HcLine $r problem (T 'find.noProgram' $type)
+            if (-not $found['noProgram']) { $found['noProgram'] = @($type) }
+        }
+    }
+    # Which program opens a type is the user's own protected choice: Windows
+    # lets no script change it, so this opens the page where the client can.
+    Add-HcAction $r 'openDefaultApps'
+
+    Select-HcFinding $r $found @('searchOff', 'noDownloads', 'downloadsElsewhere', 'noProgram', 'browserAsks') 'findOk'
+    $r
+}
+
 # ---------------------------------------------------------------- handlers --
 
 function Invoke-HcG1 { { Test-HcShell (Get-HcShellFacts) } }
 function Invoke-HcG2 { { Test-HcFiles (Get-HcFilesFacts) } }
+function Invoke-HcG3 { { Test-HcFind (Get-HcFindFacts) } }
 
 $script:ProblemHandlers['G1'] = 'Invoke-HcG1'
 $script:ProblemHandlers['G2'] = 'Invoke-HcG2'
+$script:ProblemHandlers['G3'] = 'Invoke-HcG3'
 
 # ==================================================== src\fixes.ps1 ==
 <#
@@ -5988,6 +6234,30 @@ $script:Fixes = @{
         Note = 'safe'; Admin = $false
         Apply = { param($t) Start-Process -FilePath $t.Exe -ErrorAction Stop }
         Undo  = $null
+    }
+    # Opens a folder in File Explorer (Downloads, or where a browser saves).
+    openFolder = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = { param($t) Start-Process explorer.exe -ArgumentList ('"' + $t.Path + '"') -ErrorAction Stop }
+        Undo  = $null
+    }
+    # Settings > Default apps: which program opens a file type is protected,
+    # so the client chooses it there.
+    openDefaultApps = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        # Through explorer.exe: a bare Start-Process of the ms-settings link did
+        # not reliably open Settings on Shamil's PC (27 Sep); this route did.
+        Apply = { param($t) Start-Process explorer.exe -ArgumentList 'ms-settings:defaultapps' -ErrorAction Stop }
+        Undo  = $null
+    }
+    startSearch = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            if ([string](Get-Service WSearch).StartType -eq 'Disabled') { Set-Service WSearch -StartupType Automatic -ErrorAction Stop }
+            Start-Service WSearch -ErrorAction Stop
+        }
+        Undo = $null
     }
     # Only opens the Recycle Bin, so the client can pick what to put back.
     openRecycleBin = @{

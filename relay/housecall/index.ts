@@ -37,6 +37,7 @@ const MAX_FAILED_TOTAL = 50;
 const CODES = [
   "A1", "A2", "A3", "A4", "B1", "B2", "B3", "C1", "C2", "C3",
   "D1", "D2", "D3", "D4", "E1", "E2", "E3", "F1", "F2", "F3",
+  "G1", "G2", "G3",
 ];
 
 // ------------------------------------------------------------ plumbing --
@@ -156,7 +157,8 @@ B1 no sound | B2 microphone or camera for video calls | B3 screen too small, dar
 C1 printer will not print | C2 mouse, keyboard or USB stick | C3 Bluetooth
 D1 whole PC slow | D2 slow to start | D3 program freezes or crashes, blue screens | D4 disk full
 E1 Windows Update stuck or failing, Windows 10 support | E2 error message on screen (activation, clock, recent crashes) | E3 will not shut down or restart
-F1 pop-up says there is a virus | F2 someone called and got into the PC (remote-access programs) | F3 full security check`,
+F1 pop-up says there is a virus | F2 someone called and got into the PC (remote-access programs) | F3 full security check
+G1 desktop icons, taskbar or search gone, File Explorer stuck, temporary profile | G2 files gone or not on every device (OneDrive, Desktop/Documents/Pictures, Recycle Bin) | G3 a file cannot be found (Downloads, where the browser saves, Windows Search) or opens in the wrong program`,
     strict: true,
     input_schema: {
       type: "object",
@@ -304,7 +306,7 @@ async function visitSave(body: any): Promise<Response> {
   if (lang !== "nl" && lang !== "en") return json({ error: "bad_lang" }, 400);
   if (!Array.isArray(problems) || problems.length > 20) return json({ error: "bad_problems" }, 400);
   for (const p of problems) {
-    if (typeof p?.code !== "string" || !/^[A-F]\d$/.test(p.code)) return json({ error: "bad_problems" }, 400);
+    if (typeof p?.code !== "string" || !/^[A-G]\d$/.test(p.code)) return json({ error: "bad_problems" }, 400);
     if (typeof p?.finding !== "string" || !/^\w{1,40}$/.test(p.finding)) return json({ error: "bad_problems" }, 400);
   }
   if (!Array.isArray(changes) || changes.length > 30 || changes.some((c) => typeof c !== "string" || c.length > 200)) {

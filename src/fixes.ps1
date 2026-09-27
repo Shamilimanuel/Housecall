@@ -450,6 +450,30 @@ $script:Fixes = @{
         Apply = { param($t) Start-Process -FilePath $t.Exe -ErrorAction Stop }
         Undo  = $null
     }
+    # Opens a folder in File Explorer (Downloads, or where a browser saves).
+    openFolder = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = { param($t) Start-Process explorer.exe -ArgumentList ('"' + $t.Path + '"') -ErrorAction Stop }
+        Undo  = $null
+    }
+    # Settings > Default apps: which program opens a file type is protected,
+    # so the client chooses it there.
+    openDefaultApps = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        # Through explorer.exe: a bare Start-Process of the ms-settings link did
+        # not reliably open Settings on Shamil's PC (27 Sep); this route did.
+        Apply = { param($t) Start-Process explorer.exe -ArgumentList 'ms-settings:defaultapps' -ErrorAction Stop }
+        Undo  = $null
+    }
+    startSearch = @{
+        Note = 'safe'; Admin = $true
+        Apply = {
+            param($t)
+            if ([string](Get-Service WSearch).StartType -eq 'Disabled') { Set-Service WSearch -StartupType Automatic -ErrorAction Stop }
+            Start-Service WSearch -ErrorAction Stop
+        }
+        Undo = $null
+    }
     # Only opens the Recycle Bin, so the client can pick what to put back.
     openRecycleBin = @{
         Note = 'safe'; Admin = $false; NoLog = $true

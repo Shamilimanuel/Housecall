@@ -1,12 +1,12 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 81%** `████████████████░░░░` 61 of 75 done · 0 in progress · 14 open · 0 blocked · 0 waiting on a decision
+**Progress: 83%** `█████████████████░░░` 63 of 76 done · 0 in progress · 13 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `█░░░░░░░░░` | 13% (2/16) |
+| Next up | `██░░░░░░░░` | 24% (4/17) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (44/44) |
 | Found in testing | `██████████` | 100% (10/10) |
@@ -182,7 +182,8 @@ codes and an area G. Compared against the code (no changes made yet):
 **Decided:** built before the window, so the window gets them straight away:
 - [x] **G1** "Bureaublad, taakbalk of mappen doen raar" (27 Sep): `src/checks/desktop.ps1`. Reads the temporary profile, Explorer running/responding, desktop icons and Recycle Bin, Desktop in OneDrive with OneDrive off, taskbar auto-hide, search box, tablet mode (Win10). Fixes: restart Explorer (always offered, first when it is the cause), show icons / Recycle Bin / search box, keep the taskbar visible, each undoable and each restarting Explorer; temp profile and tablet mode = steps. 9 tests (257 in total). Ran read-only on Shamil's PC: it found his own icons-off, auto-hide and hidden search. **Found in his test:** "show icons" did nothing, because Windows keeps the real setting in the desktop's view flags (`Shell\Bags\Desktop` FFlags, bit 0x1000) and rewrites HideIcons from it when Explorer starts. The fix now changes both and the check reads the flags; verified on his PC (still shown 5 s after the restart). **Also found:** "keep the taskbar visible" did not hold: changing StuckRects3 and restarting Explorer let his Windhawk mod (taskbar-auto-hide-when-maximized, which needs auto-hide on) switch it straight back. Now done live through SHAppBarMessage, the same call as the Settings switch, without an Explorer restart; the check reads the live state. Verified on his PC: off, still off after 8 s, undo puts it back. Search box fix + undo verified by Shamil. Show Recycle Bin: not tested for real (it is not hidden on his PC). **Not pushed yet**; the AI relay does not know G1 yet (add G1-G3 to CODES in one redeploy)
 - [x] **G2** "Mijn bestanden zijn weg of staan niet overal" (27 Sep): temporary profile; Desktop/Documents/Pictures (where, exists, item count only); OneDrive installed (its own Run entry or the usual places), signed in (only whether, never the address), running; free disk space (< 2 GB stops syncing); Recycle Bin count. Findings in order: temp profile, **OneDrive removed while the folders still live in its folder**, folder points nowhere, signed out, not running, disk full, files local only, items in the Recycle Bin. Fixes: start OneDrive, open the Recycle Bin. 6 tests (265 in total). Ran on Shamil's PC: found exactly his case (OneDrive removed, folders still in C:\Users\shami\OneDrive); open Recycle Bin verified for real. Start OneDrive not tested for real (not installed on his PC)
-- [ ] **G3** "Ik kan mijn bestand niet vinden of het opent verkeerd": newest downloads, which program opens the type. Fix: open the folder / Default apps + steps (UserChoice can't be set by script)
+- [x] **G3** "Ik kan een bestand niet vinden, of het opent verkeerd" (27 Sep): Windows Search running; Downloads (count, newest: when and file type, **never names**, so nothing personal reaches the AI); where Edge and Chrome save and whether they ask each time (their own Preferences file); which program opens PDF, .jpg, .docx, .mp4 (user choice, else Windows default; app names via SHLoadIndirectString). Fixes: open Downloads / the browser's folder, open Default apps (through explorer.exe: a bare Start-Process of ms-settings did not reliably open Settings on Shamil's PC), start Windows Search (admin). 5 tests (270 in total). On Shamil's PC it found no program for Word files; open folder and Default apps verified for real. Start Search not tested for real (running, needs admin)
+- [x] **Relay v9** (27 Sep): the AI knows G1-G3, and visit_save accepts area G. It only accepted A-F, so **a visit that used G would not have been saved**
 - [ ] **C4** battery: capacity left vs new, charging, power plan; code shared with Pc-overzicht
 - [ ] **B3** flag a large scale / text size / low resolution ("everything is huge")
 - [ ] **C2** keyboard layout (extra layouts, Alt+Shift switching); fix = remove the extra layout (reversible)
