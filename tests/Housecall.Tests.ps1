@@ -947,14 +947,22 @@ Describe 'C2: the keyboard types the wrong characters' {
 
     It 'finds the Dutch layout that swaps keys on Dutch-sold keyboards' {
         $r = Test-HcInputDevices (& $kb @{ Layouts = @(& $layout '00000413' 'Dutch') })
-        $r.FindingId | Should Be 'dutchLayout'
+        $r.FindingId | Should Be 'wrongLayout'
         $r.FindingArgs | Should Be @('Dutch')
+    }
+
+    It 'finds the United Kingdom layout, which English (Netherlands) can get (Shamil''s PC)' {
+        $r = Test-HcInputDevices (& $kb @{ Layouts = @(& $layout '00000809' 'United Kingdom' 'en-NL' '2000:00000809') })
+        $r.FindingId | Should Be 'wrongLayout'
+        $r.FindingArgs | Should Be @('United Kingdom')
+        (& $fixIds $r) | Should Be 'openKeyboardSettings'
+        (Get-HcSteps $r)[3] | Should Be 'Remove United Kingdom from that list with the three dots > Remove.'
     }
 
     It 'offers to remove an extra layout, but never a language''s only one' {
         $two = @((& $layout '00020409' 'US-International' 'nl-NL' '0413:00020409'), (& $layout '00000413' 'Dutch' 'nl-NL' '0413:00000413'))
         $r = Test-HcInputDevices (& $kb @{ Layouts = $two })
-        $r.FindingId | Should Be 'dutchLayout'             # the cause of wrong keys comes before "two layouts"
+        $r.FindingId | Should Be 'wrongLayout'             # the cause of wrong keys comes before "two layouts"
         (& $fixIds $r) | Should Be @('removeLayout', 'removeLayout', 'openKeyboardSettings')
         @($r.Actions | Where-Object { $_.FixId -eq 'removeLayout' } | ForEach-Object { $_.Target.Tip }) | Should Be @('0413:00020409', '0413:00000413')
         $apart = @((& $layout '00000409' 'US' 'en-US' '0409:00000409'), (& $layout '00000413' 'Dutch' 'nl-NL' '0413:00000413'))

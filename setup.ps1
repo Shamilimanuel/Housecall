@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'a93ad89a4cf9'
+$HcBuild = 'd8f39c292db0'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -408,15 +408,15 @@ $script:Strings = @{
         'dev.jobsOk'             = 'The print queue is empty'
         'dev.keyboardOk'         = 'Keyboard found'
         'dev.layouts'            = '{0} keyboard layout(s): {1}'
-        'dev.dutchLayout'        = 'The layout "{0}" is in use: it swaps keys on the keyboards sold in the Netherlands'
+        'dev.wrongLayout'        = 'The layout "{0}" is in use: it swaps keys on the keyboards sold in the Netherlands'
         'dev.deadKeys'           = 'US-International: quote marks and accents wait for the next key'
         'dev.manyLayouts'        = '{0} keyboard layouts: Alt + Shift or Windows key + Space switches between them'
         'dev.stickyKeys'         = 'Sticky Keys is on: Shift, Ctrl and Alt stay pressed after one tap'
         'dev.filterKeys'         = 'Filter Keys is on: short or repeated key presses are ignored'
         'dev.numLockOff'         = 'NumLock is off: the number keys on the right move the cursor instead'
         'dev.lastLayout'         = 'This is the language''s only keyboard layout, so it stays.'
-        'finding.dutchLayout'    = 'The keyboard is set to "{0}". Keyboards sold in the Netherlands are laid out as US, so with this setting keys like @, ", ; and ] give other characters.'
-        'advice.dutchLayout'     = 'Switch to United States-International or United States with the steps below.'
+        'finding.wrongLayout'    = 'The keyboard is set to "{0}". Keyboards sold in the Netherlands are laid out as US, so with this setting keys like @, ", # and \ give other characters.'
+        'advice.wrongLayout'     = 'Switch to United States-International or United States with the steps below.'
         'finding.manyLayouts'    = 'There are {0} keyboard layouts. Alt + Shift, or Windows key + Space, switches between them, often by accident, and then keys give other characters.'
         'advice.manyLayouts'     = 'Ask which layout is on the keyboard, then remove the other one with an option below.'
         'finding.stickyKeys'     = 'Sticky Keys is on. It is switched on by pressing Shift five times, often by accident, and makes Shift, Ctrl and Alt stay pressed.'
@@ -431,7 +431,7 @@ $script:Strings = @{
         'fix.removeLayout.done'  = 'Removed the keyboard layout {0}'
         'fix.numLockOn'          = 'Switch NumLock on'
         'fix.numLockOn.done'     = 'Switched NumLock on'
-        'steps.dutchLayout'      = 'Open Settings (Windows key + I) > Time & language > Language & region. | Click the three dots next to the language > Language options. | Under Keyboards, click Add a keyboard and choose United States-International (or United States). | Remove Dutch from that list with the three dots > Remove. | Type @ and " to check.'
+        'steps.wrongLayout'      = 'Choose the fix above to open the settings, or: Settings (Windows key + I) > Time & language > Language & region. | Click the three dots next to the language > Language options. | Under Keyboards, click Add a keyboard and choose United States-International (or United States). | Remove {0} from that list with the three dots > Remove. | Type @ (Shift + 2) and " to check.'
         'steps.manyLayouts'      = 'Ask the client which layout they use (look at the keyboard: most in the Netherlands are United States or United States-International). | Remove the other one with an option above, or do it by hand. | Settings (Windows key + I) > Time & language > Language & region > three dots > Language options > Keyboards > remove the extra one.'
         'steps.stickyKeys'       = 'Open Settings (Windows key + I) > Accessibility > Keyboard. | Switch off Sticky keys. | Click Sticky keys and switch off the keyboard shortcut, so pressing Shift five times does not switch it on again.'
         'steps.filterKeys'       = 'Open Settings (Windows key + I) > Accessibility > Keyboard. | Switch off Filter keys. | Click Filter keys and switch off the keyboard shortcut, so holding Shift does not switch it on again.'
@@ -1564,15 +1564,15 @@ $script:Strings = @{
         'dev.jobsOk'             = 'De afdrukwachtrij is leeg'
         'dev.keyboardOk'         = 'Toetsenbord gevonden'
         'dev.layouts'            = '{0} toetsenbordindeling(en): {1}'
-        'dev.dutchLayout'        = 'De indeling "{0}" wordt gebruikt: die verwisselt toetsen op de toetsenborden die in Nederland worden verkocht'
+        'dev.wrongLayout'        = 'De indeling "{0}" wordt gebruikt: die verwisselt toetsen op de toetsenborden die in Nederland worden verkocht'
         'dev.deadKeys'           = 'VS-Internationaal: aanhalingstekens en accenten wachten op de volgende toets'
         'dev.manyLayouts'        = '{0} toetsenbordindelingen: Alt + Shift of Windows-toets + Spatie wisselt ertussen'
         'dev.stickyKeys'         = 'Plaktoetsen staat aan: Shift, Ctrl en Alt blijven ingedrukt na een tik'
         'dev.filterKeys'         = 'Filtertoetsen staat aan: korte of herhaalde toetsaanslagen worden genegeerd'
         'dev.numLockOff'         = 'NumLock staat uit: de cijfertoetsen rechts verplaatsen de cursor in plaats van cijfers te typen'
         'dev.lastLayout'         = 'Dit is de enige toetsenbordindeling van die taal, dus die blijft staan.'
-        'finding.dutchLayout'    = 'Het toetsenbord staat op "{0}". Toetsenborden die in Nederland worden verkocht zijn ingedeeld als VS, dus met deze instelling geven toetsen als @, ", ; en ] andere tekens.'
-        'advice.dutchLayout'     = 'Zet het op Verenigde Staten (internationaal) of Verenigde Staten met de stappen hieronder.'
+        'finding.wrongLayout'    = 'Het toetsenbord staat op "{0}". Toetsenborden die in Nederland worden verkocht zijn ingedeeld als VS, dus met deze instelling geven toetsen als @, ", # en \ andere tekens.'
+        'advice.wrongLayout'     = 'Zet het op Verenigde Staten (internationaal) of Verenigde Staten met de stappen hieronder.'
         'finding.manyLayouts'    = 'Er zijn {0} toetsenbordindelingen. Alt + Shift, of Windows-toets + Spatie, wisselt ertussen, vaak per ongeluk, en dan geven toetsen andere tekens.'
         'advice.manyLayouts'     = 'Vraag welke indeling op het toetsenbord staat en verwijder de andere met een optie hieronder.'
         'finding.stickyKeys'     = 'Plaktoetsen staat aan. Dat gaat aan door vijf keer op Shift te drukken, vaak per ongeluk, en laat Shift, Ctrl en Alt ingedrukt blijven.'
@@ -1587,7 +1587,7 @@ $script:Strings = @{
         'fix.removeLayout.done'  = 'Toetsenbordindeling {0} verwijderd'
         'fix.numLockOn'          = 'NumLock aanzetten'
         'fix.numLockOn.done'     = 'NumLock aangezet'
-        'steps.dutchLayout'      = 'Open Instellingen (Windows-toets + I) > Tijd en taal > Taal en regio. | Klik op de drie puntjes naast de taal > Taalopties. | Klik onder Toetsenborden op Een toetsenbord toevoegen en kies Verenigde Staten (internationaal) (of Verenigde Staten). | Verwijder Nederlands uit die lijst met de drie puntjes > Verwijderen. | Typ @ en " om te controleren.'
+        'steps.wrongLayout'      = 'Kies hierboven de oplossing om de instellingen te openen, of: Instellingen (Windows-toets + I) > Tijd en taal > Taal en regio. | Klik op de drie puntjes naast de taal > Taalopties. | Klik onder Toetsenborden op Een toetsenbord toevoegen en kies Verenigde Staten (internationaal) (of Verenigde Staten). | Verwijder {0} uit die lijst met de drie puntjes > Verwijderen. | Typ @ (Shift + 2) en " om te controleren.'
         'steps.manyLayouts'      = 'Vraag de klant welke indeling hij of zij gebruikt (kijk op het toetsenbord: de meeste in Nederland zijn Verenigde Staten of Verenigde Staten (internationaal)). | Verwijder de andere met een optie hierboven, of doe het met de hand. | Instellingen (Windows-toets + I) > Tijd en taal > Taal en regio > drie puntjes > Taalopties > Toetsenborden > verwijder de extra indeling.'
         'steps.stickyKeys'       = 'Open Instellingen (Windows-toets + I) > Toegankelijkheid > Toetsenbord. | Zet Plaktoetsen uit. | Klik op Plaktoetsen en zet de sneltoets uit, zodat vijf keer Shift het niet weer aanzet.'
         'steps.filterKeys'       = 'Open Instellingen (Windows-toets + I) > Toegankelijkheid > Toetsenbord. | Zet Filtertoetsen uit. | Klik op Filtertoetsen en zet de sneltoets uit, zodat Shift ingedrukt houden het niet weer aanzet.'
@@ -4272,7 +4272,9 @@ function Get-HcInputFacts {
 
 # "My keyboard types the wrong characters": the layouts in use, and the
 # accessibility switches that make a keyboard act strange.
-$script:DutchLayout = '00000413'        # "Nederlands": swaps keys on the US-style keyboards sold in NL
+# Layouts that swap keys on the US-style keyboards sold in the Netherlands:
+# Dutch, and United Kingdom (what "English" often gets, e.g. English (Netherlands)).
+$script:WrongLayouts = @('00000413', '00000809')
 $script:UsIntlLayout = '00020409'       # US-International: ' and " wait for the next key
 
 # A keyboard layout's name ("United States-International") from its id.
@@ -4342,8 +4344,8 @@ function Add-HcKeyboardLines {
     $layouts = @($Keyboard.Layouts)
     if ($layouts.Count) {
         Add-HcLine $Report ok (T 'dev.layouts' $layouts.Count (@($layouts | ForEach-Object { $_.Name }) -join ', '))
-        $dutch = @($layouts | Where-Object { $_.Klid -eq $script:DutchLayout }) | Select-Object -First 1
-        if ($dutch) { Add-HcLine $Report warn (T 'dev.dutchLayout' $dutch.Name); $Found['dutchLayout'] = @($dutch.Name) }
+        $wrong = @($layouts | Where-Object { $script:WrongLayouts -contains $_.Klid }) | Select-Object -First 1
+        if ($wrong) { Add-HcLine $Report warn (T 'dev.wrongLayout' $wrong.Name); $Found['wrongLayout'] = @($wrong.Name) }
         if (@($layouts | Where-Object { $_.Klid -eq $script:UsIntlLayout }).Count) { Add-HcLine $Report ok (T 'dev.deadKeys'); $Found['deadKeys'] = @() }
         if ($layouts.Count -gt 1) {
             Add-HcLine $Report warn (T 'dev.manyLayouts' $layouts.Count)
@@ -4358,7 +4360,7 @@ function Add-HcKeyboardLines {
         # Settings is where the rest is done: a language's only layout, or
         # layouts Windows does not list per language (then read from the
         # session, as on a PC set to English (Netherlands)).
-        if ($Found.ContainsKey('dutchLayout') -or $Found.ContainsKey('manyLayouts')) { Add-HcAction $Report 'openKeyboardSettings' }
+        if ($Found.ContainsKey('wrongLayout') -or $Found.ContainsKey('manyLayouts')) { Add-HcAction $Report 'openKeyboardSettings' }
     }
     if ($Keyboard.NumLock -eq $false) {
         Add-HcLine $Report warn (T 'dev.numLockOff')
@@ -4520,7 +4522,7 @@ function Test-HcInputDevices {
     } else {
         foreach ($d in $problems) { Add-HcDeviceProblem $r $found $d }
     }
-    Select-HcFinding $r $found @('noPointer', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'filterKeys', 'stickyKeys', 'dutchLayout', 'manyLayouts', 'numLockOff', 'usbNoLetter', 'deadKeys') 'devicesOk'
+    Select-HcFinding $r $found @('noPointer', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'filterKeys', 'stickyKeys', 'wrongLayout', 'manyLayouts', 'numLockOff', 'usbNoLetter', 'deadKeys') 'devicesOk'
     $r
 }
 

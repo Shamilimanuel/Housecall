@@ -88,7 +88,9 @@ function Get-HcInputFacts {
 
 # "My keyboard types the wrong characters": the layouts in use, and the
 # accessibility switches that make a keyboard act strange.
-$script:DutchLayout = '00000413'        # "Nederlands": swaps keys on the US-style keyboards sold in NL
+# Layouts that swap keys on the US-style keyboards sold in the Netherlands:
+# Dutch, and United Kingdom (what "English" often gets, e.g. English (Netherlands)).
+$script:WrongLayouts = @('00000413', '00000809')
 $script:UsIntlLayout = '00020409'       # US-International: ' and " wait for the next key
 
 # A keyboard layout's name ("United States-International") from its id.
@@ -158,8 +160,8 @@ function Add-HcKeyboardLines {
     $layouts = @($Keyboard.Layouts)
     if ($layouts.Count) {
         Add-HcLine $Report ok (T 'dev.layouts' $layouts.Count (@($layouts | ForEach-Object { $_.Name }) -join ', '))
-        $dutch = @($layouts | Where-Object { $_.Klid -eq $script:DutchLayout }) | Select-Object -First 1
-        if ($dutch) { Add-HcLine $Report warn (T 'dev.dutchLayout' $dutch.Name); $Found['dutchLayout'] = @($dutch.Name) }
+        $wrong = @($layouts | Where-Object { $script:WrongLayouts -contains $_.Klid }) | Select-Object -First 1
+        if ($wrong) { Add-HcLine $Report warn (T 'dev.wrongLayout' $wrong.Name); $Found['wrongLayout'] = @($wrong.Name) }
         if (@($layouts | Where-Object { $_.Klid -eq $script:UsIntlLayout }).Count) { Add-HcLine $Report ok (T 'dev.deadKeys'); $Found['deadKeys'] = @() }
         if ($layouts.Count -gt 1) {
             Add-HcLine $Report warn (T 'dev.manyLayouts' $layouts.Count)
@@ -174,7 +176,7 @@ function Add-HcKeyboardLines {
         # Settings is where the rest is done: a language's only layout, or
         # layouts Windows does not list per language (then read from the
         # session, as on a PC set to English (Netherlands)).
-        if ($Found.ContainsKey('dutchLayout') -or $Found.ContainsKey('manyLayouts')) { Add-HcAction $Report 'openKeyboardSettings' }
+        if ($Found.ContainsKey('wrongLayout') -or $Found.ContainsKey('manyLayouts')) { Add-HcAction $Report 'openKeyboardSettings' }
     }
     if ($Keyboard.NumLock -eq $false) {
         Add-HcLine $Report warn (T 'dev.numLockOff')
@@ -336,7 +338,7 @@ function Test-HcInputDevices {
     } else {
         foreach ($d in $problems) { Add-HcDeviceProblem $r $found $d }
     }
-    Select-HcFinding $r $found @('noPointer', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'filterKeys', 'stickyKeys', 'dutchLayout', 'manyLayouts', 'numLockOff', 'usbNoLetter', 'deadKeys') 'devicesOk'
+    Select-HcFinding $r $found @('noPointer', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'filterKeys', 'stickyKeys', 'wrongLayout', 'manyLayouts', 'numLockOff', 'usbNoLetter', 'deadKeys') 'devicesOk'
     $r
 }
 
