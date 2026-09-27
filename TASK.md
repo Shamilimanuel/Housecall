@@ -160,6 +160,27 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 
 ## Next up
 
+**Proposal: more problems from Shamil's research (27 Sep), not decided yet**
+Shamil researched common problems of 65+ Windows users and proposed 15 new
+codes and an area G. Compared against the code (no changes made yet):
+
+| Proposed | Already in Housecall? | Read-only diagnosis in PS 5.1 | Advice |
+|---|---|---|---|
+| E5 activation | **Yes**: E2 checks activation (`Get-HcErrorFacts`) | yes | nothing new; maybe clearer steps |
+| D5 too many startup programs | **Yes**: D2 (`Get-HcStartupItems`, `manyStartup`, fix `disableStartup`) | yes | nothing new |
+| E4 date/time/time zone | **Partly**: E2 checks the clock against a server (`syncClock`) but compares UTC, so a wrong **time zone** is missed | yes | extend E2 |
+| B4 everything huge | **Partly**: B3 sees the magnifier (`closeMagnifier`) and shows scale/text size, but never flags them | yes (scale, text size, resolution; browser zoom no) | extend B3 |
+| G2 keyboard wrong characters | **No**, C2 only checks that a keyboard exists | yes (`Get-WinUserLanguageList`, layouts) | extend C2 |
+| G3 desktop icons gone, G4 taskbar/search gone, G5 Explorer not responding | No | yes (HideIcons, search box mode, auto-hide, explorer responding) | **merge into one** new code, fix = restart Explorer / show icons |
+| G9 temporary profile | No | yes (profile path, User Profile Service events) | detect inside the merged desktop code; fix = steps only (admin + registry) |
+| G7/G8 OneDrive | No | partly (running, signed in, folders moved into OneDrive; real sync errors no) | **merge** into one "files missing / not everywhere" code |
+| G10 download not found | No, but `Get-HcDownloadFolders` exists (F) | yes (newest files in Downloads) | merge with G6 |
+| G6 file opens with wrong program | No | yes to read (UserChoice); **cannot be set by script** (hash-protected) | merge with G10; fix = open Default apps + steps |
+| C4 battery | No | yes (Win32_Battery, design vs full capacity) | new; shares code with Pc-overzicht |
+| G1 cannot sign in | No | barely: Housecall can't run on a locked-out account | **not a check**; a step-by-step guide |
+
+Suggested outcome: **area G with 3 codes** (desktop/taskbar/profile · files missing or OneDrive · file won't open or can't be found), **C4 battery**, and extensions to **B3, C2, E2**. Sign-in stays a guide.
+
 **Phase 6: Housecall as a window (decided 27 Sep)**
 Mockup: <https://claude.ai/artifact/A6UPo4oH3LQjrxN5RcKLQJ>. A WPF window built by
 PowerShell itself (like WinUtil), no install. Decisions:
