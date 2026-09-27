@@ -1,12 +1,12 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 92%** `██████████████████░░` 59 of 64 done · 0 in progress · 5 open · 0 blocked · 0 waiting on a decision
+**Progress: 86%** `█████████████████░░░` 59 of 68 done · 0 in progress · 9 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `░░░░░░░░░░` | 0% (0/5) |
+| Next up | `░░░░░░░░░░` | 0% (0/9) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (44/44) |
 | Found in testing | `██████████` | 100% (10/10) |
@@ -159,6 +159,22 @@ Plus: it works when the internet *is* the problem, and every change is undoable.
 ---
 
 ## Next up
+
+**Phase 6: Housecall as a window (decided 27 Sep)**
+Mockup: <https://claude.ai/artifact/A6UPo4oH3LQjrxN5RcKLQJ>. A WPF window built by
+PowerShell itself (like WinUtil), no install. Decisions:
+- Window by default; the text menu stays for no desktop, `-Console`, and the tests
+- Light (brand colours) and dark, with a switch in the window
+- Tabs: **Problemen** (A-F as fold-out groups, one click per problem, plus
+  "Alles controleren"), **Veiligheid** (F1-F3), **Bezoek** (clock, done,
+  history, note/invoice), **Pc-overzicht** (new, read-only: model and age,
+  Windows and support end, disk type/fullness/health, memory, battery, plus
+  upgrade advice such as an SSD), **AI-hulp** (the ? chat)
+- Every check, fix, undo, note and invoice stays the same code; only the front changes
+- [ ] Step 1: the window shell (XAML, tabs, theme switch, clock) + Problemen with results and fixes
+- [ ] Step 2: Veiligheid and Bezoek (history, note, invoice window reused)
+- [ ] Step 3: Pc-overzicht: new read-only checks + advice rules, with tests
+- [ ] Step 4: AI-hulp tab (once there is credit)
 
 **Phase 5: testing before real clients**
 - [ ] **VirtualBox + Windows 10 + McAfee trial** ← recommended. Windows 10 is
@@ -543,7 +559,6 @@ Codes in Google Authenticator, recovery codes kept outside the PC.
 
 ## Ideas, parked
 
-- [ ] **Window with big buttons** (WPF, like WinUtil). The checks and fixes stay the same; only the front changes
 - [ ] **Arrow-key navigation** in the console menu, next to typed codes
 - [ ] **Hardware health**: SMART disk status, battery wear, temperatures
 - [ ] **Remote mode**: a client pastes the line themselves while you're on the phone
