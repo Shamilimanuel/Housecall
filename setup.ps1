@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'b4fc5b735af4'
+$HcBuild = 'd6795bd02c6e'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -875,6 +875,57 @@ $script:Strings = @{
         'fix.showSearch.done'      = 'Showed the search box on the taskbar'
         'fix.taskbarStay'          = 'Keep the taskbar visible'
         'fix.taskbarStay.done'     = 'The taskbar stays visible'
+
+        # ---- G2: check lines
+        'files.desktop'            = 'Desktop'
+        'files.documents'          = 'Documents'
+        'files.pictures'           = 'Pictures'
+        'files.whereOneDrive'      = 'in the OneDrive folder'
+        'files.whereLocal'         = 'on this PC'
+        'files.folder'             = '{0}: {1}, {2} items'
+        'files.folderMissing'      = '{0}: the folder does not exist ({1})'
+        'files.oneDriveOk'         = 'OneDrive is signed in and running'
+        'files.oneDriveGone'       = 'OneDrive has been removed, but the folders above are still kept in its folder'
+        'files.noOneDrive'         = 'OneDrive is not used on this PC'
+        'files.signedOut'          = 'OneDrive is installed but not signed in'
+        'files.notRunning'         = 'OneDrive is signed in but not running'
+        'files.diskFull'           = 'Only {0} GB free on the disk: OneDrive stops syncing'
+        'files.diskOk'             = '{0} GB free on the disk'
+        'files.recycleBin'         = '{0} items in the Recycle Bin'
+
+        # ---- G2: findings, and what to do about each
+        'finding.oneDriveRemoved'  = 'OneDrive has been removed from this PC, but Windows still keeps the Desktop, Documents and Pictures in the OneDrive folder. The files are there, but only on this PC: they are no longer copied to the cloud, and they will not appear on other devices.'
+        'advice.oneDriveRemoved'   = 'Nothing is lost. Decide with the client: reinstall OneDrive (steps below), or keep the files on this PC and make a backup another way.'
+        'finding.folderMissing'    = 'The {0} folder points to a place that does not exist, so Windows shows it as empty.'
+        'advice.folderMissing'     = 'The files are usually still in the old folder or in the OneDrive folder. The steps below show where to look and how to point the folder back.'
+        'finding.oneDriveSignedOut' = 'The client''s folders are kept in OneDrive, but OneDrive is not signed in. That is why files seem missing or out of date.'
+        'advice.oneDriveSignedOut' = 'Housecall can start OneDrive below; the client then signs in with their Microsoft account.'
+        'finding.oneDriveNotRunning' = 'OneDrive is set up but not running, so nothing is being synced.'
+        'advice.oneDriveNotRunning' = 'Housecall can start it below. It then catches up by itself.'
+        'finding.syncDiskFull'     = 'The disk is almost full ({0} GB free). OneDrive stops syncing when there is no room.'
+        'advice.syncDiskFull'      = 'Choose D4 to free up space first.'
+        'finding.filesLocal'       = 'The files are kept on this PC only; OneDrive is not used for them.'
+        'advice.filesLocal'        = 'That is fine, but there is no copy elsewhere. Suggest a backup to a USB drive, or OneDrive.'
+        'finding.recycleHasItems'  = 'Nothing is wrong with the folders or OneDrive. There are {0} items in the Recycle Bin: a file that was deleted by accident is often there.'
+        'advice.recycleHasItems'   = 'Housecall can open the Recycle Bin below, so the client can put a file back.'
+        'finding.filesOk'          = 'The folders are in place and OneDrive is signed in and running.'
+        'advice.filesOk'           = 'Can the client still not find a file? Choose G3 to search for it.'
+
+        # ---- G2: fixes
+        'fix.startOneDrive'        = 'Start OneDrive'
+        'fix.startOneDrive.done'   = 'Started OneDrive'
+        'fix.openRecycleBin'       = 'Open the Recycle Bin'
+        'fix.openRecycleBin.done'  = 'Opened the Recycle Bin'
+
+        # ---- G2: step-by-step guides
+        'steps.oneDriveRemoved'    = 'Reassure the client: the files are all still on this PC. | To use OneDrive again: press Windows key + R, type %SystemRoot%\System32\OneDriveSetup.exe and press Enter (or install OneDrive from the Microsoft Store). | Sign in with the client''s Microsoft account and keep the same OneDrive folder. | Or, to stop using OneDrive: make a backup of the folders to a USB drive first, then plan moving them back to C:\Users\<name> as a separate job.'
+        'steps.folderMissing'      = 'Open File Explorer and look in C:\Users\<name> and in C:\Users\<name>\OneDrive for a folder with that name. | Found it? Right-click the folder in the left pane (for example Documents) > Properties > Location. | Click Move, choose the folder you found, and click Apply. Answer No to moving files if they are already there.'
+        'steps.oneDriveSignedOut'  = 'Choose the fix above to start OneDrive. | Sign in with the client''s Microsoft account (the e-mail address and password they use for Outlook or Windows). | Keep the same OneDrive folder when asked. | Wait until the cloud icon at the bottom right no longer shows arrows.'
+        'steps.oneDriveNotRunning' = 'Choose the fix above to start OneDrive. | Wait until the cloud icon at the bottom right no longer shows arrows. | So it starts by itself next time: click the cloud icon > gear > Settings, and switch on "Start OneDrive automatically".'
+        'steps.syncDiskFull'       = 'Choose D4 to see what takes up space and free some. | Then click the OneDrive cloud icon at the bottom right: it continues syncing by itself.'
+        'steps.filesLocal'         = 'The files are fine, just not backed up. | Suggest a backup: copy the Desktop, Documents and Pictures to a USB drive, or set up OneDrive. | Did the client expect the files on another device? Then OneDrive or another sync service was never set up on this PC.'
+        'steps.recycleHasItems'    = 'Choose the fix above to open the Recycle Bin. | Look for the file (sort by Date deleted to see the most recent at the top). | Right-click it and choose Restore: it goes back to where it was. | Used OneDrive? Deleted files also stay 30 days in the online Recycle Bin on onedrive.live.com.'
+        'steps.filesOk'            = 'Choose G3 to look for the file by name or in Downloads. | Or search in File Explorer: open This PC and type part of the file name in the search box at the top right. | Also check the Recycle Bin, and the online Recycle Bin on onedrive.live.com.'
 
         # ---- G: step-by-step guides
         'steps.tempProfile'        = 'Do not save anything now: it would be lost at sign-out. | Restart the PC (Start > Power > Restart) and sign in again. Often that is enough. | Still a temporary profile? Check that the disk is not full (D4); a full disk is a common cause. | Still not? The profile needs repairing in the registry, with admin rights. Do this only with a backup, or plan it as a separate job. | The client''s files are normally still in C:\Users\<name>: open that folder to reassure the client.'
@@ -1838,6 +1889,57 @@ $script:Strings = @{
         'fix.showSearch.done'      = 'Zoekvak op de taakbalk getoond'
         'fix.taskbarStay'          = 'De taakbalk zichtbaar laten blijven'
         'fix.taskbarStay.done'     = 'De taakbalk blijft zichtbaar'
+
+        # ---- G2: controleregels
+        'files.desktop'            = 'Bureaublad'
+        'files.documents'          = 'Documenten'
+        'files.pictures'           = 'Afbeeldingen'
+        'files.whereOneDrive'      = 'in de OneDrive-map'
+        'files.whereLocal'         = 'op deze pc'
+        'files.folder'             = '{0}: {1}, {2} items'
+        'files.folderMissing'      = '{0}: de map bestaat niet ({1})'
+        'files.oneDriveOk'         = 'OneDrive is aangemeld en draait'
+        'files.oneDriveGone'       = 'OneDrive is verwijderd, maar de mappen hierboven staan nog in de OneDrive-map'
+        'files.noOneDrive'         = 'OneDrive wordt op deze pc niet gebruikt'
+        'files.signedOut'          = 'OneDrive is geinstalleerd maar niet aangemeld'
+        'files.notRunning'         = 'OneDrive is aangemeld maar draait niet'
+        'files.diskFull'           = 'Nog maar {0} GB vrij op de schijf: OneDrive stopt met synchroniseren'
+        'files.diskOk'             = '{0} GB vrij op de schijf'
+        'files.recycleBin'         = '{0} items in de Prullenbak'
+
+        # ---- G2: bevindingen, en wat eraan te doen
+        'finding.oneDriveRemoved'  = 'OneDrive is van deze pc verwijderd, maar Windows bewaart het Bureaublad, Documenten en Afbeeldingen nog in de OneDrive-map. De bestanden zijn er wel, maar alleen op deze pc: ze worden niet meer naar de cloud gekopieerd, en ze verschijnen niet op andere apparaten.'
+        'advice.oneDriveRemoved'   = 'Er is niets kwijt. Beslis samen met de klant: OneDrive opnieuw installeren (stappen hieronder), of de bestanden op deze pc houden en op een andere manier een back-up maken.'
+        'finding.folderMissing'    = 'De map {0} verwijst naar een plek die niet bestaat, dus Windows laat hem leeg zien.'
+        'advice.folderMissing'     = 'De bestanden staan meestal nog in de oude map of in de OneDrive-map. De stappen hieronder laten zien waar u kijkt en hoe u de map terugzet.'
+        'finding.oneDriveSignedOut' = 'De mappen van de klant staan in OneDrive, maar OneDrive is niet aangemeld. Daarom lijken bestanden te ontbreken of verouderd.'
+        'advice.oneDriveSignedOut' = 'Housecall kan OneDrive hieronder starten; de klant meldt zich dan aan met zijn of haar Microsoft-account.'
+        'finding.oneDriveNotRunning' = 'OneDrive is ingesteld maar draait niet, dus er wordt niets gesynchroniseerd.'
+        'advice.oneDriveNotRunning' = 'Housecall kan het hieronder starten. Daarna haalt het zelf de achterstand in.'
+        'finding.syncDiskFull'     = 'De schijf is bijna vol ({0} GB vrij). OneDrive stopt met synchroniseren als er geen ruimte is.'
+        'advice.syncDiskFull'      = 'Kies eerst D4 om ruimte vrij te maken.'
+        'finding.filesLocal'       = 'De bestanden staan alleen op deze pc; OneDrive wordt er niet voor gebruikt.'
+        'advice.filesLocal'        = 'Dat is prima, maar er is nergens een kopie. Stel een back-up voor op een USB-schijf, of OneDrive.'
+        'finding.recycleHasItems'  = 'Er is niets mis met de mappen of OneDrive. Er staan {0} items in de Prullenbak: een per ongeluk verwijderd bestand staat daar vaak.'
+        'advice.recycleHasItems'   = 'Housecall kan de Prullenbak hieronder openen, zodat de klant een bestand kan terugzetten.'
+        'finding.filesOk'          = 'De mappen staan op hun plek en OneDrive is aangemeld en draait.'
+        'advice.filesOk'           = 'Kan de klant een bestand toch niet vinden? Kies G3 om ernaar te zoeken.'
+
+        # ---- G2: oplossingen
+        'fix.startOneDrive'        = 'OneDrive starten'
+        'fix.startOneDrive.done'   = 'OneDrive gestart'
+        'fix.openRecycleBin'       = 'De Prullenbak openen'
+        'fix.openRecycleBin.done'  = 'Prullenbak geopend'
+
+        # ---- G2: stap-voor-stap
+        'steps.oneDriveRemoved'    = 'Stel de klant gerust: de bestanden staan allemaal nog op deze pc. | Om OneDrive weer te gebruiken: druk op Windows-toets + R, typ %SystemRoot%\System32\OneDriveSetup.exe en druk op Enter (of installeer OneDrive uit de Microsoft Store). | Meld aan met het Microsoft-account van de klant en houd dezelfde OneDrive-map aan. | Of, om te stoppen met OneDrive: maak eerst een back-up van de mappen op een USB-schijf, en plan het terugzetten naar C:\Users\<naam> als aparte klus.'
+        'steps.folderMissing'      = 'Open Verkenner en kijk in C:\Users\<naam> en in C:\Users\<naam>\OneDrive of daar een map met die naam staat. | Gevonden? Klik links met rechts op de map (bijvoorbeeld Documenten) > Eigenschappen > Locatie. | Klik op Verplaatsen, kies de gevonden map en klik op Toepassen. Kies Nee bij bestanden verplaatsen als ze er al staan.'
+        'steps.oneDriveSignedOut'  = 'Kies hierboven de oplossing om OneDrive te starten. | Meld aan met het Microsoft-account van de klant (het e-mailadres en wachtwoord dat hij of zij voor Outlook of Windows gebruikt). | Houd dezelfde OneDrive-map aan als daarom gevraagd wordt. | Wacht tot het wolkje rechtsonder geen pijltjes meer laat zien.'
+        'steps.oneDriveNotRunning' = 'Kies hierboven de oplossing om OneDrive te starten. | Wacht tot het wolkje rechtsonder geen pijltjes meer laat zien. | Zodat het de volgende keer vanzelf start: klik op het wolkje > tandwiel > Instellingen, en zet "OneDrive automatisch starten" aan.'
+        'steps.syncDiskFull'       = 'Kies D4 om te zien wat ruimte inneemt en maak wat vrij. | Klik daarna op het OneDrive-wolkje rechtsonder: het gaat vanzelf verder met synchroniseren.'
+        'steps.filesLocal'         = 'De bestanden zijn in orde, er is alleen geen back-up. | Stel een back-up voor: kopieer Bureaublad, Documenten en Afbeeldingen naar een USB-schijf, of stel OneDrive in. | Verwachtte de klant de bestanden op een ander apparaat? Dan is OneDrive of een andere dienst nooit op deze pc ingesteld.'
+        'steps.recycleHasItems'    = 'Kies hierboven de oplossing om de Prullenbak te openen. | Zoek het bestand (sorteer op Verwijderingsdatum om de nieuwste bovenaan te zien). | Klik er met rechts op en kies Terugzetten: het gaat terug naar waar het stond. | OneDrive gebruikt? Verwijderde bestanden blijven ook 30 dagen in de online Prullenbak op onedrive.live.com.'
+        'steps.filesOk'            = 'Kies G3 om het bestand op naam of in Downloads te zoeken. | Of zoek in Verkenner: open Deze pc en typ een deel van de bestandsnaam in het zoekvak rechtsboven. | Kijk ook in de Prullenbak, en in de online Prullenbak op onedrive.live.com.'
 
         # ---- G: stap-voor-stap
         'steps.tempProfile'        = 'Sla nu niets op: dat gaat verloren bij het afmelden. | Start de pc opnieuw op (Start > Aan/uit > Opnieuw opstarten) en meld opnieuw aan. Vaak is dat genoeg. | Nog steeds een tijdelijk profiel? Controleer of de schijf niet vol is (D4); een volle schijf is een veelvoorkomende oorzaak. | Nog steeds? Dan moet het profiel in het register worden hersteld, met beheerdersrechten. Doe dit alleen met een back-up, of plan het als aparte klus. | De bestanden van de klant staan normaal nog in C:\Users\<naam>: open die map om de klant gerust te stellen.'
@@ -5103,7 +5205,11 @@ $script:ProblemHandlers['E3'] = 'Invoke-HcE3'
                                   responding, desktop icons and Recycle Bin
                                   shown, Desktop moved into OneDrive, taskbar
                                   auto-hide, search box, tablet mode (Windows 10)
-      G2  files gone or not everywhere      (not built yet)
+      G2  files gone or not everywhere
+                                  temporary profile, Desktop / Documents /
+                                  Pictures (where, whether they exist, how
+                                  many items), OneDrive installed, signed in
+                                  and running, free disk space, Recycle Bin
       G3  a file cannot be found or opens wrong  (not built yet)
 
     What an older client says on the phone: "my desktop is empty", "the bar at
@@ -5297,11 +5403,138 @@ function Test-HcShell {
     $r
 }
 
+# ------------------------------------------------------------ G2: facts --
+
+# Below this much free space OneDrive stops syncing.
+$script:SyncFreeGB = 2
+
+# OneDrive.exe: where its own startup entry points, then the usual places.
+# $null when it is not on this PC (removed, or never installed).
+function Get-HcOneDriveExe {
+    $run = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -ErrorAction SilentlyContinue).OneDrive
+    $candidates = @()
+    if ($run -and $run -match '^\s*"?([^"]+?\.exe)') { $candidates += $Matches[1] }
+    $candidates += @(
+        (Join-Path $env:LOCALAPPDATA 'Microsoft\OneDrive\OneDrive.exe')
+        (Join-Path $env:ProgramFiles 'Microsoft OneDrive\OneDrive.exe')
+        (Join-Path ${env:ProgramFiles(x86)} 'Microsoft OneDrive\OneDrive.exe')
+    )
+    @($candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) }) | Select-Object -First 1
+}
+
+# Only whether an account is set up, never which: no e-mail address is read.
+function Test-HcOneDriveSignedIn {
+    [bool]@(Get-ChildItem 'HKCU:\Software\Microsoft\OneDrive\Accounts' -ErrorAction SilentlyContinue |
+        Where-Object { (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).UserFolder }).Count
+}
+
+# The three folders people mean by "my files": where each one is, whether it
+# exists, and how many items it holds at the top (counted, never listed).
+function Get-HcKnownFolders {
+    foreach ($f in @(@('desktop', 'Desktop'), @('documents', 'MyDocuments'), @('pictures', 'MyPictures'))) {
+        $path = [Environment]::GetFolderPath($f[1])
+        $exists = [bool]($path -and (Test-Path -LiteralPath $path))
+        [pscustomobject]@{
+            Key       = $f[0]
+            Path      = $path
+            Exists    = $exists
+            InOneDrive = ("$path" -match '\\OneDrive[^\\]*(\\|$)')
+            Items     = $(if ($exists) { @(Get-ChildItem -LiteralPath $path -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }).Count } else { 0 })
+        }
+    }
+}
+
+function Get-HcRecycleBinCount {
+    try { return [int](New-Object -ComObject Shell.Application).Namespace(10).Items().Count } catch { return $null }
+}
+
+function Get-HcFilesFacts {
+    $exe = Get-HcOneDriveExe
+    [pscustomobject]@{
+        TempProfile     = Test-HcTempProfile
+        Folders         = @(Get-HcKnownFolders)
+        OneDriveExe     = $exe
+        OneDriveRunning = [bool](Get-Process -Name OneDrive -ErrorAction SilentlyContinue)
+        SignedIn        = Test-HcOneDriveSignedIn
+        Disk            = Get-HcSystemDisk
+        RecycleBin      = Get-HcRecycleBinCount
+    }
+}
+
+# ---------------------------------------------------------- G2: verdict --
+
+function Test-HcFiles {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if ($Facts.TempProfile) {
+        Add-HcLine $r problem (T 'shell.tempProfile')
+        $found['tempProfile'] = @()
+    }
+
+    $inOneDrive = $false
+    foreach ($f in @($Facts.Folders)) {
+        $name = T ('files.' + $f.Key)
+        if (-not $f.Exists) {
+            Add-HcLine $r problem (T 'files.folderMissing' $name $f.Path)
+            if (-not $found['folderMissing']) { $found['folderMissing'] = @($name) }
+            continue
+        }
+        if ($f.InOneDrive) { $inOneDrive = $true }
+        $where = T $(if ($f.InOneDrive) { 'files.whereOneDrive' } else { 'files.whereLocal' })
+        Add-HcLine $r ok (T 'files.folder' $name $where $f.Items)
+    }
+
+    $installed = [bool]$Facts.OneDriveExe
+    if (-not $installed) {
+        if ($inOneDrive) {
+            Add-HcLine $r problem (T 'files.oneDriveGone')
+            $found['oneDriveRemoved'] = @()
+        } else {
+            Add-HcLine $r ok (T 'files.noOneDrive')
+            $found['filesLocal'] = @()
+        }
+    } elseif (-not $Facts.SignedIn) {
+        Add-HcLine $r $(if ($inOneDrive) { 'problem' } else { 'warn' }) (T 'files.signedOut')
+        Add-HcAction $r 'startOneDrive' @{ Label = ''; Exe = $Facts.OneDriveExe }
+        $found[$(if ($inOneDrive) { 'oneDriveSignedOut' } else { 'filesLocal' })] = @()
+    } elseif (-not $Facts.OneDriveRunning) {
+        Add-HcLine $r problem (T 'files.notRunning')
+        Add-HcAction $r 'startOneDrive' @{ Label = ''; Exe = $Facts.OneDriveExe }
+        $found['oneDriveNotRunning'] = @()
+    } else {
+        Add-HcLine $r ok (T 'files.oneDriveOk')
+    }
+
+    if ($Facts.Disk) {
+        if ($Facts.Disk.FreeGB -lt $script:SyncFreeGB) {
+            Add-HcLine $r problem (T 'files.diskFull' $Facts.Disk.FreeGB)
+            $found['syncDiskFull'] = @($Facts.Disk.FreeGB)
+        } else {
+            Add-HcLine $r ok (T 'files.diskOk' $Facts.Disk.FreeGB)
+        }
+    }
+
+    if ($null -ne $Facts.RecycleBin) {
+        Add-HcLine $r ok (T 'files.recycleBin' $Facts.RecycleBin)
+        if ($Facts.RecycleBin -gt 0) {
+            Add-HcAction $r 'openRecycleBin'
+            $found['recycleHasItems'] = @($Facts.RecycleBin)
+        }
+    }
+
+    Select-HcFinding $r $found @('tempProfile', 'oneDriveRemoved', 'folderMissing', 'oneDriveSignedOut', 'oneDriveNotRunning', 'syncDiskFull', 'filesLocal', 'recycleHasItems') 'filesOk'
+    $r
+}
+
 # ---------------------------------------------------------------- handlers --
 
 function Invoke-HcG1 { { Test-HcShell (Get-HcShellFacts) } }
+function Invoke-HcG2 { { Test-HcFiles (Get-HcFilesFacts) } }
 
 $script:ProblemHandlers['G1'] = 'Invoke-HcG1'
+$script:ProblemHandlers['G2'] = 'Invoke-HcG2'
 
 # ==================================================== src\fixes.ps1 ==
 <#
@@ -5749,6 +5982,18 @@ $script:Fixes = @{
         Note = 'undo'; Admin = $false
         Apply = { param($t) Set-HcShellValue $t 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'SearchboxTaskbarMode' 2 }
         Undo  = { param($t) Undo-HcShellValue $t }
+    }
+    # OneDrive's own program; it signs in or picks up syncing by itself.
+    startOneDrive = @{
+        Note = 'safe'; Admin = $false
+        Apply = { param($t) Start-Process -FilePath $t.Exe -ErrorAction Stop }
+        Undo  = $null
+    }
+    # Only opens the Recycle Bin, so the client can pick what to put back.
+    openRecycleBin = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = { param($t) Start-Process 'shell:RecycleBinFolder' -ErrorAction Stop }
+        Undo  = $null
     }
     # Live, through the same call as the Settings switch; no Explorer restart.
     taskbarStay = @{

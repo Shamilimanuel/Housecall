@@ -444,6 +444,18 @@ $script:Fixes = @{
         Apply = { param($t) Set-HcShellValue $t 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'SearchboxTaskbarMode' 2 }
         Undo  = { param($t) Undo-HcShellValue $t }
     }
+    # OneDrive's own program; it signs in or picks up syncing by itself.
+    startOneDrive = @{
+        Note = 'safe'; Admin = $false
+        Apply = { param($t) Start-Process -FilePath $t.Exe -ErrorAction Stop }
+        Undo  = $null
+    }
+    # Only opens the Recycle Bin, so the client can pick what to put back.
+    openRecycleBin = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = { param($t) Start-Process 'shell:RecycleBinFolder' -ErrorAction Stop }
+        Undo  = $null
+    }
     # Live, through the same call as the Settings switch; no Explorer restart.
     taskbarStay = @{
         Note = 'undo'; Admin = $false

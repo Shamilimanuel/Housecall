@@ -6,7 +6,11 @@
                                   responding, desktop icons and Recycle Bin
                                   shown, Desktop moved into OneDrive, taskbar
                                   auto-hide, search box, tablet mode (Windows 10)
-      G2  files gone or not everywhere      (not built yet)
+      G2  files gone or not everywhere
+                                  temporary profile, Desktop / Documents /
+                                  Pictures (where, whether they exist, how
+                                  many items), OneDrive installed, signed in
+                                  and running, free disk space, Recycle Bin
       G3  a file cannot be found or opens wrong  (not built yet)
 
     What an older client says on the phone: "my desktop is empty", "the bar at
@@ -200,8 +204,135 @@ function Test-HcShell {
     $r
 }
 
+# ------------------------------------------------------------ G2: facts --
+
+# Below this much free space OneDrive stops syncing.
+$script:SyncFreeGB = 2
+
+# OneDrive.exe: where its own startup entry points, then the usual places.
+# $null when it is not on this PC (removed, or never installed).
+function Get-HcOneDriveExe {
+    $run = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -ErrorAction SilentlyContinue).OneDrive
+    $candidates = @()
+    if ($run -and $run -match '^\s*"?([^"]+?\.exe)') { $candidates += $Matches[1] }
+    $candidates += @(
+        (Join-Path $env:LOCALAPPDATA 'Microsoft\OneDrive\OneDrive.exe')
+        (Join-Path $env:ProgramFiles 'Microsoft OneDrive\OneDrive.exe')
+        (Join-Path ${env:ProgramFiles(x86)} 'Microsoft OneDrive\OneDrive.exe')
+    )
+    @($candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) }) | Select-Object -First 1
+}
+
+# Only whether an account is set up, never which: no e-mail address is read.
+function Test-HcOneDriveSignedIn {
+    [bool]@(Get-ChildItem 'HKCU:\Software\Microsoft\OneDrive\Accounts' -ErrorAction SilentlyContinue |
+        Where-Object { (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).UserFolder }).Count
+}
+
+# The three folders people mean by "my files": where each one is, whether it
+# exists, and how many items it holds at the top (counted, never listed).
+function Get-HcKnownFolders {
+    foreach ($f in @(@('desktop', 'Desktop'), @('documents', 'MyDocuments'), @('pictures', 'MyPictures'))) {
+        $path = [Environment]::GetFolderPath($f[1])
+        $exists = [bool]($path -and (Test-Path -LiteralPath $path))
+        [pscustomobject]@{
+            Key       = $f[0]
+            Path      = $path
+            Exists    = $exists
+            InOneDrive = ("$path" -match '\\OneDrive[^\\]*(\\|$)')
+            Items     = $(if ($exists) { @(Get-ChildItem -LiteralPath $path -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'desktop.ini' }).Count } else { 0 })
+        }
+    }
+}
+
+function Get-HcRecycleBinCount {
+    try { return [int](New-Object -ComObject Shell.Application).Namespace(10).Items().Count } catch { return $null }
+}
+
+function Get-HcFilesFacts {
+    $exe = Get-HcOneDriveExe
+    [pscustomobject]@{
+        TempProfile     = Test-HcTempProfile
+        Folders         = @(Get-HcKnownFolders)
+        OneDriveExe     = $exe
+        OneDriveRunning = [bool](Get-Process -Name OneDrive -ErrorAction SilentlyContinue)
+        SignedIn        = Test-HcOneDriveSignedIn
+        Disk            = Get-HcSystemDisk
+        RecycleBin      = Get-HcRecycleBinCount
+    }
+}
+
+# ---------------------------------------------------------- G2: verdict --
+
+function Test-HcFiles {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if ($Facts.TempProfile) {
+        Add-HcLine $r problem (T 'shell.tempProfile')
+        $found['tempProfile'] = @()
+    }
+
+    $inOneDrive = $false
+    foreach ($f in @($Facts.Folders)) {
+        $name = T ('files.' + $f.Key)
+        if (-not $f.Exists) {
+            Add-HcLine $r problem (T 'files.folderMissing' $name $f.Path)
+            if (-not $found['folderMissing']) { $found['folderMissing'] = @($name) }
+            continue
+        }
+        if ($f.InOneDrive) { $inOneDrive = $true }
+        $where = T $(if ($f.InOneDrive) { 'files.whereOneDrive' } else { 'files.whereLocal' })
+        Add-HcLine $r ok (T 'files.folder' $name $where $f.Items)
+    }
+
+    $installed = [bool]$Facts.OneDriveExe
+    if (-not $installed) {
+        if ($inOneDrive) {
+            Add-HcLine $r problem (T 'files.oneDriveGone')
+            $found['oneDriveRemoved'] = @()
+        } else {
+            Add-HcLine $r ok (T 'files.noOneDrive')
+            $found['filesLocal'] = @()
+        }
+    } elseif (-not $Facts.SignedIn) {
+        Add-HcLine $r $(if ($inOneDrive) { 'problem' } else { 'warn' }) (T 'files.signedOut')
+        Add-HcAction $r 'startOneDrive' @{ Label = ''; Exe = $Facts.OneDriveExe }
+        $found[$(if ($inOneDrive) { 'oneDriveSignedOut' } else { 'filesLocal' })] = @()
+    } elseif (-not $Facts.OneDriveRunning) {
+        Add-HcLine $r problem (T 'files.notRunning')
+        Add-HcAction $r 'startOneDrive' @{ Label = ''; Exe = $Facts.OneDriveExe }
+        $found['oneDriveNotRunning'] = @()
+    } else {
+        Add-HcLine $r ok (T 'files.oneDriveOk')
+    }
+
+    if ($Facts.Disk) {
+        if ($Facts.Disk.FreeGB -lt $script:SyncFreeGB) {
+            Add-HcLine $r problem (T 'files.diskFull' $Facts.Disk.FreeGB)
+            $found['syncDiskFull'] = @($Facts.Disk.FreeGB)
+        } else {
+            Add-HcLine $r ok (T 'files.diskOk' $Facts.Disk.FreeGB)
+        }
+    }
+
+    if ($null -ne $Facts.RecycleBin) {
+        Add-HcLine $r ok (T 'files.recycleBin' $Facts.RecycleBin)
+        if ($Facts.RecycleBin -gt 0) {
+            Add-HcAction $r 'openRecycleBin'
+            $found['recycleHasItems'] = @($Facts.RecycleBin)
+        }
+    }
+
+    Select-HcFinding $r $found @('tempProfile', 'oneDriveRemoved', 'folderMissing', 'oneDriveSignedOut', 'oneDriveNotRunning', 'syncDiskFull', 'filesLocal', 'recycleHasItems') 'filesOk'
+    $r
+}
+
 # ---------------------------------------------------------------- handlers --
 
 function Invoke-HcG1 { { Test-HcShell (Get-HcShellFacts) } }
+function Invoke-HcG2 { { Test-HcFiles (Get-HcFilesFacts) } }
 
 $script:ProblemHandlers['G1'] = 'Invoke-HcG1'
+$script:ProblemHandlers['G2'] = 'Invoke-HcG2'

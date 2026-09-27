@@ -880,11 +880,76 @@ Describe 'G1: desktop, taskbar and folders' {
         Assert-MockCalled Restart-HcExplorer -Times 2 -Exactly
     }
 
-    It 'is on the menu as area G, with G1 built and G2, G3 still to come' {
+    It 'is on the menu as area G, with G1 and G2 built and G3 still to come' {
         (Resolve-HcChoice 'G').Kind | Should Be 'area'
         (Resolve-HcChoice 'g1').Value | Should Be 'G1'
         $script:ProblemHandlers['G1'] | Should Be 'Invoke-HcG1'
-        $script:ProblemHandlers.ContainsKey('G2') | Should Be $false
+        $script:ProblemHandlers['G2'] | Should Be 'Invoke-HcG2'
+        $script:ProblemHandlers.ContainsKey('G3') | Should Be $false
+    }
+}
+
+Describe 'G2: files gone or not everywhere' {
+    $script:Lang = 'en'
+    $folder = { param($key, $oneDrive = $true, $exists = $true, $items = 5)
+        [pscustomobject]@{ Key = $key; Path = "C:\Users\x\$(if ($oneDrive) { 'OneDrive\' })$key"; Exists = $exists; InOneDrive = $oneDrive; Items = $items } }
+    $files = { param([hashtable]$Change = @{})
+        $f = [pscustomobject]@{
+            TempProfile = $false
+            Folders = @((& $folder 'desktop'), (& $folder 'documents'), (& $folder 'pictures'))
+            OneDriveExe = 'C:\Users\x\AppData\Local\Microsoft\OneDrive\OneDrive.exe'; OneDriveRunning = $true; SignedIn = $true
+            Disk = [pscustomobject]@{ FreeGB = 120 }; RecycleBin = 0
+        }
+        foreach ($k in $Change.Keys) { $f.$k = $Change[$k] }
+        $f }
+    $fixIds = { param($r) @($r.Actions | ForEach-Object { $_.FixId }) }
+
+    It 'is happy when the folders are there and OneDrive runs signed in' {
+        $r = Test-HcFiles (& $files)
+        $r.FindingId | Should Be 'filesOk'
+        @($r.Results | Where-Object { $_.Status -ne 'ok' }).Count | Should Be 0
+        $r.Results[0].Text | Should Be 'Desktop: in the OneDrive folder, 5 items'
+    }
+
+    It 'says OneDrive was removed while the folders still live in its folder (Shamil''s PC)' {
+        $r = Test-HcFiles (& $files @{ OneDriveExe = $null; OneDriveRunning = $false; SignedIn = $false; RecycleBin = 1 })
+        $r.FindingId | Should Be 'oneDriveRemoved'
+        @($r.Results | Where-Object { $_.Status -eq 'problem' }).Count | Should Be 1
+        (& $fixIds $r) | Should Be @('openRecycleBin')                # nothing to start: the program is gone
+    }
+
+    It 'calls local folders without OneDrive fine, only without a copy elsewhere' {
+        $local = @((& $folder 'desktop' $false), (& $folder 'documents' $false), (& $folder 'pictures' $false))
+        $r = Test-HcFiles (& $files @{ Folders = $local; OneDriveExe = $null; OneDriveRunning = $false; SignedIn = $false })
+        $r.FindingId | Should Be 'filesLocal'
+        @($r.Results | Where-Object { $_.Status -ne 'ok' }).Count | Should Be 0
+    }
+
+    It 'starts OneDrive when it is signed out or not running' {
+        $r = Test-HcFiles (& $files @{ SignedIn = $false; OneDriveRunning = $false })
+        $r.FindingId | Should Be 'oneDriveSignedOut'
+        $r.Actions[0].FixId | Should Be 'startOneDrive'
+        $r.Actions[0].Target.Exe | Should Match 'OneDrive\.exe$'
+        $r = Test-HcFiles (& $files @{ OneDriveRunning = $false })
+        $r.FindingId | Should Be 'oneDriveNotRunning'
+        (& $fixIds $r) | Should Be @('startOneDrive')
+    }
+
+    It 'names a folder that points nowhere, and puts a temporary profile first' {
+        $gone = @((& $folder 'desktop'), (& $folder 'documents' $true $false), (& $folder 'pictures'))
+        $r = Test-HcFiles (& $files @{ Folders = $gone })
+        $r.FindingId | Should Be 'folderMissing'
+        $r.FindingArgs | Should Be @('Documents')
+        (Test-HcFiles (& $files @{ Folders = $gone; TempProfile = $true })).FindingId | Should Be 'tempProfile'
+    }
+
+    It 'warns that a full disk stops syncing, and points to the Recycle Bin when all else is fine' {
+        $r = Test-HcFiles (& $files @{ Disk = [pscustomobject]@{ FreeGB = 0.8 } })
+        $r.FindingId | Should Be 'syncDiskFull'
+        $r = Test-HcFiles (& $files @{ RecycleBin = 23 })
+        $r.FindingId | Should Be 'recycleHasItems'
+        $r.FindingArgs | Should Be @(23)
+        (& $fixIds $r) | Should Be @('openRecycleBin')
     }
 }
 
