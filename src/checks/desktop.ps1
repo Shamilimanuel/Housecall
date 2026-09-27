@@ -64,7 +64,7 @@ function Get-HcShellFacts {
         DesktopItems     = $items
         DesktopInOneDrive = ("$desktop" -match '\\OneDrive[^\\]*\\')
         OneDriveRunning  = [bool](Get-Process -Name OneDrive -ErrorAction SilentlyContinue)
-        TaskbarAutoHide  = (Test-HcTaskbarAutoHide $taskbar)
+        TaskbarAutoHide  = $(if ($null -ne ($live = Get-HcTaskbarState)) { [bool]($live -band 1) } else { Test-HcTaskbarAutoHide $taskbar })
         SearchHidden     = ($null -ne $search -and [int]$search -eq 0)
         TabletMode       = ($tablet -eq 1)
         Windows10        = ([Environment]::OSVersion.Version.Build -lt 22000)
@@ -89,18 +89,41 @@ function ConvertTo-HcInt32 {
     [BitConverter]::ToInt32([BitConverter]::GetBytes($Value), 0)
 }
 
-# The taskbar's settings are a binary blob; byte 8 is 3 when it hides itself
-# and 2 when it stays. Pure, so the tests can check both ways.
+<#
+    Taskbar auto-hide, through the same call the Settings switch uses
+    (SHAppBarMessage). It changes it live, without restarting Explorer, and
+    Explorer stores it itself. Changing the stored copy and restarting
+    Explorer did not hold on Shamil's PC (27 Sep): a Windhawk taskbar mod,
+    reloaded with Explorer, switched auto-hide straight back on.
+#>
+function Initialize-HcAppBar {
+    if ('Housecall.AppBar' -as [type]) { return }
+    Add-Type -Namespace Housecall -Name AppBar -MemberDefinition @"
+[StructLayout(LayoutKind.Sequential)]
+public struct APPBARDATA { public int cbSize; public System.IntPtr hWnd; public uint uCallbackMessage; public uint uEdge; public int left; public int top; public int right; public int bottom; public System.IntPtr lParam; }
+[DllImport("shell32.dll")]
+public static extern System.UIntPtr SHAppBarMessage(uint msg, ref APPBARDATA data);
+public static int GetState() { APPBARDATA d = new APPBARDATA(); d.cbSize = Marshal.SizeOf(typeof(APPBARDATA)); return (int)SHAppBarMessage(4, ref d).ToUInt32(); }
+public static void SetState(int state) { APPBARDATA d = new APPBARDATA(); d.cbSize = Marshal.SizeOf(typeof(APPBARDATA)); d.lParam = new System.IntPtr(state); SHAppBarMessage(10, ref d); }
+"@
+}
+
+# 1 = hides itself. $null when Windows cannot say.
+function Get-HcTaskbarState {
+    try { Initialize-HcAppBar; return [Housecall.AppBar]::GetState() } catch { return $null }
+}
+
+function Set-HcTaskbarState {
+    param([int]$State)
+    Initialize-HcAppBar
+    [Housecall.AppBar]::SetState($State)
+}
+
+# The stored copy, only used when the live call is not available: byte 8 of
+# the taskbar's settings is 3 when it hides itself and 2 when it stays.
 function Test-HcTaskbarAutoHide {
     param([byte[]]$Settings)
     [bool]($Settings -and $Settings.Count -gt 8 -and ($Settings[8] -band 1))
-}
-
-function ConvertTo-HcTaskbarSetting {
-    param([byte[]]$Settings, [bool]$AutoHide)
-    $copy = [byte[]]$Settings.Clone()
-    if ($AutoHide) { $copy[8] = [byte]($copy[8] -bor 1) } else { $copy[8] = [byte]($copy[8] -band 0xFE) }
-    , $copy
 }
 
 # ------------------------------------------------------------------ verdict --

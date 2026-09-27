@@ -840,16 +840,22 @@ Describe 'G1: desktop, taskbar and folders' {
         (Test-HcShell (& $shell @{ TabletMode = $true; Windows10 = $false })).FindingId | Should Be 'shellOk'
     }
 
-    It 'reads and flips only the auto-hide bit of the taskbar setting' {
-        $on = [byte[]](0x30, 0, 0, 0, 0xFE, 0xFF, 0xFF, 0xFF, 0x03, 0x08, 0, 0)
-        Test-HcTaskbarAutoHide $on | Should Be $true
-        $off = ConvertTo-HcTaskbarSetting $on $false
-        $off[8] | Should Be 2
-        Test-HcTaskbarAutoHide $off | Should Be $false
-        $on[8] | Should Be 3                                   # the original is left alone, for undo
-        (ConvertTo-HcTaskbarSetting $off $true)[8] | Should Be 3
-        @(Compare-Object ($on | Select-Object -First 8) ($off | Select-Object -First 8)).Count | Should Be 0
+    It 'reads auto-hide from the stored copy when the live call is not available' {
+        Test-HcTaskbarAutoHide ([byte[]](0x30, 0, 0, 0, 0xFE, 0xFF, 0xFF, 0xFF, 0x03, 0x08)) | Should Be $true
+        Test-HcTaskbarAutoHide ([byte[]](0x30, 0, 0, 0, 0xFE, 0xFF, 0xFF, 0xFF, 0x02, 0x08)) | Should Be $false
         Test-HcTaskbarAutoHide $null | Should Be $false
+    }
+
+    It 'keeps the taskbar visible live, without restarting Explorer, and undoes it the same way' {
+        Mock Restart-HcExplorer { }
+        Mock Get-HcTaskbarState { 3 }
+        $script:TaskbarSet = New-Object System.Collections.ArrayList
+        Mock Set-HcTaskbarState { [void]$script:TaskbarSet.Add($State) }
+        $t = @{}
+        & $script:Fixes.taskbarStay.Apply $t
+        & $script:Fixes.taskbarStay.Undo $t
+        @($script:TaskbarSet) | Should Be @(2, 3)
+        Assert-MockCalled Restart-HcExplorer -Times 0 -Exactly
     }
 
     It 'reads "no icons" from the desktop''s view flags, the setting Windows really uses' {

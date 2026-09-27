@@ -444,20 +444,16 @@ $script:Fixes = @{
         Apply = { param($t) Set-HcShellValue $t 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'SearchboxTaskbarMode' 2 }
         Undo  = { param($t) Undo-HcShellValue $t }
     }
+    # Live, through the same call as the Settings switch; no Explorer restart.
     taskbarStay = @{
         Note = 'undo'; Admin = $false
         Apply = {
             param($t)
-            $key = "$script:ExplorerKey\StuckRects3"
-            $t.Saved = [byte[]](Get-ItemProperty $key -ErrorAction Stop).Settings
-            Set-ItemProperty $key -Name Settings -Value (ConvertTo-HcTaskbarSetting $t.Saved $false) -Type Binary -ErrorAction Stop
-            Restart-HcExplorer
+            $t.Saved = Get-HcTaskbarState
+            if ($null -eq $t.Saved) { throw (T 'shell.taskbarUnknown') }
+            Set-HcTaskbarState ($t.Saved -band -bnot 1)
         }
-        Undo = {
-            param($t)
-            Set-ItemProperty "$script:ExplorerKey\StuckRects3" -Name Settings -Value ([byte[]]$t.Saved) -Type Binary -ErrorAction Stop
-            Restart-HcExplorer
-        }
+        Undo = { param($t) Set-HcTaskbarState $t.Saved }
     }
 }
 

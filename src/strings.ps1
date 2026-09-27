@@ -788,6 +788,7 @@ $script:Strings = @{
         'shell.taskbarAutoHide'    = 'The taskbar hides itself until the mouse touches the bottom of the screen'
         'shell.searchHidden'       = 'The search box is hidden from the taskbar'
         'shell.tabletMode'         = 'Tablet mode is on: bigger tiles, no desktop icons'
+        'shell.taskbarUnknown'     = 'Windows does not say whether the taskbar hides itself'
 
         # ---- G: findings, and what to do about each
         'finding.tempProfile'      = 'Windows could not load the client''s own profile and signed in with an empty, temporary one. The files are almost certainly still there, but this session does not show them, and anything saved now is lost at sign-out.'
@@ -1750,6 +1751,7 @@ $script:Strings = @{
         'shell.taskbarAutoHide'    = 'De taakbalk verbergt zichzelf tot de muis de onderkant van het scherm raakt'
         'shell.searchHidden'       = 'Het zoekvak is verborgen op de taakbalk'
         'shell.tabletMode'         = 'De tabletmodus staat aan: grote tegels, geen pictogrammen op het bureaublad'
+        'shell.taskbarUnknown'     = 'Windows geeft niet aan of de taakbalk zichzelf verbergt'
 
         # ---- G: bevindingen, en wat eraan te doen
         'finding.tempProfile'      = 'Windows kon het eigen profiel van de klant niet laden en heeft aangemeld met een leeg, tijdelijk profiel. De bestanden zijn vrijwel zeker nog aanwezig, maar deze sessie laat ze niet zien, en wat nu wordt opgeslagen gaat verloren bij het afmelden.'
