@@ -18,6 +18,12 @@
 
 $script:ExplorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer'
 $script:RecycleBinId = '{645FF040-5081-101B-9F08-00AA002F954E}'
+# Where Windows really keeps "Show desktop icons": the desktop's own view
+# settings. Bit 0x1000 of FFlags means no icons. HideIcons under Advanced is
+# only a copy, which Explorer overwrites from FFlags when it starts (found
+# on Shamil's PC, 27 Sep: setting HideIcons alone came back within seconds).
+$script:DesktopBagKey = 'HKCU:\Software\Microsoft\Windows\Shell\Bags\1\Desktop'
+$script:NoIconsFlag = 0x1000
 
 # ------------------------------------------------------------------- facts --
 
@@ -34,6 +40,7 @@ function Test-HcTempProfile {
 
 function Get-HcShellFacts {
     $advanced = Get-ItemProperty "$script:ExplorerKey\Advanced" -ErrorAction SilentlyContinue
+    $flags = (Get-ItemProperty $script:DesktopBagKey -ErrorAction SilentlyContinue).FFlags
     $icons = Get-ItemProperty "$script:ExplorerKey\HideDesktopIcons\NewStartPanel" -ErrorAction SilentlyContinue
     $taskbar = (Get-ItemProperty "$script:ExplorerKey\StuckRects3" -ErrorAction SilentlyContinue).Settings
     $search = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' -ErrorAction SilentlyContinue).SearchboxTaskbarMode
@@ -52,7 +59,7 @@ function Get-HcShellFacts {
         TempProfile      = Test-HcTempProfile
         ExplorerRunning  = ($explorer.Count -gt 0)
         ExplorerHung     = [bool]@($explorer | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero -and -not $_.Responding }).Count
-        IconsHidden      = ($advanced -and $advanced.HideIcons -eq 1)
+        IconsHidden      = (Test-HcIconsHidden $advanced.HideIcons $flags)
         RecycleBinHidden = ($icons -and $icons.$script:RecycleBinId -eq 1)
         DesktopItems     = $items
         DesktopInOneDrive = ("$desktop" -match '\\OneDrive[^\\]*\\')
@@ -62,6 +69,24 @@ function Get-HcShellFacts {
         TabletMode       = ($tablet -eq 1)
         Windows10        = ([Environment]::OSVersion.Version.Build -lt 22000)
     }
+}
+
+# The desktop's view flags decide; HideIcons only counts when they are missing.
+function Test-HcIconsHidden {
+    param($HideIcons, $Flags)
+    if ($null -ne $Flags) { return [bool]((ConvertTo-HcUInt32 $Flags) -band $script:NoIconsFlag) }
+    ($HideIcons -eq 1)
+}
+
+# Registry DWORDs come back as signed Int32; the flag maths needs them unsigned.
+function ConvertTo-HcUInt32 {
+    param($Value)
+    [BitConverter]::ToUInt32([BitConverter]::GetBytes([int32]$Value), 0)
+}
+
+function ConvertTo-HcInt32 {
+    param([uint32]$Value)
+    [BitConverter]::ToInt32([BitConverter]::GetBytes($Value), 0)
 }
 
 # The taskbar's settings are a binary blob; byte 8 is 3 when it hides itself

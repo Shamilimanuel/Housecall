@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'cd26700124d6'
+$HcBuild = '58cd973cbb66'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -5113,6 +5113,12 @@ $script:ProblemHandlers['E3'] = 'Invoke-HcE3'
 
 $script:ExplorerKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer'
 $script:RecycleBinId = '{645FF040-5081-101B-9F08-00AA002F954E}'
+# Where Windows really keeps "Show desktop icons": the desktop's own view
+# settings. Bit 0x1000 of FFlags means no icons. HideIcons under Advanced is
+# only a copy, which Explorer overwrites from FFlags when it starts (found
+# on Shamil's PC, 27 Sep: setting HideIcons alone came back within seconds).
+$script:DesktopBagKey = 'HKCU:\Software\Microsoft\Windows\Shell\Bags\1\Desktop'
+$script:NoIconsFlag = 0x1000
 
 # ------------------------------------------------------------------- facts --
 
@@ -5129,6 +5135,7 @@ function Test-HcTempProfile {
 
 function Get-HcShellFacts {
     $advanced = Get-ItemProperty "$script:ExplorerKey\Advanced" -ErrorAction SilentlyContinue
+    $flags = (Get-ItemProperty $script:DesktopBagKey -ErrorAction SilentlyContinue).FFlags
     $icons = Get-ItemProperty "$script:ExplorerKey\HideDesktopIcons\NewStartPanel" -ErrorAction SilentlyContinue
     $taskbar = (Get-ItemProperty "$script:ExplorerKey\StuckRects3" -ErrorAction SilentlyContinue).Settings
     $search = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' -ErrorAction SilentlyContinue).SearchboxTaskbarMode
@@ -5147,7 +5154,7 @@ function Get-HcShellFacts {
         TempProfile      = Test-HcTempProfile
         ExplorerRunning  = ($explorer.Count -gt 0)
         ExplorerHung     = [bool]@($explorer | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero -and -not $_.Responding }).Count
-        IconsHidden      = ($advanced -and $advanced.HideIcons -eq 1)
+        IconsHidden      = (Test-HcIconsHidden $advanced.HideIcons $flags)
         RecycleBinHidden = ($icons -and $icons.$script:RecycleBinId -eq 1)
         DesktopItems     = $items
         DesktopInOneDrive = ("$desktop" -match '\\OneDrive[^\\]*\\')
@@ -5157,6 +5164,24 @@ function Get-HcShellFacts {
         TabletMode       = ($tablet -eq 1)
         Windows10        = ([Environment]::OSVersion.Version.Build -lt 22000)
     }
+}
+
+# The desktop's view flags decide; HideIcons only counts when they are missing.
+function Test-HcIconsHidden {
+    param($HideIcons, $Flags)
+    if ($null -ne $Flags) { return [bool]((ConvertTo-HcUInt32 $Flags) -band $script:NoIconsFlag) }
+    ($HideIcons -eq 1)
+}
+
+# Registry DWORDs come back as signed Int32; the flag maths needs them unsigned.
+function ConvertTo-HcUInt32 {
+    param($Value)
+    [BitConverter]::ToUInt32([BitConverter]::GetBytes([int32]$Value), 0)
+}
+
+function ConvertTo-HcInt32 {
+    param([uint32]$Value)
+    [BitConverter]::ToInt32([BitConverter]::GetBytes($Value), 0)
 }
 
 # The taskbar's settings are a binary blob; byte 8 is 3 when it hides itself
@@ -5668,10 +5693,27 @@ $script:Fixes = @{
     }
     # The settings below only take effect once Explorer restarts, so each
     # one restarts it, and so does its undo.
+    # Both the desktop's view flags (the real setting) and HideIcons (the copy).
     showDesktopIcons = @{
         Note = 'undo'; Admin = $false
-        Apply = { param($t) Set-HcShellValue $t "$script:ExplorerKey\Advanced" 'HideIcons' 0 }
-        Undo  = { param($t) Undo-HcShellValue $t }
+        Apply = {
+            param($t)
+            $t.SavedHide = (Get-ItemProperty "$script:ExplorerKey\Advanced" -ErrorAction SilentlyContinue).HideIcons
+            $t.SavedFlags = (Get-ItemProperty $script:DesktopBagKey -ErrorAction SilentlyContinue).FFlags
+            New-ItemProperty "$script:ExplorerKey\Advanced" -Name HideIcons -Value 0 -PropertyType DWord -Force -ErrorAction Stop | Out-Null
+            if ($null -ne $t.SavedFlags) {
+                $shown = (ConvertTo-HcUInt32 $t.SavedFlags) -band (-bnot [uint32]$script:NoIconsFlag)
+                New-ItemProperty $script:DesktopBagKey -Name FFlags -Value (ConvertTo-HcInt32 $shown) -PropertyType DWord -Force -ErrorAction Stop | Out-Null
+            }
+            Restart-HcExplorer
+        }
+        Undo = {
+            param($t)
+            if ($null -eq $t.SavedHide) { Remove-ItemProperty "$script:ExplorerKey\Advanced" -Name HideIcons -ErrorAction SilentlyContinue }
+            else { New-ItemProperty "$script:ExplorerKey\Advanced" -Name HideIcons -Value $t.SavedHide -PropertyType DWord -Force -ErrorAction Stop | Out-Null }
+            if ($null -ne $t.SavedFlags) { New-ItemProperty $script:DesktopBagKey -Name FFlags -Value $t.SavedFlags -PropertyType DWord -Force -ErrorAction Stop | Out-Null }
+            Restart-HcExplorer
+        }
     }
     showRecycleBin = @{
         Note = 'undo'; Admin = $false

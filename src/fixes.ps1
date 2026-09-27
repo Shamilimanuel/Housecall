@@ -412,10 +412,27 @@ $script:Fixes = @{
     }
     # The settings below only take effect once Explorer restarts, so each
     # one restarts it, and so does its undo.
+    # Both the desktop's view flags (the real setting) and HideIcons (the copy).
     showDesktopIcons = @{
         Note = 'undo'; Admin = $false
-        Apply = { param($t) Set-HcShellValue $t "$script:ExplorerKey\Advanced" 'HideIcons' 0 }
-        Undo  = { param($t) Undo-HcShellValue $t }
+        Apply = {
+            param($t)
+            $t.SavedHide = (Get-ItemProperty "$script:ExplorerKey\Advanced" -ErrorAction SilentlyContinue).HideIcons
+            $t.SavedFlags = (Get-ItemProperty $script:DesktopBagKey -ErrorAction SilentlyContinue).FFlags
+            New-ItemProperty "$script:ExplorerKey\Advanced" -Name HideIcons -Value 0 -PropertyType DWord -Force -ErrorAction Stop | Out-Null
+            if ($null -ne $t.SavedFlags) {
+                $shown = (ConvertTo-HcUInt32 $t.SavedFlags) -band (-bnot [uint32]$script:NoIconsFlag)
+                New-ItemProperty $script:DesktopBagKey -Name FFlags -Value (ConvertTo-HcInt32 $shown) -PropertyType DWord -Force -ErrorAction Stop | Out-Null
+            }
+            Restart-HcExplorer
+        }
+        Undo = {
+            param($t)
+            if ($null -eq $t.SavedHide) { Remove-ItemProperty "$script:ExplorerKey\Advanced" -Name HideIcons -ErrorAction SilentlyContinue }
+            else { New-ItemProperty "$script:ExplorerKey\Advanced" -Name HideIcons -Value $t.SavedHide -PropertyType DWord -Force -ErrorAction Stop | Out-Null }
+            if ($null -ne $t.SavedFlags) { New-ItemProperty $script:DesktopBagKey -Name FFlags -Value $t.SavedFlags -PropertyType DWord -Force -ErrorAction Stop | Out-Null }
+            Restart-HcExplorer
+        }
     }
     showRecycleBin = @{
         Note = 'undo'; Admin = $false

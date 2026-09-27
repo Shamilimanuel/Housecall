@@ -852,18 +852,25 @@ Describe 'G1: desktop, taskbar and folders' {
         Test-HcTaskbarAutoHide $null | Should Be $false
     }
 
-    It 'shows the icons again, remembers the old value, and puts it back on undo' {
+    It 'reads "no icons" from the desktop''s view flags, the setting Windows really uses' {
+        Test-HcIconsHidden 0 0x48201224 | Should Be $true          # Shamil's PC: HideIcons says shown, the flags say hidden
+        Test-HcIconsHidden 1 0x48200224 | Should Be $false
+        Test-HcIconsHidden 1 $null | Should Be $true               # no view flags yet: the copy counts
+        Test-HcIconsHidden 0 $null | Should Be $false
+        Test-HcIconsHidden 0 ([int32]-2147479004) | Should Be $true  # a flag word with the top bit set comes back negative
+    }
+
+    It 'shows the icons by clearing the flag and HideIcons, and puts both back on undo' {
         Mock Restart-HcExplorer { }
-        Mock Get-ItemProperty { [pscustomobject]@{ HideIcons = 1 } }
-        Mock Test-Path { $true }
+        Mock Get-ItemProperty { [pscustomobject]@{ HideIcons = 1; FFlags = 0x48201224 } }
         $script:ShellSet = New-Object System.Collections.ArrayList
-        Mock New-ItemProperty { [void]$script:ShellSet.Add("$Name=$Value") }
+        # No {0} in a Pester 3 mock body: Pester formats the body as a string itself.
+        Mock New-ItemProperty { [void]$script:ShellSet.Add($Name + '=0x' + (ConvertTo-HcUInt32 $Value).ToString('X8')) }
         $t = @{}
         & $script:Fixes.showDesktopIcons.Apply $t
-        $script:ShellSet[0] | Should Be 'HideIcons=0'
-        $t.Saved | Should Be 1
+        @($script:ShellSet) | Should Be @('HideIcons=0x00000000', 'FFlags=0x48200224')
         & $script:Fixes.showDesktopIcons.Undo $t
-        $script:ShellSet[1] | Should Be 'HideIcons=1'
+        @($script:ShellSet)[2..3] | Should Be @('HideIcons=0x00000001', 'FFlags=0x48201224')
         Assert-MockCalled Restart-HcExplorer -Times 2 -Exactly
     }
 
