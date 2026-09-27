@@ -450,6 +450,41 @@ $script:Fixes = @{
         Apply = { param($t) Start-Process -FilePath $t.Exe -ErrorAction Stop }
         Undo  = $null
     }
+    # Takes one keyboard layout off a language, never its last one. The whole
+    # list is remembered first, so undo puts it back exactly.
+    removeLayout = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            $list = Get-WinUserLanguageList
+            $t.Saved = @($list | ForEach-Object { [pscustomobject]@{ Tag = $_.LanguageTag; Tips = @($_.InputMethodTips) } })
+            $lang = @($list | Where-Object { $_.LanguageTag -eq $t.Tag }) | Select-Object -First 1
+            # Never a language's last layout: that would remove the language,
+            # which can change the Windows display language too.
+            if (-not $lang -or $lang.InputMethodTips.Count -lt 2) { throw (T 'dev.lastLayout') }
+            [void]$lang.InputMethodTips.Remove($t.Tip)
+            Set-WinUserLanguageList $list -Force -ErrorAction Stop
+        }
+        Undo = {
+            param($t)
+            $list = New-WinUserLanguageList $t.Saved[0].Tag
+            $list[0].InputMethodTips.Clear()
+            foreach ($tip in $t.Saved[0].Tips) { $list[0].InputMethodTips.Add($tip) }
+            foreach ($l in @($t.Saved | Select-Object -Skip 1)) {
+                $list.Add($l.Tag)
+                $added = $list[$list.Count - 1]
+                $added.InputMethodTips.Clear()
+                foreach ($tip in $l.Tips) { $added.InputMethodTips.Add($tip) }
+            }
+            Set-WinUserLanguageList $list -Force -ErrorAction Stop
+        }
+    }
+    # The same as pressing the NumLock key.
+    numLockOn = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) if (-not [Console]::NumberLock) { (New-Object -ComObject WScript.Shell).SendKeys('{NUMLOCK}') } }
+        Undo  = { param($t) if ([Console]::NumberLock) { (New-Object -ComObject WScript.Shell).SendKeys('{NUMLOCK}') } }
+    }
     # Settings > Power & battery, through explorer.exe like Default apps.
     openBatterySettings = @{
         Note = 'safe'; Admin = $false; NoLog = $true

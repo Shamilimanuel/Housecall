@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'bbb9824364f3'
+$HcBuild = 'ebf459db0a91'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -407,6 +407,36 @@ $script:Strings = @{
         'dev.jobsStuck'          = '{0} document(s) stuck in the queue, the oldest since {1}'
         'dev.jobsOk'             = 'The print queue is empty'
         'dev.keyboardOk'         = 'Keyboard found'
+        'dev.layouts'            = '{0} keyboard layout(s): {1}'
+        'dev.dutchLayout'        = 'The layout "{0}" is in use: it swaps keys on the keyboards sold in the Netherlands'
+        'dev.deadKeys'           = 'US-International: quote marks and accents wait for the next key'
+        'dev.manyLayouts'        = '{0} keyboard layouts: Alt + Shift or Windows key + Space switches between them'
+        'dev.stickyKeys'         = 'Sticky Keys is on: Shift, Ctrl and Alt stay pressed after one tap'
+        'dev.filterKeys'         = 'Filter Keys is on: short or repeated key presses are ignored'
+        'dev.numLockOff'         = 'NumLock is off: the number keys on the right move the cursor instead'
+        'dev.lastLayout'         = 'This is the language''s only keyboard layout, so it stays.'
+        'finding.dutchLayout'    = 'The keyboard is set to "{0}". Keyboards sold in the Netherlands are laid out as US, so with this setting keys like @, ", ; and ] give other characters.'
+        'advice.dutchLayout'     = 'Switch to United States-International or United States with the steps below.'
+        'finding.manyLayouts'    = 'There are {0} keyboard layouts. Alt + Shift, or Windows key + Space, switches between them, often by accident, and then keys give other characters.'
+        'advice.manyLayouts'     = 'Housecall can remove the one the client does not use below (it can be undone). Ask which one is on the keyboard.'
+        'finding.stickyKeys'     = 'Sticky Keys is on. It is switched on by pressing Shift five times, often by accident, and makes Shift, Ctrl and Alt stay pressed.'
+        'advice.stickyKeys'      = 'Switch it off with the steps below, including the shortcut, so it does not come back.'
+        'finding.filterKeys'     = 'Filter Keys is on. It is switched on by holding Shift for eight seconds, often by accident, and makes the keyboard ignore quick key presses.'
+        'advice.filterKeys'      = 'Switch it off with the steps below, including the shortcut, so it does not come back.'
+        'finding.numLockOff'     = 'NumLock is off, so the number keys on the right move the cursor instead of typing numbers.'
+        'advice.numLockOff'      = 'Housecall can switch it on below, or press the NumLock key.'
+        'finding.deadKeys'       = 'The keyboard is set to United States-International. A quote mark or accent appears only after the next key, so "it does nothing" when typed, and ''+e becomes an accented letter.'
+        'advice.deadKeys'        = 'Press the space bar after a quote mark to get it straight away. Or switch to United States with the steps below.'
+        'fix.removeLayout'       = 'Remove the keyboard layout {0}'
+        'fix.removeLayout.done'  = 'Removed the keyboard layout {0}'
+        'fix.numLockOn'          = 'Switch NumLock on'
+        'fix.numLockOn.done'     = 'Switched NumLock on'
+        'steps.dutchLayout'      = 'Open Settings (Windows key + I) > Time & language > Language & region. | Click the three dots next to the language > Language options. | Under Keyboards, click Add a keyboard and choose United States-International (or United States). | Remove Dutch from that list with the three dots > Remove. | Type @ and " to check.'
+        'steps.manyLayouts'      = 'Ask the client which layout they use (look at the keyboard: most in the Netherlands are United States or United States-International). | Choose the fix above to remove the other one, or do it by hand. | Settings (Windows key + I) > Time & language > Language & region > three dots > Language options > Keyboards > remove the extra one.'
+        'steps.stickyKeys'       = 'Open Settings (Windows key + I) > Accessibility > Keyboard. | Switch off Sticky keys. | Click Sticky keys and switch off the keyboard shortcut, so pressing Shift five times does not switch it on again.'
+        'steps.filterKeys'       = 'Open Settings (Windows key + I) > Accessibility > Keyboard. | Switch off Filter keys. | Click Filter keys and switch off the keyboard shortcut, so holding Shift does not switch it on again.'
+        'steps.numLockOff'       = 'Choose the fix above, or press the NumLock key (top left of the number keys). | The NumLock light on the keyboard comes on. | Numbers still wrong after a restart? NumLock can be switched on at startup in the PC''s BIOS.'
+        'steps.deadKeys'         = 'To type a quote mark straight away: press the quote key and then the space bar. | Prefer quote marks that appear at once? Settings (Windows key + I) > Time & language > Language & region > three dots > Language options > Keyboards. | Add United States, and remove United States-International.'
         'dev.noKeyboard'         = 'No keyboard found'
         'dev.pointerOk'          = 'Mouse or touchpad found'
         'dev.noPointer'          = 'No mouse or touchpad found'
@@ -1520,6 +1550,36 @@ $script:Strings = @{
         'dev.jobsStuck'          = '{0} document(en) vastgelopen in de wachtrij, het oudste sinds {1}'
         'dev.jobsOk'             = 'De afdrukwachtrij is leeg'
         'dev.keyboardOk'         = 'Toetsenbord gevonden'
+        'dev.layouts'            = '{0} toetsenbordindeling(en): {1}'
+        'dev.dutchLayout'        = 'De indeling "{0}" wordt gebruikt: die verwisselt toetsen op de toetsenborden die in Nederland worden verkocht'
+        'dev.deadKeys'           = 'VS-Internationaal: aanhalingstekens en accenten wachten op de volgende toets'
+        'dev.manyLayouts'        = '{0} toetsenbordindelingen: Alt + Shift of Windows-toets + Spatie wisselt ertussen'
+        'dev.stickyKeys'         = 'Plaktoetsen staat aan: Shift, Ctrl en Alt blijven ingedrukt na een tik'
+        'dev.filterKeys'         = 'Filtertoetsen staat aan: korte of herhaalde toetsaanslagen worden genegeerd'
+        'dev.numLockOff'         = 'NumLock staat uit: de cijfertoetsen rechts verplaatsen de cursor in plaats van cijfers te typen'
+        'dev.lastLayout'         = 'Dit is de enige toetsenbordindeling van die taal, dus die blijft staan.'
+        'finding.dutchLayout'    = 'Het toetsenbord staat op "{0}". Toetsenborden die in Nederland worden verkocht zijn ingedeeld als VS, dus met deze instelling geven toetsen als @, ", ; en ] andere tekens.'
+        'advice.dutchLayout'     = 'Zet het op Verenigde Staten (internationaal) of Verenigde Staten met de stappen hieronder.'
+        'finding.manyLayouts'    = 'Er zijn {0} toetsenbordindelingen. Alt + Shift, of Windows-toets + Spatie, wisselt ertussen, vaak per ongeluk, en dan geven toetsen andere tekens.'
+        'advice.manyLayouts'     = 'Housecall kan hieronder de indeling verwijderen die de klant niet gebruikt (kan worden teruggedraaid). Vraag welke op het toetsenbord staat.'
+        'finding.stickyKeys'     = 'Plaktoetsen staat aan. Dat gaat aan door vijf keer op Shift te drukken, vaak per ongeluk, en laat Shift, Ctrl en Alt ingedrukt blijven.'
+        'advice.stickyKeys'      = 'Zet het uit met de stappen hieronder, ook de sneltoets, zodat het niet terugkomt.'
+        'finding.filterKeys'     = 'Filtertoetsen staat aan. Dat gaat aan door Shift acht seconden ingedrukt te houden, vaak per ongeluk, en laat het toetsenbord snelle toetsaanslagen negeren.'
+        'advice.filterKeys'      = 'Zet het uit met de stappen hieronder, ook de sneltoets, zodat het niet terugkomt.'
+        'finding.numLockOff'     = 'NumLock staat uit, dus de cijfertoetsen rechts verplaatsen de cursor in plaats van cijfers te typen.'
+        'advice.numLockOff'      = 'Housecall kan het hieronder aanzetten, of druk op de NumLock-toets.'
+        'finding.deadKeys'       = 'Het toetsenbord staat op Verenigde Staten (internationaal). Een aanhalingsteken of accent verschijnt pas na de volgende toets, dus "het doet niets" bij het typen, en ''+e wordt een letter met accent.'
+        'advice.deadKeys'        = 'Druk na een aanhalingsteken op de spatiebalk om het meteen te krijgen. Of zet het op Verenigde Staten met de stappen hieronder.'
+        'fix.removeLayout'       = 'De toetsenbordindeling {0} verwijderen'
+        'fix.removeLayout.done'  = 'Toetsenbordindeling {0} verwijderd'
+        'fix.numLockOn'          = 'NumLock aanzetten'
+        'fix.numLockOn.done'     = 'NumLock aangezet'
+        'steps.dutchLayout'      = 'Open Instellingen (Windows-toets + I) > Tijd en taal > Taal en regio. | Klik op de drie puntjes naast de taal > Taalopties. | Klik onder Toetsenborden op Een toetsenbord toevoegen en kies Verenigde Staten (internationaal) (of Verenigde Staten). | Verwijder Nederlands uit die lijst met de drie puntjes > Verwijderen. | Typ @ en " om te controleren.'
+        'steps.manyLayouts'      = 'Vraag de klant welke indeling hij of zij gebruikt (kijk op het toetsenbord: de meeste in Nederland zijn Verenigde Staten of Verenigde Staten (internationaal)). | Kies hierboven de oplossing om de andere te verwijderen, of doe het met de hand. | Instellingen (Windows-toets + I) > Tijd en taal > Taal en regio > drie puntjes > Taalopties > Toetsenborden > verwijder de extra indeling.'
+        'steps.stickyKeys'       = 'Open Instellingen (Windows-toets + I) > Toegankelijkheid > Toetsenbord. | Zet Plaktoetsen uit. | Klik op Plaktoetsen en zet de sneltoets uit, zodat vijf keer Shift het niet weer aanzet.'
+        'steps.filterKeys'       = 'Open Instellingen (Windows-toets + I) > Toegankelijkheid > Toetsenbord. | Zet Filtertoetsen uit. | Klik op Filtertoetsen en zet de sneltoets uit, zodat Shift ingedrukt houden het niet weer aanzet.'
+        'steps.numLockOff'       = 'Kies hierboven de oplossing, of druk op de NumLock-toets (linksboven bij de cijfertoetsen). | Het NumLock-lampje op het toetsenbord gaat aan. | Na een herstart weer fout? NumLock kan in het BIOS van de pc bij het opstarten worden aangezet.'
+        'steps.deadKeys'         = 'Om een aanhalingsteken meteen te typen: druk op de aanhalingstekentoets en dan op de spatiebalk. | Liever aanhalingstekens die meteen verschijnen? Instellingen (Windows-toets + I) > Tijd en taal > Taal en regio > drie puntjes > Taalopties > Toetsenborden. | Voeg Verenigde Staten toe, en verwijder Verenigde Staten (internationaal).'
         'dev.noKeyboard'         = 'Geen toetsenbord gevonden'
         'dev.pointerOk'          = 'Muis of touchpad gevonden'
         'dev.noPointer'          = 'Geen muis of touchpad gevonden'
@@ -4178,6 +4238,102 @@ function Get-HcInputFacts {
         Keyboards = @(Get-CimInstance Win32_Keyboard -ErrorAction SilentlyContinue).Count
         Pointers  = @(Get-CimInstance Win32_PointingDevice -ErrorAction SilentlyContinue).Count
         UsbDrives = @(Get-HcUsbDrives)
+        Keyboard  = Get-HcKeyboardFacts
+    }
+}
+
+# ------------------------------------------------ C2: the keyboard itself --
+
+# "My keyboard types the wrong characters": the layouts in use, and the
+# accessibility switches that make a keyboard act strange.
+$script:DutchLayout = '00000413'        # "Nederlands": swaps keys on the US-style keyboards sold in NL
+$script:UsIntlLayout = '00020409'       # US-International: ' and " wait for the next key
+
+# A keyboard layout's name ("United States-International") from its id.
+function Get-HcLayoutName {
+    param([string]$Klid)
+    $key = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layouts\$Klid" -ErrorAction SilentlyContinue
+    if (-not $key) { return $Klid }
+    $name = $null
+    if ($key.'Layout Display Name') { $name = Get-HcIndirectString ([Environment]::ExpandEnvironmentVariables($key.'Layout Display Name')) }
+    if (-not $name) { $name = $key.'Layout Text' }
+    if ($name) { $name } else { $Klid }
+}
+
+# The layouts the session has loaded, for a language list that names none
+# (Windows then uses the language's default layout).
+function Get-HcSessionLayouts {
+    try {
+        if (-not ('Housecall.Layouts' -as [type])) {
+            Add-Type -Namespace Housecall -Name Layouts -MemberDefinition @"
+[DllImport("user32.dll")]
+public static extern int GetKeyboardLayoutList(int count, System.IntPtr[] list);
+public static long[] All() { int n = GetKeyboardLayoutList(0, null); System.IntPtr[] l = new System.IntPtr[n]; GetKeyboardLayoutList(n, l); long[] r = new long[n]; for (int i = 0; i < n; i++) { r[i] = l[i].ToInt64(); } return r; }
+"@
+        }
+        foreach ($hkl in [Housecall.Layouts]::All()) {
+            $device = ($hkl -shr 16) -band 0xFFFF
+            $klid = if (($device -band 0xF000) -eq 0xF000) {
+                $id = '{0:X4}' -f ($device -band 0x0FFF)
+                @(Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layouts' -ErrorAction SilentlyContinue |
+                    Where-Object { (Get-ItemProperty $_.PSPath).'Layout Id' -eq $id }) | Select-Object -First 1 | ForEach-Object { $_.PSChildName }
+            } else { '{0:X8}' -f $device }
+            if ($klid) { [pscustomobject]@{ Tag = $null; Tip = $null; Klid = $klid.ToUpper(); Name = Get-HcLayoutName $klid } }
+        }
+    } catch { }
+}
+
+function Get-HcKeyboardFacts {
+    $layouts = @()
+    try {
+        foreach ($lang in @(Get-WinUserLanguageList -ErrorAction Stop)) {
+            foreach ($tip in @($lang.InputMethodTips)) {
+                if ("$tip" -match '^[0-9A-Fa-f]{4}:([0-9A-Fa-f]{8})$') {
+                    $klid = $Matches[1].ToUpper()
+                    $layouts += [pscustomobject]@{ Tag = $lang.LanguageTag; Tip = "$tip"; Klid = $klid; Name = Get-HcLayoutName $klid }
+                }
+            }
+        }
+    } catch { }
+    if ($layouts.Count -eq 0) { $layouts = @(Get-HcSessionLayouts | Sort-Object Klid -Unique) }
+    $sticky = (Get-ItemProperty 'HKCU:\Control Panel\Accessibility\StickyKeys' -ErrorAction SilentlyContinue).Flags
+    $filter = (Get-ItemProperty 'HKCU:\Control Panel\Accessibility\Keyboard Response' -ErrorAction SilentlyContinue).Flags
+    $numLock = $null
+    try { $numLock = [Console]::NumberLock } catch { }
+    [pscustomobject]@{
+        Layouts    = @($layouts)
+        StickyKeys = [bool]($sticky -and ([int]$sticky -band 1))
+        FilterKeys = [bool]($filter -and ([int]$filter -band 1))
+        NumLock    = $numLock
+    }
+}
+
+function Add-HcKeyboardLines {
+    param([pscustomobject]$Report, [hashtable]$Found, [pscustomobject]$Keyboard)
+    if ($Keyboard.FilterKeys) { Add-HcLine $Report warn (T 'dev.filterKeys'); $Found['filterKeys'] = @() }
+    if ($Keyboard.StickyKeys) { Add-HcLine $Report warn (T 'dev.stickyKeys'); $Found['stickyKeys'] = @() }
+
+    $layouts = @($Keyboard.Layouts)
+    if ($layouts.Count) {
+        Add-HcLine $Report ok (T 'dev.layouts' $layouts.Count (@($layouts | ForEach-Object { $_.Name }) -join ', '))
+        $dutch = @($layouts | Where-Object { $_.Klid -eq $script:DutchLayout }) | Select-Object -First 1
+        if ($dutch) { Add-HcLine $Report warn (T 'dev.dutchLayout' $dutch.Name); $Found['dutchLayout'] = @($dutch.Name) }
+        if (@($layouts | Where-Object { $_.Klid -eq $script:UsIntlLayout }).Count) { Add-HcLine $Report ok (T 'dev.deadKeys'); $Found['deadKeys'] = @() }
+        if ($layouts.Count -gt 1) {
+            Add-HcLine $Report warn (T 'dev.manyLayouts' $layouts.Count)
+            $Found['manyLayouts'] = @($layouts.Count)
+            # One can go, never a language's last one: Shamil picks which,
+            # with the client. A layout that is its language's only one gets steps.
+            foreach ($l in @($layouts | Where-Object { $_.Tip })) {
+                $siblings = @($layouts | Where-Object { $_.Tag -eq $l.Tag -and $_.Tip }).Count
+                if ($siblings -ge 2) { Add-HcAction $Report 'removeLayout' @{ Label = $l.Name; Tag = $l.Tag; Tip = $l.Tip } }
+            }
+        }
+    }
+    if ($Keyboard.NumLock -eq $false) {
+        Add-HcLine $Report warn (T 'dev.numLockOff')
+        Add-HcAction $Report 'numLockOn'
+        $Found['numLockOff'] = @()
     }
 }
 
@@ -4313,6 +4469,7 @@ function Test-HcInputDevices {
     $found = @{}
 
     if ($Facts.Keyboards -gt 0) { Add-HcLine $r ok (T 'dev.keyboardOk') } else { Add-HcLine $r warn (T 'dev.noKeyboard') }
+    if ($Facts.PSObject.Properties['Keyboard'] -and $Facts.Keyboard) { Add-HcKeyboardLines $r $found $Facts.Keyboard }
     if ($Facts.Pointers -gt 0) {
         Add-HcLine $r ok (T 'dev.pointerOk')
     } else {
@@ -4333,7 +4490,7 @@ function Test-HcInputDevices {
     } else {
         foreach ($d in $problems) { Add-HcDeviceProblem $r $found $d }
     }
-    Select-HcFinding $r $found @('noPointer', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'usbNoLetter') 'devicesOk'
+    Select-HcFinding $r $found @('noPointer', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'filterKeys', 'stickyKeys', 'dutchLayout', 'manyLayouts', 'numLockOff', 'usbNoLetter', 'deadKeys') 'devicesOk'
     $r
 }
 
@@ -6478,6 +6635,41 @@ $script:Fixes = @{
         Note = 'safe'; Admin = $false
         Apply = { param($t) Start-Process -FilePath $t.Exe -ErrorAction Stop }
         Undo  = $null
+    }
+    # Takes one keyboard layout off a language, never its last one. The whole
+    # list is remembered first, so undo puts it back exactly.
+    removeLayout = @{
+        Note = 'undo'; Admin = $false
+        Apply = {
+            param($t)
+            $list = Get-WinUserLanguageList
+            $t.Saved = @($list | ForEach-Object { [pscustomobject]@{ Tag = $_.LanguageTag; Tips = @($_.InputMethodTips) } })
+            $lang = @($list | Where-Object { $_.LanguageTag -eq $t.Tag }) | Select-Object -First 1
+            # Never a language's last layout: that would remove the language,
+            # which can change the Windows display language too.
+            if (-not $lang -or $lang.InputMethodTips.Count -lt 2) { throw (T 'dev.lastLayout') }
+            [void]$lang.InputMethodTips.Remove($t.Tip)
+            Set-WinUserLanguageList $list -Force -ErrorAction Stop
+        }
+        Undo = {
+            param($t)
+            $list = New-WinUserLanguageList $t.Saved[0].Tag
+            $list[0].InputMethodTips.Clear()
+            foreach ($tip in $t.Saved[0].Tips) { $list[0].InputMethodTips.Add($tip) }
+            foreach ($l in @($t.Saved | Select-Object -Skip 1)) {
+                $list.Add($l.Tag)
+                $added = $list[$list.Count - 1]
+                $added.InputMethodTips.Clear()
+                foreach ($tip in $l.Tips) { $added.InputMethodTips.Add($tip) }
+            }
+            Set-WinUserLanguageList $list -Force -ErrorAction Stop
+        }
+    }
+    # The same as pressing the NumLock key.
+    numLockOn = @{
+        Note = 'undo'; Admin = $false
+        Apply = { param($t) if (-not [Console]::NumberLock) { (New-Object -ComObject WScript.Shell).SendKeys('{NUMLOCK}') } }
+        Undo  = { param($t) if ([Console]::NumberLock) { (New-Object -ComObject WScript.Shell).SendKeys('{NUMLOCK}') } }
     }
     # Settings > Power & battery, through explorer.exe like Default apps.
     openBatterySettings = @{

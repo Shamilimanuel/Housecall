@@ -906,6 +906,53 @@ Describe 'G1: desktop, taskbar and folders' {
     }
 }
 
+Describe 'C2: the keyboard types the wrong characters' {
+    $script:Lang = 'en'
+    $layout = { param($klid, $name, $tag = 'nl-NL', $tip = $null)
+        [pscustomobject]@{ Tag = $tag; Tip = $(if ($tip) { $tip } else { '0413:' + $klid }); Klid = $klid; Name = $name } }
+    $kb = { param([hashtable]$Change = @{})
+        $k = [pscustomobject]@{ Layouts = @(& $layout '00000409' 'US' 'en-NL' '0409:00000409'); StickyKeys = $false; FilterKeys = $false; NumLock = $true }
+        foreach ($key in $Change.Keys) { $k.$key = $Change[$key] }
+        [pscustomobject]@{ Problems = @(); Keyboards = 1; Pointers = 1; UsbDrives = @(); Keyboard = $k } }
+    $fixIds = { param($r) @($r.Actions | ForEach-Object { $_.FixId }) }
+
+    It 'is happy with one US layout and the switches off (Shamil''s PC)' {
+        $r = Test-HcInputDevices (& $kb)
+        $r.FindingId | Should Be 'devicesOk'
+        @($r.Results | ForEach-Object { $_.Text }) -contains '1 keyboard layout(s): US' | Should Be $true
+        @($r.Actions).Count | Should Be 0
+    }
+
+    It 'finds the Dutch layout that swaps keys on Dutch-sold keyboards' {
+        $r = Test-HcInputDevices (& $kb @{ Layouts = @(& $layout '00000413' 'Dutch') })
+        $r.FindingId | Should Be 'dutchLayout'
+        $r.FindingArgs | Should Be @('Dutch')
+    }
+
+    It 'offers to remove an extra layout, but never a language''s only one' {
+        $two = @((& $layout '00020409' 'US-International' 'nl-NL' '0413:00020409'), (& $layout '00000413' 'Dutch' 'nl-NL' '0413:00000413'))
+        $r = Test-HcInputDevices (& $kb @{ Layouts = $two })
+        $r.FindingId | Should Be 'dutchLayout'             # the cause of wrong keys comes before "two layouts"
+        (& $fixIds $r) | Should Be @('removeLayout', 'removeLayout')
+        @($r.Actions | ForEach-Object { $_.Target.Tip }) | Should Be @('0413:00020409', '0413:00000413')
+        $apart = @((& $layout '00000409' 'US' 'en-US' '0409:00000409'), (& $layout '00000413' 'Dutch' 'nl-NL' '0413:00000413'))
+        @(& $fixIds (Test-HcInputDevices (& $kb @{ Layouts = $apart }))).Count | Should Be 0
+    }
+
+    It 'names Sticky Keys and Filter Keys first, and offers NumLock' {
+        (Test-HcInputDevices (& $kb @{ StickyKeys = $true; Layouts = @(& $layout '00000413' 'Dutch') })).FindingId | Should Be 'stickyKeys'
+        (Test-HcInputDevices (& $kb @{ FilterKeys = $true; StickyKeys = $true })).FindingId | Should Be 'filterKeys'
+        $r = Test-HcInputDevices (& $kb @{ NumLock = $false })
+        $r.FindingId | Should Be 'numLockOff'
+        (& $fixIds $r) | Should Be @('numLockOn')
+        (Test-HcInputDevices (& $kb @{ NumLock = $null })).FindingId | Should Be 'devicesOk'
+    }
+
+    It 'explains US-International quote marks when nothing else is wrong' {
+        (Test-HcInputDevices (& $kb @{ Layouts = @(& $layout '00020409' 'US-International' 'en-NL' '0409:00020409') })).FindingId | Should Be 'deadKeys'
+    }
+}
+
 Describe 'C4: laptop battery' {
     $script:Lang = 'en'
     $bat = { param([hashtable]$Change = @{})

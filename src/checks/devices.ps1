@@ -80,6 +80,102 @@ function Get-HcInputFacts {
         Keyboards = @(Get-CimInstance Win32_Keyboard -ErrorAction SilentlyContinue).Count
         Pointers  = @(Get-CimInstance Win32_PointingDevice -ErrorAction SilentlyContinue).Count
         UsbDrives = @(Get-HcUsbDrives)
+        Keyboard  = Get-HcKeyboardFacts
+    }
+}
+
+# ------------------------------------------------ C2: the keyboard itself --
+
+# "My keyboard types the wrong characters": the layouts in use, and the
+# accessibility switches that make a keyboard act strange.
+$script:DutchLayout = '00000413'        # "Nederlands": swaps keys on the US-style keyboards sold in NL
+$script:UsIntlLayout = '00020409'       # US-International: ' and " wait for the next key
+
+# A keyboard layout's name ("United States-International") from its id.
+function Get-HcLayoutName {
+    param([string]$Klid)
+    $key = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layouts\$Klid" -ErrorAction SilentlyContinue
+    if (-not $key) { return $Klid }
+    $name = $null
+    if ($key.'Layout Display Name') { $name = Get-HcIndirectString ([Environment]::ExpandEnvironmentVariables($key.'Layout Display Name')) }
+    if (-not $name) { $name = $key.'Layout Text' }
+    if ($name) { $name } else { $Klid }
+}
+
+# The layouts the session has loaded, for a language list that names none
+# (Windows then uses the language's default layout).
+function Get-HcSessionLayouts {
+    try {
+        if (-not ('Housecall.Layouts' -as [type])) {
+            Add-Type -Namespace Housecall -Name Layouts -MemberDefinition @"
+[DllImport("user32.dll")]
+public static extern int GetKeyboardLayoutList(int count, System.IntPtr[] list);
+public static long[] All() { int n = GetKeyboardLayoutList(0, null); System.IntPtr[] l = new System.IntPtr[n]; GetKeyboardLayoutList(n, l); long[] r = new long[n]; for (int i = 0; i < n; i++) { r[i] = l[i].ToInt64(); } return r; }
+"@
+        }
+        foreach ($hkl in [Housecall.Layouts]::All()) {
+            $device = ($hkl -shr 16) -band 0xFFFF
+            $klid = if (($device -band 0xF000) -eq 0xF000) {
+                $id = '{0:X4}' -f ($device -band 0x0FFF)
+                @(Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layouts' -ErrorAction SilentlyContinue |
+                    Where-Object { (Get-ItemProperty $_.PSPath).'Layout Id' -eq $id }) | Select-Object -First 1 | ForEach-Object { $_.PSChildName }
+            } else { '{0:X8}' -f $device }
+            if ($klid) { [pscustomobject]@{ Tag = $null; Tip = $null; Klid = $klid.ToUpper(); Name = Get-HcLayoutName $klid } }
+        }
+    } catch { }
+}
+
+function Get-HcKeyboardFacts {
+    $layouts = @()
+    try {
+        foreach ($lang in @(Get-WinUserLanguageList -ErrorAction Stop)) {
+            foreach ($tip in @($lang.InputMethodTips)) {
+                if ("$tip" -match '^[0-9A-Fa-f]{4}:([0-9A-Fa-f]{8})$') {
+                    $klid = $Matches[1].ToUpper()
+                    $layouts += [pscustomobject]@{ Tag = $lang.LanguageTag; Tip = "$tip"; Klid = $klid; Name = Get-HcLayoutName $klid }
+                }
+            }
+        }
+    } catch { }
+    if ($layouts.Count -eq 0) { $layouts = @(Get-HcSessionLayouts | Sort-Object Klid -Unique) }
+    $sticky = (Get-ItemProperty 'HKCU:\Control Panel\Accessibility\StickyKeys' -ErrorAction SilentlyContinue).Flags
+    $filter = (Get-ItemProperty 'HKCU:\Control Panel\Accessibility\Keyboard Response' -ErrorAction SilentlyContinue).Flags
+    $numLock = $null
+    try { $numLock = [Console]::NumberLock } catch { }
+    [pscustomobject]@{
+        Layouts    = @($layouts)
+        StickyKeys = [bool]($sticky -and ([int]$sticky -band 1))
+        FilterKeys = [bool]($filter -and ([int]$filter -band 1))
+        NumLock    = $numLock
+    }
+}
+
+function Add-HcKeyboardLines {
+    param([pscustomobject]$Report, [hashtable]$Found, [pscustomobject]$Keyboard)
+    if ($Keyboard.FilterKeys) { Add-HcLine $Report warn (T 'dev.filterKeys'); $Found['filterKeys'] = @() }
+    if ($Keyboard.StickyKeys) { Add-HcLine $Report warn (T 'dev.stickyKeys'); $Found['stickyKeys'] = @() }
+
+    $layouts = @($Keyboard.Layouts)
+    if ($layouts.Count) {
+        Add-HcLine $Report ok (T 'dev.layouts' $layouts.Count (@($layouts | ForEach-Object { $_.Name }) -join ', '))
+        $dutch = @($layouts | Where-Object { $_.Klid -eq $script:DutchLayout }) | Select-Object -First 1
+        if ($dutch) { Add-HcLine $Report warn (T 'dev.dutchLayout' $dutch.Name); $Found['dutchLayout'] = @($dutch.Name) }
+        if (@($layouts | Where-Object { $_.Klid -eq $script:UsIntlLayout }).Count) { Add-HcLine $Report ok (T 'dev.deadKeys'); $Found['deadKeys'] = @() }
+        if ($layouts.Count -gt 1) {
+            Add-HcLine $Report warn (T 'dev.manyLayouts' $layouts.Count)
+            $Found['manyLayouts'] = @($layouts.Count)
+            # One can go, never a language's last one: Shamil picks which,
+            # with the client. A layout that is its language's only one gets steps.
+            foreach ($l in @($layouts | Where-Object { $_.Tip })) {
+                $siblings = @($layouts | Where-Object { $_.Tag -eq $l.Tag -and $_.Tip }).Count
+                if ($siblings -ge 2) { Add-HcAction $Report 'removeLayout' @{ Label = $l.Name; Tag = $l.Tag; Tip = $l.Tip } }
+            }
+        }
+    }
+    if ($Keyboard.NumLock -eq $false) {
+        Add-HcLine $Report warn (T 'dev.numLockOff')
+        Add-HcAction $Report 'numLockOn'
+        $Found['numLockOff'] = @()
     }
 }
 
@@ -215,6 +311,7 @@ function Test-HcInputDevices {
     $found = @{}
 
     if ($Facts.Keyboards -gt 0) { Add-HcLine $r ok (T 'dev.keyboardOk') } else { Add-HcLine $r warn (T 'dev.noKeyboard') }
+    if ($Facts.PSObject.Properties['Keyboard'] -and $Facts.Keyboard) { Add-HcKeyboardLines $r $found $Facts.Keyboard }
     if ($Facts.Pointers -gt 0) {
         Add-HcLine $r ok (T 'dev.pointerOk')
     } else {
@@ -235,7 +332,7 @@ function Test-HcInputDevices {
     } else {
         foreach ($d in $problems) { Add-HcDeviceProblem $r $found $d }
     }
-    Select-HcFinding $r $found @('noPointer', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'usbNoLetter') 'devicesOk'
+    Select-HcFinding $r $found @('noPointer', 'deviceDisabled', 'deviceError', 'deviceNoDriver', 'filterKeys', 'stickyKeys', 'dutchLayout', 'manyLayouts', 'numLockOff', 'usbNoLetter', 'deadKeys') 'devicesOk'
     $r
 }
 
