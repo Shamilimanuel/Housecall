@@ -542,7 +542,7 @@ Describe 'B: sound, video calls and screen' {
     }
 
     $screen = { param([hashtable]$c = @{})
-        $f = [pscustomobject]@{ Brightness = $null; ColorFilter = $false; HighContrast = $false; Magnifier = $false; Portrait = $false; Scale = 100; TextSize = 100 }
+        $f = [pscustomobject]@{ Brightness = $null; ColorFilter = $false; HighContrast = $false; Magnifier = $false; Portrait = $false; Scale = 100; TextSize = 100; Width = $null; Height = $null; Native = @() }
         foreach ($k in $c.Keys) { $f.$k = $c[$k] }
         $f }
     It 'B3 finds a dark screen, colour filter, high contrast, magnifier and a turned screen' {
@@ -557,6 +557,25 @@ Describe 'B: sound, video calls and screen' {
         $mag.FindingId | Should Be 'magnifier'
         $mag.Actions[0].FixId | Should Be 'closeMagnifier'
         (Test-HcScreen (& $screen @{ Portrait = $true })).FindingId | Should Be 'rotated'
+    }
+
+    It 'B3 finds why everything is suddenly huge: a low resolution, a high scale, big text' {
+        $script:Lang = 'en'
+        $qhd = [pscustomobject]@{ Width = 2560; Height = 1440 }
+        $fhd = [pscustomobject]@{ Width = 1920; Height = 1080 }
+        # Shamil's PC: two screens, the main one at its own resolution.
+        $r = Test-HcScreen (& $screen @{ Width = 2560; Height = 1440; Native = @($qhd, $fhd) })
+        $r.FindingId | Should Be 'screenOk'
+        @($r.Results | ForEach-Object { $_.Text }) -contains 'Resolution 2560 x 1440' | Should Be $true
+        $low = Test-HcScreen (& $screen @{ Width = 1280; Height = 720; Native = @($fhd) })
+        $low.FindingId | Should Be 'lowResolution'
+        $low.FindingArgs | Should Be @('1280 x 720', '1920 x 1080')
+        (Test-HcScreen (& $screen @{ Scale = 225 })).FindingId | Should Be 'bigScale'
+        (Test-HcScreen (& $screen @{ TextSize = 175 })).FindingId | Should Be 'bigText'
+        (Test-HcScreen (& $screen @{ Scale = 150; TextSize = 125 })).FindingId | Should Be 'screenOk'
+        # The Magnifier stays the first suspect when both are there.
+        (Test-HcScreen (& $screen @{ Magnifier = $true; Scale = 250 })).FindingId | Should Be 'magnifier'
+        Test-HcLowResolution 1920 @() | Should Be $null
     }
 
     It 'reads a privacy block from the registry, per app' {

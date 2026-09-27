@@ -89,6 +89,18 @@ function Get-HcScreenFacts {
     $dpi = (Get-ItemProperty 'HKCU:\Control Panel\Desktop\WindowMetrics' -ErrorAction SilentlyContinue).AppliedDPI
     $text = (Get-ItemProperty 'HKCU:\Software\Microsoft\Accessibility' -ErrorAction SilentlyContinue).TextScaleFactor
     $contrast = (Get-ItemProperty 'HKCU:\Control Panel\Accessibility\HighContrast' -ErrorAction SilentlyContinue).Flags
+    # The resolution now, and each screen's own best one (its preferred mode):
+    # a resolution far below it makes everything huge and blurry.
+    $width = $null; $height = $null
+    $video = @(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | Where-Object { $_.CurrentHorizontalResolution }) | Select-Object -First 1
+    if ($video) { $width = [int]$video.CurrentHorizontalResolution; $height = [int]$video.CurrentVerticalResolution }
+    $native = @()
+    try {
+        $native = @(Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorListedSupportedSourceModes -ErrorAction Stop | ForEach-Object {
+            $mode = $_.MonitorSourceModes[$_.PreferredMonitorSourceModeIndex]
+            if ($mode) { [pscustomobject]@{ Width = [int]$mode.HorizontalActivePixels; Height = [int]$mode.VerticalActivePixels } }
+        })
+    } catch { }
     [pscustomobject]@{
         Brightness   = $brightness
         ColorFilter  = ((Get-ItemProperty 'HKCU:\Software\Microsoft\ColorFiltering' -ErrorAction SilentlyContinue).Active -eq 1)
@@ -97,6 +109,9 @@ function Get-HcScreenFacts {
         Portrait     = $portrait
         Scale        = $(if ($dpi) { [int]([int]$dpi * 100 / 96) } else { 100 })
         TextSize     = $(if ($text) { [int]$text } else { 100 })
+        Width        = $width
+        Height       = $height
+        Native       = $native
     }
 }
 
@@ -213,6 +228,22 @@ function Test-HcCalls {
 }
 
 # B3.
+# Settings above these make the screen look zoomed in.
+$script:BigScale = 200
+$script:BigText = 150
+
+# The screen's own best resolution when the one in use is far below it (below
+# 80% of the smallest screen's width, so a second, smaller screen does not
+# count as wrong); $null when it is fine or unknown.
+function Test-HcLowResolution {
+    param($Width, $Native)
+    $screens = @($Native | Where-Object { $_ -and $_.Width })
+    if (-not $Width -or $screens.Count -eq 0) { return $null }
+    $smallest = $screens | Sort-Object Width | Select-Object -First 1
+    if ($Width -lt 0.8 * $smallest.Width) { return $smallest }
+    $null
+}
+
 function Test-HcScreen {
     param([pscustomobject]$Facts)
     $r = New-HcReport
@@ -238,7 +269,19 @@ function Test-HcScreen {
     if ($Facts.Portrait) { Add-HcLine $r warn (T 'scr.rotated'); $found['rotated'] = @() }
     Add-HcLine $r ok (T 'scr.scale' $Facts.Scale $Facts.TextSize)
 
-    Select-HcFinding $r $found @('tooDark', 'colorFilter', 'highContrast', 'magnifier', 'rotated') 'screenOk'
+    # "Everything is suddenly huge": a resolution far below the screen's own,
+    # a very high scale, or very large text.
+    $low = Test-HcLowResolution $Facts.Width $Facts.Native
+    if ($low) {
+        Add-HcLine $r problem (T 'scr.lowRes' $Facts.Width $Facts.Height $low.Width $low.Height)
+        $found['lowResolution'] = @("$($Facts.Width) x $($Facts.Height)", "$($low.Width) x $($low.Height)")
+    } elseif ($Facts.Width) {
+        Add-HcLine $r ok (T 'scr.resolution' $Facts.Width $Facts.Height)
+    }
+    if ($Facts.Scale -ge $script:BigScale) { Add-HcLine $r warn (T 'scr.bigScale' $Facts.Scale); $found['bigScale'] = @($Facts.Scale) }
+    if ($Facts.TextSize -ge $script:BigText) { Add-HcLine $r warn (T 'scr.bigText' $Facts.TextSize); $found['bigText'] = @($Facts.TextSize) }
+
+    Select-HcFinding $r $found @('tooDark', 'colorFilter', 'highContrast', 'magnifier', 'lowResolution', 'bigScale', 'bigText', 'rotated') 'screenOk'
     $r
 }
 

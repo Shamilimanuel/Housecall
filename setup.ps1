@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'e15281f6ebc5'
+$HcBuild = 'bbb9824364f3'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -126,7 +126,7 @@ $script:Strings = @{
         'problem.A4' = 'Email will not send or arrive'
         'problem.B1' = 'No sound'
         'problem.B2' = 'Microphone or camera (video calls)'
-        'problem.B3' = 'Screen too small, too dark or wrong'
+        'problem.B3' = 'Screen too big or small, too dark or wrong'
         'problem.C1' = 'Printer will not print'
         'problem.C2' = 'Mouse, keyboard or USB stick'
         'problem.C3' = 'Bluetooth'
@@ -535,6 +535,19 @@ $script:Strings = @{
         'scr.normal'         = 'No colour filter, high contrast or Magnifier on'
         'scr.rotated'        = 'The main screen stands upright (portrait)'
         'scr.scale'          = 'Scale {0}%, text size {1}%'
+        'scr.resolution'     = 'Resolution {0} x {1}'
+        'scr.lowRes'         = 'Resolution {0} x {1}, far below what the screen can show ({2} x {3})'
+        'scr.bigScale'       = 'The scale is very high ({0}%)'
+        'scr.bigText'        = 'The text size is very large ({0}%)'
+        'finding.lowResolution' = 'The screen is set to {0}, while it is made for {1}. That makes everything huge and blurry.'
+        'advice.lowResolution'  = 'Set the resolution back with the steps below: the one marked (Recommended).'
+        'finding.bigScale'      = 'Windows enlarges everything to {0}%. That is why everything looks huge.'
+        'advice.bigScale'       = 'Set the scale back with the steps below. Some clients like it big: ask first.'
+        'finding.bigText'       = 'The text size is set to {0}%. That is why the letters look huge.'
+        'advice.bigText'        = 'Set the text size back with the steps below. Some clients like it big: ask first.'
+        'steps.lowResolution'   = 'Open Settings (Windows key + I) > System > Display. | Click the right screen at the top, if there are more. | Under Display resolution, choose the one marked (Recommended), and click Keep changes. | Only big inside the browser? Press Ctrl + 0 (zero) there.'
+        'steps.bigScale'        = 'Open Settings (Windows key + I) > System > Display. | Under Scale, choose the one marked (Recommended), often 100% or 125%. | Some programs look right only after signing out and in again. | Only big inside the browser? Press Ctrl + 0 (zero) there.'
+        'steps.bigText'         = 'Open Settings (Windows key + I) > Accessibility > Text size. | Drag the slider back to the left (100%) and click Apply. | Only big inside the browser? Press Ctrl + 0 (zero) there.'
 
         # ---- B: findings, and what to do about each
         'finding.audioServiceStopped' = 'The sound service is not running, so no sound can play.'
@@ -1226,7 +1239,7 @@ $script:Strings = @{
         'problem.A4' = 'E-mail verzenden of ontvangen lukt niet'
         'problem.B1' = 'Geen geluid'
         'problem.B2' = 'Microfoon of camera (videobellen)'
-        'problem.B3' = 'Scherm te klein, te donker of verkeerd'
+        'problem.B3' = 'Scherm te groot of klein, te donker of verkeerd'
         'problem.C1' = 'De printer print niet'
         'problem.C2' = 'Muis, toetsenbord of USB-stick'
         'problem.C3' = 'Bluetooth'
@@ -1635,6 +1648,19 @@ $script:Strings = @{
         'scr.normal'         = 'Geen kleurenfilter, hoog contrast of Vergrootglas aan'
         'scr.rotated'        = 'Het hoofdscherm staat rechtop (staand)'
         'scr.scale'          = 'Schaal {0}%, tekstgrootte {1}%'
+        'scr.resolution'     = 'Resolutie {0} x {1}'
+        'scr.lowRes'         = 'Resolutie {0} x {1}, ver onder wat het scherm kan ({2} x {3})'
+        'scr.bigScale'       = 'De schaal staat heel hoog ({0}%)'
+        'scr.bigText'        = 'De tekstgrootte staat heel groot ({0}%)'
+        'finding.lowResolution' = 'Het scherm staat op {0}, terwijl het gemaakt is voor {1}. Daardoor is alles groot en wazig.'
+        'advice.lowResolution'  = 'Zet de resolutie terug met de stappen hieronder: die met (Aanbevolen).'
+        'finding.bigScale'      = 'Windows vergroot alles tot {0}%. Daarom ziet alles er zo groot uit.'
+        'advice.bigScale'       = 'Zet de schaal terug met de stappen hieronder. Sommige klanten willen het juist groot: vraag het eerst.'
+        'finding.bigText'       = 'De tekstgrootte staat op {0}%. Daarom zijn de letters zo groot.'
+        'advice.bigText'        = 'Zet de tekstgrootte terug met de stappen hieronder. Sommige klanten willen het juist groot: vraag het eerst.'
+        'steps.lowResolution'   = 'Open Instellingen (Windows-toets + I) > Systeem > Beeldscherm. | Klik bovenaan op het juiste scherm, als er meer zijn. | Kies bij Beeldschermresolutie die met (Aanbevolen) en klik op Wijzigingen behouden. | Alleen groot in de browser? Druk daar op Ctrl + 0 (nul).'
+        'steps.bigScale'        = 'Open Instellingen (Windows-toets + I) > Systeem > Beeldscherm. | Kies bij Schaal die met (Aanbevolen), vaak 100% of 125%. | Sommige programma''s zien er pas goed uit na af- en weer aanmelden. | Alleen groot in de browser? Druk daar op Ctrl + 0 (nul).'
+        'steps.bigText'         = 'Open Instellingen (Windows-toets + I) > Toegankelijkheid > Tekstgrootte. | Sleep de schuif terug naar links (100%) en klik op Toepassen. | Alleen groot in de browser? Druk daar op Ctrl + 0 (nul).'
 
         # ---- B: findings, and what to do about each
         'finding.audioServiceStopped' = 'De geluidsservice draait niet, dus er kan geen geluid klinken.'
@@ -4771,6 +4797,18 @@ function Get-HcScreenFacts {
     $dpi = (Get-ItemProperty 'HKCU:\Control Panel\Desktop\WindowMetrics' -ErrorAction SilentlyContinue).AppliedDPI
     $text = (Get-ItemProperty 'HKCU:\Software\Microsoft\Accessibility' -ErrorAction SilentlyContinue).TextScaleFactor
     $contrast = (Get-ItemProperty 'HKCU:\Control Panel\Accessibility\HighContrast' -ErrorAction SilentlyContinue).Flags
+    # The resolution now, and each screen's own best one (its preferred mode):
+    # a resolution far below it makes everything huge and blurry.
+    $width = $null; $height = $null
+    $video = @(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | Where-Object { $_.CurrentHorizontalResolution }) | Select-Object -First 1
+    if ($video) { $width = [int]$video.CurrentHorizontalResolution; $height = [int]$video.CurrentVerticalResolution }
+    $native = @()
+    try {
+        $native = @(Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorListedSupportedSourceModes -ErrorAction Stop | ForEach-Object {
+            $mode = $_.MonitorSourceModes[$_.PreferredMonitorSourceModeIndex]
+            if ($mode) { [pscustomobject]@{ Width = [int]$mode.HorizontalActivePixels; Height = [int]$mode.VerticalActivePixels } }
+        })
+    } catch { }
     [pscustomobject]@{
         Brightness   = $brightness
         ColorFilter  = ((Get-ItemProperty 'HKCU:\Software\Microsoft\ColorFiltering' -ErrorAction SilentlyContinue).Active -eq 1)
@@ -4779,6 +4817,9 @@ function Get-HcScreenFacts {
         Portrait     = $portrait
         Scale        = $(if ($dpi) { [int]([int]$dpi * 100 / 96) } else { 100 })
         TextSize     = $(if ($text) { [int]$text } else { 100 })
+        Width        = $width
+        Height       = $height
+        Native       = $native
     }
 }
 
@@ -4895,6 +4936,22 @@ function Test-HcCalls {
 }
 
 # B3.
+# Settings above these make the screen look zoomed in.
+$script:BigScale = 200
+$script:BigText = 150
+
+# The screen's own best resolution when the one in use is far below it (below
+# 80% of the smallest screen's width, so a second, smaller screen does not
+# count as wrong); $null when it is fine or unknown.
+function Test-HcLowResolution {
+    param($Width, $Native)
+    $screens = @($Native | Where-Object { $_ -and $_.Width })
+    if (-not $Width -or $screens.Count -eq 0) { return $null }
+    $smallest = $screens | Sort-Object Width | Select-Object -First 1
+    if ($Width -lt 0.8 * $smallest.Width) { return $smallest }
+    $null
+}
+
 function Test-HcScreen {
     param([pscustomobject]$Facts)
     $r = New-HcReport
@@ -4920,7 +4977,19 @@ function Test-HcScreen {
     if ($Facts.Portrait) { Add-HcLine $r warn (T 'scr.rotated'); $found['rotated'] = @() }
     Add-HcLine $r ok (T 'scr.scale' $Facts.Scale $Facts.TextSize)
 
-    Select-HcFinding $r $found @('tooDark', 'colorFilter', 'highContrast', 'magnifier', 'rotated') 'screenOk'
+    # "Everything is suddenly huge": a resolution far below the screen's own,
+    # a very high scale, or very large text.
+    $low = Test-HcLowResolution $Facts.Width $Facts.Native
+    if ($low) {
+        Add-HcLine $r problem (T 'scr.lowRes' $Facts.Width $Facts.Height $low.Width $low.Height)
+        $found['lowResolution'] = @("$($Facts.Width) x $($Facts.Height)", "$($low.Width) x $($low.Height)")
+    } elseif ($Facts.Width) {
+        Add-HcLine $r ok (T 'scr.resolution' $Facts.Width $Facts.Height)
+    }
+    if ($Facts.Scale -ge $script:BigScale) { Add-HcLine $r warn (T 'scr.bigScale' $Facts.Scale); $found['bigScale'] = @($Facts.Scale) }
+    if ($Facts.TextSize -ge $script:BigText) { Add-HcLine $r warn (T 'scr.bigText' $Facts.TextSize); $found['bigText'] = @($Facts.TextSize) }
+
+    Select-HcFinding $r $found @('tooDark', 'colorFilter', 'highContrast', 'magnifier', 'lowResolution', 'bigScale', 'bigText', 'rotated') 'screenOk'
     $r
 }
 
