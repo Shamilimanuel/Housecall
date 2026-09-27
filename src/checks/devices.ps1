@@ -171,6 +171,10 @@ function Add-HcKeyboardLines {
                 if ($siblings -ge 2) { Add-HcAction $Report 'removeLayout' @{ Label = $l.Name; Tag = $l.Tag; Tip = $l.Tip } }
             }
         }
+        # Settings is where the rest is done: a language's only layout, or
+        # layouts Windows does not list per language (then read from the
+        # session, as on a PC set to English (Netherlands)).
+        if ($Found.ContainsKey('dutchLayout') -or $Found.ContainsKey('manyLayouts')) { Add-HcAction $Report 'openKeyboardSettings' }
     }
     if ($Keyboard.NumLock -eq $false) {
         Add-HcLine $Report warn (T 'dev.numLockOff')

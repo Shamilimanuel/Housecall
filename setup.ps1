@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = '587985b65747'
+$HcBuild = 'a93ad89a4cf9'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -418,7 +418,7 @@ $script:Strings = @{
         'finding.dutchLayout'    = 'The keyboard is set to "{0}". Keyboards sold in the Netherlands are laid out as US, so with this setting keys like @, ", ; and ] give other characters.'
         'advice.dutchLayout'     = 'Switch to United States-International or United States with the steps below.'
         'finding.manyLayouts'    = 'There are {0} keyboard layouts. Alt + Shift, or Windows key + Space, switches between them, often by accident, and then keys give other characters.'
-        'advice.manyLayouts'     = 'Housecall can remove the one the client does not use below (it can be undone). Ask which one is on the keyboard.'
+        'advice.manyLayouts'     = 'Ask which layout is on the keyboard, then remove the other one with an option below.'
         'finding.stickyKeys'     = 'Sticky Keys is on. It is switched on by pressing Shift five times, often by accident, and makes Shift, Ctrl and Alt stay pressed.'
         'advice.stickyKeys'      = 'Switch it off with the steps below, including the shortcut, so it does not come back.'
         'finding.filterKeys'     = 'Filter Keys is on. It is switched on by holding Shift for eight seconds, often by accident, and makes the keyboard ignore quick key presses.'
@@ -432,7 +432,7 @@ $script:Strings = @{
         'fix.numLockOn'          = 'Switch NumLock on'
         'fix.numLockOn.done'     = 'Switched NumLock on'
         'steps.dutchLayout'      = 'Open Settings (Windows key + I) > Time & language > Language & region. | Click the three dots next to the language > Language options. | Under Keyboards, click Add a keyboard and choose United States-International (or United States). | Remove Dutch from that list with the three dots > Remove. | Type @ and " to check.'
-        'steps.manyLayouts'      = 'Ask the client which layout they use (look at the keyboard: most in the Netherlands are United States or United States-International). | Choose the fix above to remove the other one, or do it by hand. | Settings (Windows key + I) > Time & language > Language & region > three dots > Language options > Keyboards > remove the extra one.'
+        'steps.manyLayouts'      = 'Ask the client which layout they use (look at the keyboard: most in the Netherlands are United States or United States-International). | Remove the other one with an option above, or do it by hand. | Settings (Windows key + I) > Time & language > Language & region > three dots > Language options > Keyboards > remove the extra one.'
         'steps.stickyKeys'       = 'Open Settings (Windows key + I) > Accessibility > Keyboard. | Switch off Sticky keys. | Click Sticky keys and switch off the keyboard shortcut, so pressing Shift five times does not switch it on again.'
         'steps.filterKeys'       = 'Open Settings (Windows key + I) > Accessibility > Keyboard. | Switch off Filter keys. | Click Filter keys and switch off the keyboard shortcut, so holding Shift does not switch it on again.'
         'steps.numLockOff'       = 'Choose the fix above, or press the NumLock key (top left of the number keys). | The NumLock light on the keyboard comes on. | Numbers still wrong after a restart? NumLock can be switched on at startup in the PC''s BIOS.'
@@ -1000,6 +1000,8 @@ $script:Strings = @{
         'advice.batteryOk'         = 'Runs out fast anyway? A bright screen and many open programs use the most power; the steps below help.'
         'fix.openBatterySettings'      = 'Open the battery settings'
         'fix.openBatterySettings.done' = 'Opened the battery settings'
+        'fix.openKeyboardSettings'      = 'Open the language and keyboard settings'
+        'fix.openKeyboardSettings.done' = 'Opened the language and keyboard settings'
         'steps.batteryMissing'     = 'Shut the laptop down and unplug it. | If the battery can be taken out (a latch underneath), take it out and put it back firmly. | Still no battery? Note the laptop''s model (sticker underneath) and order a battery for exactly that model, or plan the replacement as a separate job.'
         'steps.notCharging'        = 'Check that the charger is firmly in the laptop and in the wall socket; try another socket. | Look at the charging light on the laptop or the charger, if there is one. | Try a different charger of the same type, if one is available. | Still not charging: the charger or the battery is broken. Note the model (sticker underneath) and order the right part.'
         'steps.batteryWorn'        = 'Note the laptop''s model (sticker underneath) and look up a battery for exactly that model. | Until then, the laptop works normally while plugged in. | Plan replacing the battery as a separate job.'
@@ -1572,7 +1574,7 @@ $script:Strings = @{
         'finding.dutchLayout'    = 'Het toetsenbord staat op "{0}". Toetsenborden die in Nederland worden verkocht zijn ingedeeld als VS, dus met deze instelling geven toetsen als @, ", ; en ] andere tekens.'
         'advice.dutchLayout'     = 'Zet het op Verenigde Staten (internationaal) of Verenigde Staten met de stappen hieronder.'
         'finding.manyLayouts'    = 'Er zijn {0} toetsenbordindelingen. Alt + Shift, of Windows-toets + Spatie, wisselt ertussen, vaak per ongeluk, en dan geven toetsen andere tekens.'
-        'advice.manyLayouts'     = 'Housecall kan hieronder de indeling verwijderen die de klant niet gebruikt (kan worden teruggedraaid). Vraag welke op het toetsenbord staat.'
+        'advice.manyLayouts'     = 'Vraag welke indeling op het toetsenbord staat en verwijder de andere met een optie hieronder.'
         'finding.stickyKeys'     = 'Plaktoetsen staat aan. Dat gaat aan door vijf keer op Shift te drukken, vaak per ongeluk, en laat Shift, Ctrl en Alt ingedrukt blijven.'
         'advice.stickyKeys'      = 'Zet het uit met de stappen hieronder, ook de sneltoets, zodat het niet terugkomt.'
         'finding.filterKeys'     = 'Filtertoetsen staat aan. Dat gaat aan door Shift acht seconden ingedrukt te houden, vaak per ongeluk, en laat het toetsenbord snelle toetsaanslagen negeren.'
@@ -1586,7 +1588,7 @@ $script:Strings = @{
         'fix.numLockOn'          = 'NumLock aanzetten'
         'fix.numLockOn.done'     = 'NumLock aangezet'
         'steps.dutchLayout'      = 'Open Instellingen (Windows-toets + I) > Tijd en taal > Taal en regio. | Klik op de drie puntjes naast de taal > Taalopties. | Klik onder Toetsenborden op Een toetsenbord toevoegen en kies Verenigde Staten (internationaal) (of Verenigde Staten). | Verwijder Nederlands uit die lijst met de drie puntjes > Verwijderen. | Typ @ en " om te controleren.'
-        'steps.manyLayouts'      = 'Vraag de klant welke indeling hij of zij gebruikt (kijk op het toetsenbord: de meeste in Nederland zijn Verenigde Staten of Verenigde Staten (internationaal)). | Kies hierboven de oplossing om de andere te verwijderen, of doe het met de hand. | Instellingen (Windows-toets + I) > Tijd en taal > Taal en regio > drie puntjes > Taalopties > Toetsenborden > verwijder de extra indeling.'
+        'steps.manyLayouts'      = 'Vraag de klant welke indeling hij of zij gebruikt (kijk op het toetsenbord: de meeste in Nederland zijn Verenigde Staten of Verenigde Staten (internationaal)). | Verwijder de andere met een optie hierboven, of doe het met de hand. | Instellingen (Windows-toets + I) > Tijd en taal > Taal en regio > drie puntjes > Taalopties > Toetsenborden > verwijder de extra indeling.'
         'steps.stickyKeys'       = 'Open Instellingen (Windows-toets + I) > Toegankelijkheid > Toetsenbord. | Zet Plaktoetsen uit. | Klik op Plaktoetsen en zet de sneltoets uit, zodat vijf keer Shift het niet weer aanzet.'
         'steps.filterKeys'       = 'Open Instellingen (Windows-toets + I) > Toegankelijkheid > Toetsenbord. | Zet Filtertoetsen uit. | Klik op Filtertoetsen en zet de sneltoets uit, zodat Shift ingedrukt houden het niet weer aanzet.'
         'steps.numLockOff'       = 'Kies hierboven de oplossing, of druk op de NumLock-toets (linksboven bij de cijfertoetsen). | Het NumLock-lampje op het toetsenbord gaat aan. | Na een herstart weer fout? NumLock kan in het BIOS van de pc bij het opstarten worden aangezet.'
@@ -2154,6 +2156,8 @@ $script:Strings = @{
         'advice.batteryOk'         = 'Toch snel leeg? Een fel scherm en veel open programma''s verbruiken het meest; de stappen hieronder helpen.'
         'fix.openBatterySettings'      = 'De accu-instellingen openen'
         'fix.openBatterySettings.done' = 'Accu-instellingen geopend'
+        'fix.openKeyboardSettings'      = 'De taal- en toetsenbordinstellingen openen'
+        'fix.openKeyboardSettings.done' = 'Taal- en toetsenbordinstellingen geopend'
         'steps.batteryMissing'     = 'Sluit de laptop af en haal de stekker eruit. | Kan de accu eruit (een schuifje aan de onderkant)? Haal hem eruit en zet hem stevig terug. | Nog steeds geen accu? Noteer het model van de laptop (sticker aan de onderkant) en bestel een accu voor precies dat model, of plan het vervangen als aparte klus.'
         'steps.notCharging'        = 'Controleer of de lader stevig in de laptop en in het stopcontact zit; probeer een ander stopcontact. | Kijk naar het oplaadlampje op de laptop of de lader, als dat er is. | Probeer een andere lader van hetzelfde type, als die er is. | Laadt hij nog steeds niet: de lader of de accu is kapot. Noteer het model (sticker aan de onderkant) en bestel het juiste onderdeel.'
         'steps.batteryWorn'        = 'Noteer het model van de laptop (sticker aan de onderkant) en zoek een accu voor precies dat model. | Tot die tijd werkt de laptop gewoon met de stekker erin. | Plan het vervangen van de accu als aparte klus.'
@@ -4351,6 +4355,10 @@ function Add-HcKeyboardLines {
                 if ($siblings -ge 2) { Add-HcAction $Report 'removeLayout' @{ Label = $l.Name; Tag = $l.Tag; Tip = $l.Tip } }
             }
         }
+        # Settings is where the rest is done: a language's only layout, or
+        # layouts Windows does not list per language (then read from the
+        # session, as on a PC set to English (Netherlands)).
+        if ($Found.ContainsKey('dutchLayout') -or $Found.ContainsKey('manyLayouts')) { Add-HcAction $Report 'openKeyboardSettings' }
     }
     if ($Keyboard.NumLock -eq $false) {
         Add-HcLine $Report warn (T 'dev.numLockOff')
@@ -6747,6 +6755,12 @@ $script:Fixes = @{
     openBatterySettings = @{
         Note = 'safe'; Admin = $false; NoLog = $true
         Apply = { param($t) Start-Process explorer.exe -ArgumentList 'ms-settings:batterysaver' -ErrorAction Stop }
+        Undo  = $null
+    }
+    # Settings > Time & language > Language & region, for the keyboard layouts.
+    openKeyboardSettings = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = { param($t) Start-Process explorer.exe -ArgumentList 'ms-settings:regionlanguage' -ErrorAction Stop }
         Undo  = $null
     }
     # Opens a folder in File Explorer (Downloads, or where a browser saves).

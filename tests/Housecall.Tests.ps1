@@ -955,10 +955,19 @@ Describe 'C2: the keyboard types the wrong characters' {
         $two = @((& $layout '00020409' 'US-International' 'nl-NL' '0413:00020409'), (& $layout '00000413' 'Dutch' 'nl-NL' '0413:00000413'))
         $r = Test-HcInputDevices (& $kb @{ Layouts = $two })
         $r.FindingId | Should Be 'dutchLayout'             # the cause of wrong keys comes before "two layouts"
-        (& $fixIds $r) | Should Be @('removeLayout', 'removeLayout')
-        @($r.Actions | ForEach-Object { $_.Target.Tip }) | Should Be @('0413:00020409', '0413:00000413')
+        (& $fixIds $r) | Should Be @('removeLayout', 'removeLayout', 'openKeyboardSettings')
+        @($r.Actions | Where-Object { $_.FixId -eq 'removeLayout' } | ForEach-Object { $_.Target.Tip }) | Should Be @('0413:00020409', '0413:00000413')
         $apart = @((& $layout '00000409' 'US' 'en-US' '0409:00000409'), (& $layout '00000413' 'Dutch' 'nl-NL' '0413:00000413'))
-        @(& $fixIds (Test-HcInputDevices (& $kb @{ Layouts = $apart }))).Count | Should Be 0
+        (& $fixIds (Test-HcInputDevices (& $kb @{ Layouts = $apart }))) | Should Be 'openKeyboardSettings'
+    }
+
+    It 'opens Settings for layouts read from the session, which cannot be removed here (Shamil''s PC)' {
+        $session = @(
+            [pscustomobject]@{ Tag = $null; Tip = $null; Klid = '00000409'; Name = 'US' },
+            [pscustomobject]@{ Tag = $null; Tip = $null; Klid = '00000807'; Name = 'Swiss German' })
+        $r = Test-HcInputDevices (& $kb @{ Layouts = $session })
+        $r.FindingId | Should Be 'manyLayouts'
+        (& $fixIds $r) | Should Be 'openKeyboardSettings'
     }
 
     It 'names Sticky Keys and Filter Keys first, and offers NumLock' {
