@@ -781,6 +781,28 @@ Describe 'E: Windows and updates' {
         (Test-HcErrors (& $err @{ Crashes = @([pscustomobject]@{ Name = 'EXCEL'; Count = 2 }) })).FindingArgs | Should Be @('EXCEL')
     }
 
+    It 'E2 finds a time zone that does not fit the country, by its clock and not its name' {
+        $zone = { param($id) [TimeZoneInfo]::FindSystemTimeZoneById($id) }
+        $tz = { param($id, $country = 'NL', [hashtable]$c = @{})
+            $f = & $err $c
+            $f | Add-Member TimeZone (& $zone $id)
+            $f | Add-Member Country $country
+            $f | Add-Member AutoTimeOff $false
+            $f }
+        (Test-HcErrors (& $tz 'W. Europe Standard Time')).FindingId | Should Be 'errorsOk'          # Shamil's PC
+        (Test-HcErrors (& $tz 'Central Europe Standard Time')).FindingId | Should Be 'errorsOk'     # the same clock
+        $wrong = Test-HcErrors (& $tz 'GMT Standard Time')
+        $wrong.FindingId | Should Be 'wrongTimeZone'
+        $fix = @($wrong.Actions | Where-Object { $_.FixId -eq 'setTimeZone' })[0]
+        $fix.Target.Id | Should Be 'W. Europe Standard Time'
+        $fix.Target.Previous | Should Be 'GMT Standard Time'
+        (Test-HcErrors (& $tz 'GMT Standard Time' 'XX')).FindingId | Should Be 'errorsOk'           # an unknown country is not judged
+        (Test-HcErrors (& $tz 'W. Europe Standard Time' 'BE')).FindingId | Should Be 'errorsOk'    # Brussels runs the same clock
+        $drift = & $tz 'W. Europe Standard Time'
+        $drift.AutoTimeOff = $true
+        (Test-HcErrors $drift).FindingId | Should Be 'autoTimeOff'
+    }
+
     It 'E3 finds a waiting restart, fast startup and a long uptime' {
         $sd = { param([hashtable]$c = @{}) $f = [pscustomobject]@{ RebootPending = $false; FastStartup = $false; UptimeDays = 1 }; foreach ($k in $c.Keys) { $f.$k = $c[$k] }; $f }
         (Test-HcShutdown (& $sd)).FindingId | Should Be 'shutdownOk'

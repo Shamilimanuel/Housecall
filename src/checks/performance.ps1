@@ -119,7 +119,7 @@ function Get-HcPerformanceFacts {
         $since = (Get-Date).AddDays(-7)
         try {
             $f.CrashApps = @(Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Id = 1000, 1002; StartTime = $since } -ErrorAction Stop |
-                Group-Object { ([string]$_.Properties[0].Value) -replace '\.exe$', '' } | Where-Object { $_.Name -notmatch $script:WindowsHelpers } |
+                Group-Object { (Split-Path -Leaf ([string]$_.Properties[0].Value)) -replace '\.exe$', '' } | Where-Object { $_.Name -notmatch $script:WindowsHelpers } |
                 Sort-Object Count -Descending | Select-Object -First 5 |
                 ForEach-Object { [pscustomobject]@{ Name = $_.Name; Count = $_.Count } })
         } catch { }

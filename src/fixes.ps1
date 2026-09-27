@@ -371,6 +371,13 @@ $script:Fixes = @{
     # DISM repairs Windows' own store of system files (from Windows Update),
     # then SFC repairs the files in use from that store. Their progress shows
     # in the window while they run.
+    # Needs admin: Set-TimeZone from a normal PowerShell failed on Shamil's PC
+    # with "a required privilege is not held" (27 Sep). Undo puts the old one back.
+    setTimeZone = @{
+        Note = 'undo'; Admin = $true
+        Apply = { param($t) Set-TimeZone -Id $t.Id -ErrorAction Stop }
+        Undo  = { param($t) Set-TimeZone -Id $t.Previous -ErrorAction Stop }
+    }
     repairWindows = @{
         Note = 'long'; Admin = $true
         Apply = {

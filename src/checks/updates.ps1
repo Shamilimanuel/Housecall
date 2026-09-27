@@ -69,6 +69,30 @@ function Get-HcClockOffset {
     }
 }
 
+# The time zone a client in these countries should have. Only compared by
+# offset and summer time, so a zone with the same clock (Berlin for a Dutch
+# client) is not called wrong. Countries not listed are not judged.
+$script:CountryTimeZone = @{
+    NL = 'W. Europe Standard Time'; DE = 'W. Europe Standard Time'; LU = 'W. Europe Standard Time'
+    BE = 'Romance Standard Time'; FR = 'Romance Standard Time'; ES = 'Romance Standard Time'
+    GB = 'GMT Standard Time'; IE = 'GMT Standard Time'
+    SR = 'SA Eastern Standard Time'; AW = 'SA Western Standard Time'; CW = 'SA Western Standard Time'; BQ = 'SA Western Standard Time'
+}
+
+# The expected zone when the current one runs a different clock; $null when
+# it is fine or the country is not known.
+function Get-HcExpectedTimeZone {
+    param([string]$Country, [string]$CurrentId)
+    $expectedId = $script:CountryTimeZone[$Country]
+    if (-not $expectedId -or -not $CurrentId) { return $null }
+    try {
+        $expected = [TimeZoneInfo]::FindSystemTimeZoneById($expectedId)
+        $current = [TimeZoneInfo]::FindSystemTimeZoneById($CurrentId)
+    } catch { return $null }
+    if ($expected.BaseUtcOffset -eq $current.BaseUtcOffset -and $expected.SupportsDaylightSavingTime -eq $current.SupportsDaylightSavingTime) { return $null }
+    $expected
+}
+
 function Get-HcErrorFacts {
     $activated = $null
     try {
@@ -78,12 +102,15 @@ function Get-HcErrorFacts {
     $crashes = @()
     try {
         $crashes = @(Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Id = 1000, 1002; StartTime = (Get-Date).AddDays(-3) } -ErrorAction Stop |
-            Group-Object { ([string]$_.Properties[0].Value) -replace '\.exe$', '' } | Where-Object { $_.Name -notmatch $script:WindowsHelpers } |
+            Group-Object { (Split-Path -Leaf ([string]$_.Properties[0].Value)) -replace '\.exe$', '' } | Where-Object { $_.Name -notmatch $script:WindowsHelpers } |
             Sort-Object Count -Descending | Select-Object -First 3 | ForEach-Object { [pscustomobject]@{ Name = $_.Name; Count = $_.Count } })
     } catch { }
     [pscustomobject]@{
         Activated     = $activated
         ClockOffset   = Get-HcClockOffset
+        TimeZone      = (Get-TimeZone -ErrorAction SilentlyContinue)
+        Country       = (Get-ItemProperty 'HKCU:\Control Panel\International\Geo' -ErrorAction SilentlyContinue).Name
+        AutoTimeOff   = ((Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters' -ErrorAction SilentlyContinue).Type -eq 'NoSync')
         RebootPending = Test-HcRebootPending
         Crashes       = $crashes
     }
@@ -178,6 +205,22 @@ function Test-HcErrors {
     } else {
         Add-HcLine $r ok (T 'err.clockOk')
     }
+    # The clock check above compares universal time, so a wrong time zone
+    # passes it while the clock on screen is hours off.
+    if ($Facts.PSObject.Properties['TimeZone'] -and $Facts.TimeZone) {
+        $expected = Get-HcExpectedTimeZone $Facts.Country $Facts.TimeZone.Id
+        if ($expected) {
+            Add-HcLine $r problem (T 'err.timeZoneWrong' $Facts.TimeZone.DisplayName $expected.DisplayName)
+            Add-HcAction $r 'setTimeZone' @{ Label = $expected.DisplayName; Id = $expected.Id; Previous = $Facts.TimeZone.Id }
+            $found['wrongTimeZone'] = @($Facts.TimeZone.DisplayName, $expected.DisplayName)
+        } else {
+            Add-HcLine $r ok (T 'err.timeZone' $Facts.TimeZone.DisplayName)
+        }
+    }
+    if ($Facts.PSObject.Properties['AutoTimeOff'] -and $Facts.AutoTimeOff) {
+        Add-HcLine $r warn (T 'err.autoTimeOff')
+        $found['autoTimeOff'] = @()
+    }
     if ($Facts.RebootPending) {
         Add-HcLine $r warn (T 'upd.rebootPending')
         $found['rebootPending'] = @()
@@ -190,7 +233,7 @@ function Test-HcErrors {
         Add-HcLine $r ok (T 'err.noCrash')
     }
     Add-HcAction $r 'repairWindows'
-    Select-HcFinding $r $found @('clockWrong', 'notActivated', 'rebootPending', 'recentCrash') 'errorsOk'
+    Select-HcFinding $r $found @('clockWrong', 'wrongTimeZone', 'notActivated', 'rebootPending', 'recentCrash', 'autoTimeOff') 'errorsOk'
     $r
 }
 

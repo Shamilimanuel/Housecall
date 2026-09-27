@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'ebf459db0a91'
+$HcBuild = '587985b65747'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -765,6 +765,17 @@ $script:Strings = @{
         'err.activated'       = 'Windows is activated'
         'err.notActivated'    = 'Windows is not activated'
         'err.clockOk'         = 'The clock is right'
+        'err.timeZone'          = 'Time zone: {0}'
+        'err.timeZoneWrong'     = 'Time zone {0}, but for this country it should be {1}'
+        'err.autoTimeOff'       = 'The clock is not set automatically from the internet'
+        'finding.wrongTimeZone' = 'The time zone is {0}, while this PC is set to a country with {1}. That is why the clock is exactly an hour (or more) off.'
+        'advice.wrongTimeZone'  = 'Housecall can set the right time zone below (it can be undone).'
+        'finding.autoTimeOff'   = 'The clock is not set automatically, so it slowly drifts and does not follow summer and winter time.'
+        'advice.autoTimeOff'    = 'Switch automatic time on with the steps below.'
+        'fix.setTimeZone'       = 'Set the time zone to {0}'
+        'fix.setTimeZone.done'  = 'Set the time zone to {0}'
+        'steps.wrongTimeZone'   = 'Choose the fix above (it can be undone), or do it by hand. | Open Settings (Windows key + I) > Time & language > Date & time. | Choose the right Time zone, or switch on "Set time zone automatically". | Check the clock at the bottom right.'
+        'steps.autoTimeOff'     = 'Open Settings (Windows key + I) > Time & language > Date & time. | Switch on "Set time automatically". | Click Sync now.'
         'err.clockWrong'      = 'The clock is off by {0} minutes'
         'err.clockUnknown'    = 'The clock could not be compared (no internet)'
         'err.crash'           = '{0} crashed or froze {1} time(s) in the past 3 days'
@@ -1908,6 +1919,17 @@ $script:Strings = @{
         'err.activated'       = 'Windows is geactiveerd'
         'err.notActivated'    = 'Windows is niet geactiveerd'
         'err.clockOk'         = 'De klok staat goed'
+        'err.timeZone'          = 'Tijdzone: {0}'
+        'err.timeZoneWrong'     = 'Tijdzone {0}, maar voor dit land hoort het {1} te zijn'
+        'err.autoTimeOff'       = 'De klok wordt niet automatisch via internet gelijkgezet'
+        'finding.wrongTimeZone' = 'De tijdzone is {0}, terwijl deze pc op een land staat met {1}. Daarom loopt de klok precies een uur (of meer) verkeerd.'
+        'advice.wrongTimeZone'  = 'Housecall kan hieronder de juiste tijdzone instellen (kan worden teruggedraaid).'
+        'finding.autoTimeOff'   = 'De klok wordt niet automatisch gelijkgezet, dus hij loopt langzaam uit en volgt zomer- en wintertijd niet.'
+        'advice.autoTimeOff'    = 'Zet automatische tijd aan met de stappen hieronder.'
+        'fix.setTimeZone'       = 'De tijdzone instellen op {0}'
+        'fix.setTimeZone.done'  = 'Tijdzone ingesteld op {0}'
+        'steps.wrongTimeZone'   = 'Kies hierboven de oplossing (kan worden teruggedraaid), of doe het met de hand. | Open Instellingen (Windows-toets + I) > Tijd en taal > Datum en tijd. | Kies de juiste Tijdzone, of zet "Tijdzone automatisch instellen" aan. | Controleer de klok rechtsonder.'
+        'steps.autoTimeOff'     = 'Open Instellingen (Windows-toets + I) > Tijd en taal > Datum en tijd. | Zet "Tijd automatisch instellen" aan. | Klik op Nu synchroniseren.'
         'err.clockWrong'      = 'De klok loopt {0} minuten verkeerd'
         'err.clockUnknown'    = 'De klok kon niet worden vergeleken (geen internet)'
         'err.crash'           = '{0} is de afgelopen 3 dagen {1} keer vastgelopen of gecrasht'
@@ -5282,7 +5304,7 @@ function Get-HcPerformanceFacts {
         $since = (Get-Date).AddDays(-7)
         try {
             $f.CrashApps = @(Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Id = 1000, 1002; StartTime = $since } -ErrorAction Stop |
-                Group-Object { ([string]$_.Properties[0].Value) -replace '\.exe$', '' } | Where-Object { $_.Name -notmatch $script:WindowsHelpers } |
+                Group-Object { (Split-Path -Leaf ([string]$_.Properties[0].Value)) -replace '\.exe$', '' } | Where-Object { $_.Name -notmatch $script:WindowsHelpers } |
                 Sort-Object Count -Descending | Select-Object -First 5 |
                 ForEach-Object { [pscustomobject]@{ Name = $_.Name; Count = $_.Count } })
         } catch { }
@@ -5534,6 +5556,30 @@ function Get-HcClockOffset {
     }
 }
 
+# The time zone a client in these countries should have. Only compared by
+# offset and summer time, so a zone with the same clock (Berlin for a Dutch
+# client) is not called wrong. Countries not listed are not judged.
+$script:CountryTimeZone = @{
+    NL = 'W. Europe Standard Time'; DE = 'W. Europe Standard Time'; LU = 'W. Europe Standard Time'
+    BE = 'Romance Standard Time'; FR = 'Romance Standard Time'; ES = 'Romance Standard Time'
+    GB = 'GMT Standard Time'; IE = 'GMT Standard Time'
+    SR = 'SA Eastern Standard Time'; AW = 'SA Western Standard Time'; CW = 'SA Western Standard Time'; BQ = 'SA Western Standard Time'
+}
+
+# The expected zone when the current one runs a different clock; $null when
+# it is fine or the country is not known.
+function Get-HcExpectedTimeZone {
+    param([string]$Country, [string]$CurrentId)
+    $expectedId = $script:CountryTimeZone[$Country]
+    if (-not $expectedId -or -not $CurrentId) { return $null }
+    try {
+        $expected = [TimeZoneInfo]::FindSystemTimeZoneById($expectedId)
+        $current = [TimeZoneInfo]::FindSystemTimeZoneById($CurrentId)
+    } catch { return $null }
+    if ($expected.BaseUtcOffset -eq $current.BaseUtcOffset -and $expected.SupportsDaylightSavingTime -eq $current.SupportsDaylightSavingTime) { return $null }
+    $expected
+}
+
 function Get-HcErrorFacts {
     $activated = $null
     try {
@@ -5543,12 +5589,15 @@ function Get-HcErrorFacts {
     $crashes = @()
     try {
         $crashes = @(Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Id = 1000, 1002; StartTime = (Get-Date).AddDays(-3) } -ErrorAction Stop |
-            Group-Object { ([string]$_.Properties[0].Value) -replace '\.exe$', '' } | Where-Object { $_.Name -notmatch $script:WindowsHelpers } |
+            Group-Object { (Split-Path -Leaf ([string]$_.Properties[0].Value)) -replace '\.exe$', '' } | Where-Object { $_.Name -notmatch $script:WindowsHelpers } |
             Sort-Object Count -Descending | Select-Object -First 3 | ForEach-Object { [pscustomobject]@{ Name = $_.Name; Count = $_.Count } })
     } catch { }
     [pscustomobject]@{
         Activated     = $activated
         ClockOffset   = Get-HcClockOffset
+        TimeZone      = (Get-TimeZone -ErrorAction SilentlyContinue)
+        Country       = (Get-ItemProperty 'HKCU:\Control Panel\International\Geo' -ErrorAction SilentlyContinue).Name
+        AutoTimeOff   = ((Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters' -ErrorAction SilentlyContinue).Type -eq 'NoSync')
         RebootPending = Test-HcRebootPending
         Crashes       = $crashes
     }
@@ -5643,6 +5692,22 @@ function Test-HcErrors {
     } else {
         Add-HcLine $r ok (T 'err.clockOk')
     }
+    # The clock check above compares universal time, so a wrong time zone
+    # passes it while the clock on screen is hours off.
+    if ($Facts.PSObject.Properties['TimeZone'] -and $Facts.TimeZone) {
+        $expected = Get-HcExpectedTimeZone $Facts.Country $Facts.TimeZone.Id
+        if ($expected) {
+            Add-HcLine $r problem (T 'err.timeZoneWrong' $Facts.TimeZone.DisplayName $expected.DisplayName)
+            Add-HcAction $r 'setTimeZone' @{ Label = $expected.DisplayName; Id = $expected.Id; Previous = $Facts.TimeZone.Id }
+            $found['wrongTimeZone'] = @($Facts.TimeZone.DisplayName, $expected.DisplayName)
+        } else {
+            Add-HcLine $r ok (T 'err.timeZone' $Facts.TimeZone.DisplayName)
+        }
+    }
+    if ($Facts.PSObject.Properties['AutoTimeOff'] -and $Facts.AutoTimeOff) {
+        Add-HcLine $r warn (T 'err.autoTimeOff')
+        $found['autoTimeOff'] = @()
+    }
     if ($Facts.RebootPending) {
         Add-HcLine $r warn (T 'upd.rebootPending')
         $found['rebootPending'] = @()
@@ -5655,7 +5720,7 @@ function Test-HcErrors {
         Add-HcLine $r ok (T 'err.noCrash')
     }
     Add-HcAction $r 'repairWindows'
-    Select-HcFinding $r $found @('clockWrong', 'notActivated', 'rebootPending', 'recentCrash') 'errorsOk'
+    Select-HcFinding $r $found @('clockWrong', 'wrongTimeZone', 'notActivated', 'rebootPending', 'recentCrash', 'autoTimeOff') 'errorsOk'
     $r
 }
 
@@ -6557,6 +6622,13 @@ $script:Fixes = @{
     # DISM repairs Windows' own store of system files (from Windows Update),
     # then SFC repairs the files in use from that store. Their progress shows
     # in the window while they run.
+    # Needs admin: Set-TimeZone from a normal PowerShell failed on Shamil's PC
+    # with "a required privilege is not held" (27 Sep). Undo puts the old one back.
+    setTimeZone = @{
+        Note = 'undo'; Admin = $true
+        Apply = { param($t) Set-TimeZone -Id $t.Id -ErrorAction Stop }
+        Undo  = { param($t) Set-TimeZone -Id $t.Previous -ErrorAction Stop }
+    }
     repairWindows = @{
         Note = 'long'; Admin = $true
         Apply = {
