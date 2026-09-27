@@ -274,10 +274,111 @@ function Test-HcBluetooth {
 
 # ---------------------------------------------------------------- handlers --
 
+# ------------------------------------------------------------ C4: battery --
+
+# Laptop, notebook, sub-notebook, tablet, convertible, detachable.
+$script:LaptopChassis = @(8, 9, 10, 14, 30, 31, 32)
+# Win32_Battery.BatteryStatus values that mean mains power is connected.
+$script:OnMains = @(2, 3, 6, 7, 8, 9, 11)
+$script:BatteryCharging = @(6, 7, 8, 9)
+# Below this share of its original capacity a battery is worn out.
+$script:BatteryWornPercent = 50
+$script:BatteryAgingPercent = 70
+
+function Get-HcBatteryFacts {
+    $battery = @(Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue) | Select-Object -First 1
+    $chassis = @((Get-CimInstance Win32_SystemEnclosure -ErrorAction SilentlyContinue).ChassisTypes)
+    $design = $null; $full = $null; $online = $null; $charging = $null
+    try { $design = [int64](Get-CimInstance -Namespace root/wmi -ClassName BatteryStaticData -ErrorAction Stop | Select-Object -First 1).DesignedCapacity } catch { }
+    try { $full = [int64](Get-CimInstance -Namespace root/wmi -ClassName BatteryFullChargedCapacity -ErrorAction Stop | Select-Object -First 1).FullChargedCapacity } catch { }
+    try {
+        $st = Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction Stop | Select-Object -First 1
+        if ($st) { $online = [bool]$st.PowerOnline; $charging = [bool]$st.Charging }
+    } catch { }
+    $status = if ($battery) { [int]$battery.BatteryStatus } else { $null }
+    $plan = $null
+    try { if ("$(powercfg /getactivescheme)" -match '\(([^)]+)\)\s*$') { $plan = $Matches[1] } } catch { }
+    [pscustomobject]@{
+        HasBattery = [bool]$battery
+        Laptop     = [bool]@($chassis | Where-Object { $_ -in $script:LaptopChassis }).Count
+        Charge     = $(if ($battery) { [int]$battery.EstimatedChargeRemaining })
+        # Windows reports 71582788 minutes when it cannot estimate (on mains).
+        RunMinutes = $(if ($battery -and $battery.EstimatedRunTime -and $battery.EstimatedRunTime -lt 10000) { [int]$battery.EstimatedRunTime })
+        PluggedIn  = $(if ($null -ne $online) { $online } elseif ($null -ne $status) { $status -in $script:OnMains } else { $null })
+        Charging   = $(if ($null -ne $charging) { $charging } elseif ($null -ne $status) { $status -in $script:BatteryCharging } else { $null })
+        DesignMWh  = $design
+        FullMWh    = $full
+        PowerPlan  = $plan
+    }
+}
+
+# How much of its original capacity the battery still holds; $null when
+# Windows does not say.
+function Get-HcBatteryHealth {
+    param($DesignMWh, $FullMWh)
+    if (-not $DesignMWh -or -not $FullMWh -or $DesignMWh -le 0) { return $null }
+    [int][Math]::Min(100, [Math]::Round(100 * $FullMWh / $DesignMWh))
+}
+
+function Test-HcBattery {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if (-not $Facts.HasBattery) {
+        if ($Facts.Laptop) {
+            Add-HcLine $r problem (T 'bat.missing')
+            $found['batteryMissing'] = @()
+        } else {
+            Add-HcLine $r ok (T 'bat.none')
+            $found['noBattery'] = @()
+        }
+    } else {
+        $health = Get-HcBatteryHealth $Facts.DesignMWh $Facts.FullMWh
+        if ($null -eq $health) {
+            Add-HcLine $r skipped (T 'bat.healthUnknown')
+        } elseif ($health -lt $script:BatteryWornPercent) {
+            Add-HcLine $r problem (T 'bat.health' $health)
+            $found['batteryWorn'] = @($health)
+        } elseif ($health -lt $script:BatteryAgingPercent) {
+            Add-HcLine $r warn (T 'bat.health' $health)
+            $found['batteryAging'] = @($health)
+        } else {
+            Add-HcLine $r ok (T 'bat.health' $health)
+        }
+
+        if ($Facts.PluggedIn) {
+            if ($Facts.Charging) {
+                Add-HcLine $r ok (T 'bat.charging' $Facts.Charge)
+            } elseif ($Facts.Charge -ge 95) {
+                Add-HcLine $r ok (T 'bat.full' $Facts.Charge)
+            } elseif ($Facts.Charge -ge 55 -and $Facts.Charge -le 85) {
+                # Many laptops stop around 60 or 80% on purpose, to spare the battery.
+                Add-HcLine $r warn (T 'bat.holding' $Facts.Charge)
+                $found['chargeLimit'] = @($Facts.Charge)
+            } else {
+                Add-HcLine $r problem (T 'bat.notCharging' $Facts.Charge)
+                $found['notCharging'] = @($Facts.Charge)
+            }
+        } elseif ($null -ne $Facts.RunMinutes) {
+            Add-HcLine $r ok (T 'bat.onBatteryTime' $Facts.Charge $Facts.RunMinutes)
+        } else {
+            Add-HcLine $r ok (T 'bat.onBattery' $Facts.Charge)
+        }
+        Add-HcAction $r 'openBatterySettings'
+    }
+    if ($Facts.PowerPlan) { Add-HcLine $r ok (T 'bat.plan' $Facts.PowerPlan) }
+
+    Select-HcFinding $r $found @('batteryMissing', 'notCharging', 'batteryWorn', 'batteryAging', 'chargeLimit', 'noBattery') 'batteryOk'
+    $r
+}
+
 function Invoke-HcC1 { { Test-HcPrinter (Get-HcPrinterFacts) } }
 function Invoke-HcC2 { { Test-HcInputDevices (Get-HcInputFacts) } }
 function Invoke-HcC3 { { Test-HcBluetooth (Get-HcBluetoothFacts) } }
+function Invoke-HcC4 { { Test-HcBattery (Get-HcBatteryFacts) } }
 
 $script:ProblemHandlers['C1'] = 'Invoke-HcC1'
 $script:ProblemHandlers['C2'] = 'Invoke-HcC2'
 $script:ProblemHandlers['C3'] = 'Invoke-HcC3'
+$script:ProblemHandlers['C4'] = 'Invoke-HcC4'

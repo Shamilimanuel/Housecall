@@ -450,6 +450,12 @@ $script:Fixes = @{
         Apply = { param($t) Start-Process -FilePath $t.Exe -ErrorAction Stop }
         Undo  = $null
     }
+    # Settings > Power & battery, through explorer.exe like Default apps.
+    openBatterySettings = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = { param($t) Start-Process explorer.exe -ArgumentList 'ms-settings:batterysaver' -ErrorAction Stop }
+        Undo  = $null
+    }
     # Opens a folder in File Explorer (Downloads, or where a browser saves).
     openFolder = @{
         Note = 'safe'; Admin = $false; NoLog = $true

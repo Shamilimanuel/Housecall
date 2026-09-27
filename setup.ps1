@@ -38,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = '38bf3d297fcd'
+$HcBuild = 'e15281f6ebc5'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -114,7 +114,7 @@ $script:Strings = @{
 
         'looks.A' = 'network adapter, address from the router, router, DNS, internet, proxy, Wi-Fi signal'
         'looks.B' = 'default sound device, mute and volume, audio service, camera and microphone access, screen scale'
-        'looks.C' = 'print service, stuck print jobs, default printer, USB devices with errors, Bluetooth'
+        'looks.C' = 'print service, stuck print jobs, default printer, USB devices with errors, Bluetooth, laptop battery'
         'looks.D' = 'free disk space, programs using memory and CPU, startup programs, recent crashes, time since restart'
         'looks.E' = 'Windows Update service, last successful update, waiting restart'
         'looks.F' = 'remote-access programs such as AnyDesk, sites allowed to send pop-ups, Microsoft Defender, unknown scheduled tasks'
@@ -130,6 +130,7 @@ $script:Strings = @{
         'problem.C1' = 'Printer will not print'
         'problem.C2' = 'Mouse, keyboard or USB stick'
         'problem.C3' = 'Bluetooth'
+        'problem.C4' = 'Laptop battery will not charge or runs out fast'
         'problem.D1' = 'The whole computer is slow'
         'problem.D2' = 'Takes ages to start'
         'problem.D3' = 'A program freezes or crashes'
@@ -917,6 +918,42 @@ $script:Strings = @{
         'fix.openRecycleBin'       = 'Open the Recycle Bin'
         'fix.openRecycleBin.done'  = 'Opened the Recycle Bin'
 
+        # ---- C4: battery
+        'bat.none'                 = 'This PC has no battery (a desktop PC)'
+        'bat.missing'              = 'This is a laptop, but Windows finds no battery'
+        'bat.health'               = 'The battery still holds {0}% of its original capacity'
+        'bat.healthUnknown'        = 'Windows does not say how worn the battery is'
+        'bat.charging'             = 'Plugged in and charging ({0}%)'
+        'bat.full'                 = 'Plugged in and full ({0}%)'
+        'bat.holding'              = 'Plugged in but not charging, at {0}%'
+        'bat.notCharging'          = 'Plugged in but NOT charging, at only {0}%'
+        'bat.onBattery'            = 'Running on the battery ({0}%)'
+        'bat.onBatteryTime'        = 'Running on the battery ({0}%), about {1} minutes left'
+        'bat.plan'                 = 'Power plan: {0}'
+        'finding.batteryMissing'   = 'This is a laptop, but Windows finds no battery. The battery is probably dead or disconnected, which is why it only works when plugged in.'
+        'advice.batteryMissing'    = 'A new battery is needed (the steps below say how to find the right one). Software cannot fix this.'
+        'finding.notCharging'      = 'The laptop is plugged in but the battery does not charge, and it is only at {0}%.'
+        'advice.notCharging'       = 'Check the charger and the plug first (steps below). Still not charging? Then the battery or the charger needs replacing.'
+        'finding.batteryWorn'      = 'The battery only holds {0}% of what it did when new. That is why it runs out so fast.'
+        'advice.batteryWorn'       = 'A new battery fixes this. For a laptop this is usually a simple, affordable repair.'
+        'finding.batteryAging'     = 'The battery holds {0}% of what it did when new: it is getting older, but still usable.'
+        'advice.batteryAging'      = 'No need to replace it yet. The steps below help it last longer each day.'
+        'finding.chargeLimit'      = 'The laptop is plugged in and stops charging at {0}%. Many laptops do this on purpose to make the battery last longer (battery care).'
+        'advice.chargeLimit'       = 'Usually nothing is wrong. The steps below show where to switch battery care off if the client wants a full battery.'
+        'finding.noBattery'        = 'This is a desktop PC: it has no battery and always works on mains power.'
+        'advice.noBattery'         = 'Nothing to check here. Does the PC switch off by itself? Choose D3 to look at crashes.'
+        'finding.batteryOk'        = 'The battery is in good shape and charges normally.'
+        'advice.batteryOk'         = 'Runs out fast anyway? A bright screen and many open programs use the most power; the steps below help.'
+        'fix.openBatterySettings'      = 'Open the battery settings'
+        'fix.openBatterySettings.done' = 'Opened the battery settings'
+        'steps.batteryMissing'     = 'Shut the laptop down and unplug it. | If the battery can be taken out (a latch underneath), take it out and put it back firmly. | Still no battery? Note the laptop''s model (sticker underneath) and order a battery for exactly that model, or plan the replacement as a separate job.'
+        'steps.notCharging'        = 'Check that the charger is firmly in the laptop and in the wall socket; try another socket. | Look at the charging light on the laptop or the charger, if there is one. | Try a different charger of the same type, if one is available. | Still not charging: the charger or the battery is broken. Note the model (sticker underneath) and order the right part.'
+        'steps.batteryWorn'        = 'Note the laptop''s model (sticker underneath) and look up a battery for exactly that model. | Until then, the laptop works normally while plugged in. | Plan replacing the battery as a separate job.'
+        'steps.batteryAging'       = 'Turn the screen brightness down a bit: it uses the most power. | Close programs that are not being used. | Choose the fix above and switch on Energy saver when the battery is low.'
+        'steps.chargeLimit'        = 'This is usually a setting of the laptop maker, meant to protect the battery. | Look for the maker''s own app (Lenovo Vantage, MyASUS, HP Support Assistant, Dell Power Manager) and a setting like battery care, conservation mode or charge threshold. | Leave it on if the laptop is mostly used plugged in: the battery lasts years longer.'
+        'steps.noBattery'          = 'A desktop PC has no battery. | Does it switch off by itself? Check that the plug is firm, and choose D3 to look at crashes.'
+        'steps.batteryOk'          = 'Turn the screen brightness down a bit: it uses the most power. | Close programs and browser tabs that are not being used. | Choose the fix above and switch on Energy saver when the battery is low.'
+
         # ---- G3: check lines
         'find.searchOn'            = 'Windows Search is running'
         'find.searchOff'           = 'Windows Search is switched off, so searching finds nothing'
@@ -1177,7 +1214,7 @@ $script:Strings = @{
 
         'looks.A' = 'netwerkadapter, adres van de router, router, DNS, internet, proxy, wifi-signaal'
         'looks.B' = 'standaard geluidsapparaat, dempen en volume, audioservice, toegang tot camera en microfoon, schermschaal'
-        'looks.C' = 'afdrukservice, vastgelopen printopdrachten, standaardprinter, USB-apparaten met fouten, Bluetooth'
+        'looks.C' = 'afdrukservice, vastgelopen printopdrachten, standaardprinter, USB-apparaten met fouten, Bluetooth, laptopaccu'
         'looks.D' = 'vrije schijfruimte, programma''s die geheugen en processor gebruiken, opstartprogramma''s, recente crashes, tijd sinds herstart'
         'looks.E' = 'Windows Update-service, laatste geslaagde update, wachtende herstart'
         'looks.F' = 'programma''s voor overname op afstand zoals AnyDesk, sites die meldingen mogen sturen, Microsoft Defender, onbekende geplande taken'
@@ -1193,6 +1230,7 @@ $script:Strings = @{
         'problem.C1' = 'De printer print niet'
         'problem.C2' = 'Muis, toetsenbord of USB-stick'
         'problem.C3' = 'Bluetooth'
+        'problem.C4' = 'Laptopaccu laadt niet op of is snel leeg'
         'problem.D1' = 'De hele computer is traag'
         'problem.D2' = 'Opstarten duurt heel lang'
         'problem.D3' = 'Een programma loopt vast of crasht'
@@ -1980,6 +2018,42 @@ $script:Strings = @{
         'fix.openRecycleBin'       = 'De Prullenbak openen'
         'fix.openRecycleBin.done'  = 'Prullenbak geopend'
 
+        # ---- C4: accu
+        'bat.none'                 = 'Deze pc heeft geen accu (een desktop-pc)'
+        'bat.missing'              = 'Dit is een laptop, maar Windows vindt geen accu'
+        'bat.health'               = 'De accu houdt nog {0}% van de oorspronkelijke capaciteit vast'
+        'bat.healthUnknown'        = 'Windows geeft niet aan hoe versleten de accu is'
+        'bat.charging'             = 'Aangesloten en aan het opladen ({0}%)'
+        'bat.full'                 = 'Aangesloten en vol ({0}%)'
+        'bat.holding'              = 'Aangesloten maar laadt niet op, bij {0}%'
+        'bat.notCharging'          = 'Aangesloten maar laadt NIET op, bij maar {0}%'
+        'bat.onBattery'            = 'Werkt op de accu ({0}%)'
+        'bat.onBatteryTime'        = 'Werkt op de accu ({0}%), nog ongeveer {1} minuten'
+        'bat.plan'                 = 'Energiebeheer: {0}'
+        'finding.batteryMissing'   = 'Dit is een laptop, maar Windows vindt geen accu. De accu is waarschijnlijk kapot of los, en daarom werkt hij alleen met de stekker erin.'
+        'advice.batteryMissing'    = 'Er is een nieuwe accu nodig (de stappen hieronder zeggen hoe u de juiste vindt). Met software valt dit niet op te lossen.'
+        'finding.notCharging'      = 'De laptop is aangesloten maar de accu laadt niet op, en staat maar op {0}%.'
+        'advice.notCharging'       = 'Controleer eerst de lader en de stekker (stappen hieronder). Laadt hij nog steeds niet? Dan moet de accu of de lader worden vervangen.'
+        'finding.batteryWorn'      = 'De accu houdt nog maar {0}% vast van wat hij nieuw kon. Daarom is hij zo snel leeg.'
+        'advice.batteryWorn'       = 'Een nieuwe accu lost dit op. Bij een laptop is dat meestal een eenvoudige, betaalbare reparatie.'
+        'finding.batteryAging'     = 'De accu houdt {0}% vast van wat hij nieuw kon: hij wordt ouder, maar is nog goed bruikbaar.'
+        'advice.batteryAging'      = 'Vervangen is nog niet nodig. De stappen hieronder helpen hem per dag langer mee te laten gaan.'
+        'finding.chargeLimit'      = 'De laptop is aangesloten en stopt met opladen bij {0}%. Veel laptops doen dat bewust, zodat de accu langer meegaat (accubescherming).'
+        'advice.chargeLimit'       = 'Meestal is er niets mis. De stappen hieronder laten zien waar u de accubescherming uitzet als de klant een volle accu wil.'
+        'finding.noBattery'        = 'Dit is een desktop-pc: die heeft geen accu en werkt altijd op het stopcontact.'
+        'advice.noBattery'         = 'Hier valt niets te controleren. Gaat de pc vanzelf uit? Kies D3 om naar vastlopers te kijken.'
+        'finding.batteryOk'        = 'De accu is in goede staat en laadt normaal op.'
+        'advice.batteryOk'         = 'Toch snel leeg? Een fel scherm en veel open programma''s verbruiken het meest; de stappen hieronder helpen.'
+        'fix.openBatterySettings'      = 'De accu-instellingen openen'
+        'fix.openBatterySettings.done' = 'Accu-instellingen geopend'
+        'steps.batteryMissing'     = 'Sluit de laptop af en haal de stekker eruit. | Kan de accu eruit (een schuifje aan de onderkant)? Haal hem eruit en zet hem stevig terug. | Nog steeds geen accu? Noteer het model van de laptop (sticker aan de onderkant) en bestel een accu voor precies dat model, of plan het vervangen als aparte klus.'
+        'steps.notCharging'        = 'Controleer of de lader stevig in de laptop en in het stopcontact zit; probeer een ander stopcontact. | Kijk naar het oplaadlampje op de laptop of de lader, als dat er is. | Probeer een andere lader van hetzelfde type, als die er is. | Laadt hij nog steeds niet: de lader of de accu is kapot. Noteer het model (sticker aan de onderkant) en bestel het juiste onderdeel.'
+        'steps.batteryWorn'        = 'Noteer het model van de laptop (sticker aan de onderkant) en zoek een accu voor precies dat model. | Tot die tijd werkt de laptop gewoon met de stekker erin. | Plan het vervangen van de accu als aparte klus.'
+        'steps.batteryAging'       = 'Zet de helderheid van het scherm iets lager: dat verbruikt het meest. | Sluit programma''s die niet worden gebruikt. | Kies hierboven de oplossing en zet Energiebesparing aan als de accu bijna leeg is.'
+        'steps.chargeLimit'        = 'Dit is meestal een instelling van de fabrikant, bedoeld om de accu te sparen. | Zoek de eigen app van de fabrikant (Lenovo Vantage, MyASUS, HP Support Assistant, Dell Power Manager) en een instelling als accubescherming, conservation mode of laaddrempel. | Laat het aan als de laptop meestal aan de stekker gebruikt wordt: de accu gaat dan jaren langer mee.'
+        'steps.noBattery'          = 'Een desktop-pc heeft geen accu. | Gaat hij vanzelf uit? Controleer of de stekker goed vastzit, en kies D3 om naar vastlopers te kijken.'
+        'steps.batteryOk'          = 'Zet de helderheid van het scherm iets lager: dat verbruikt het meest. | Sluit programma''s en browsertabbladen die niet worden gebruikt. | Kies hierboven de oplossing en zet Energiebesparing aan als de accu bijna leeg is.'
+
         # ---- G3: controleregels
         'find.searchOn'            = 'Windows Zoeken draait'
         'find.searchOff'           = 'Windows Zoeken staat uit, dus zoeken vindt niets'
@@ -2478,7 +2552,7 @@ function Get-HcEnvironment {
 $script:Areas = [ordered]@{
     A = @('A1', 'A2', 'A3', 'A4')
     B = @('B1', 'B2', 'B3')
-    C = @('C1', 'C2', 'C3')
+    C = @('C1', 'C2', 'C3', 'C4')
     D = @('D1', 'D2', 'D3', 'D4')
     E = @('E1', 'E2', 'E3')
     F = @('F1', 'F2', 'F3')
@@ -4272,13 +4346,114 @@ function Test-HcBluetooth {
 
 # ---------------------------------------------------------------- handlers --
 
+# ------------------------------------------------------------ C4: battery --
+
+# Laptop, notebook, sub-notebook, tablet, convertible, detachable.
+$script:LaptopChassis = @(8, 9, 10, 14, 30, 31, 32)
+# Win32_Battery.BatteryStatus values that mean mains power is connected.
+$script:OnMains = @(2, 3, 6, 7, 8, 9, 11)
+$script:BatteryCharging = @(6, 7, 8, 9)
+# Below this share of its original capacity a battery is worn out.
+$script:BatteryWornPercent = 50
+$script:BatteryAgingPercent = 70
+
+function Get-HcBatteryFacts {
+    $battery = @(Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue) | Select-Object -First 1
+    $chassis = @((Get-CimInstance Win32_SystemEnclosure -ErrorAction SilentlyContinue).ChassisTypes)
+    $design = $null; $full = $null; $online = $null; $charging = $null
+    try { $design = [int64](Get-CimInstance -Namespace root/wmi -ClassName BatteryStaticData -ErrorAction Stop | Select-Object -First 1).DesignedCapacity } catch { }
+    try { $full = [int64](Get-CimInstance -Namespace root/wmi -ClassName BatteryFullChargedCapacity -ErrorAction Stop | Select-Object -First 1).FullChargedCapacity } catch { }
+    try {
+        $st = Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction Stop | Select-Object -First 1
+        if ($st) { $online = [bool]$st.PowerOnline; $charging = [bool]$st.Charging }
+    } catch { }
+    $status = if ($battery) { [int]$battery.BatteryStatus } else { $null }
+    $plan = $null
+    try { if ("$(powercfg /getactivescheme)" -match '\(([^)]+)\)\s*$') { $plan = $Matches[1] } } catch { }
+    [pscustomobject]@{
+        HasBattery = [bool]$battery
+        Laptop     = [bool]@($chassis | Where-Object { $_ -in $script:LaptopChassis }).Count
+        Charge     = $(if ($battery) { [int]$battery.EstimatedChargeRemaining })
+        # Windows reports 71582788 minutes when it cannot estimate (on mains).
+        RunMinutes = $(if ($battery -and $battery.EstimatedRunTime -and $battery.EstimatedRunTime -lt 10000) { [int]$battery.EstimatedRunTime })
+        PluggedIn  = $(if ($null -ne $online) { $online } elseif ($null -ne $status) { $status -in $script:OnMains } else { $null })
+        Charging   = $(if ($null -ne $charging) { $charging } elseif ($null -ne $status) { $status -in $script:BatteryCharging } else { $null })
+        DesignMWh  = $design
+        FullMWh    = $full
+        PowerPlan  = $plan
+    }
+}
+
+# How much of its original capacity the battery still holds; $null when
+# Windows does not say.
+function Get-HcBatteryHealth {
+    param($DesignMWh, $FullMWh)
+    if (-not $DesignMWh -or -not $FullMWh -or $DesignMWh -le 0) { return $null }
+    [int][Math]::Min(100, [Math]::Round(100 * $FullMWh / $DesignMWh))
+}
+
+function Test-HcBattery {
+    param([pscustomobject]$Facts)
+    $r = New-HcReport
+    $found = @{}
+
+    if (-not $Facts.HasBattery) {
+        if ($Facts.Laptop) {
+            Add-HcLine $r problem (T 'bat.missing')
+            $found['batteryMissing'] = @()
+        } else {
+            Add-HcLine $r ok (T 'bat.none')
+            $found['noBattery'] = @()
+        }
+    } else {
+        $health = Get-HcBatteryHealth $Facts.DesignMWh $Facts.FullMWh
+        if ($null -eq $health) {
+            Add-HcLine $r skipped (T 'bat.healthUnknown')
+        } elseif ($health -lt $script:BatteryWornPercent) {
+            Add-HcLine $r problem (T 'bat.health' $health)
+            $found['batteryWorn'] = @($health)
+        } elseif ($health -lt $script:BatteryAgingPercent) {
+            Add-HcLine $r warn (T 'bat.health' $health)
+            $found['batteryAging'] = @($health)
+        } else {
+            Add-HcLine $r ok (T 'bat.health' $health)
+        }
+
+        if ($Facts.PluggedIn) {
+            if ($Facts.Charging) {
+                Add-HcLine $r ok (T 'bat.charging' $Facts.Charge)
+            } elseif ($Facts.Charge -ge 95) {
+                Add-HcLine $r ok (T 'bat.full' $Facts.Charge)
+            } elseif ($Facts.Charge -ge 55 -and $Facts.Charge -le 85) {
+                # Many laptops stop around 60 or 80% on purpose, to spare the battery.
+                Add-HcLine $r warn (T 'bat.holding' $Facts.Charge)
+                $found['chargeLimit'] = @($Facts.Charge)
+            } else {
+                Add-HcLine $r problem (T 'bat.notCharging' $Facts.Charge)
+                $found['notCharging'] = @($Facts.Charge)
+            }
+        } elseif ($null -ne $Facts.RunMinutes) {
+            Add-HcLine $r ok (T 'bat.onBatteryTime' $Facts.Charge $Facts.RunMinutes)
+        } else {
+            Add-HcLine $r ok (T 'bat.onBattery' $Facts.Charge)
+        }
+        Add-HcAction $r 'openBatterySettings'
+    }
+    if ($Facts.PowerPlan) { Add-HcLine $r ok (T 'bat.plan' $Facts.PowerPlan) }
+
+    Select-HcFinding $r $found @('batteryMissing', 'notCharging', 'batteryWorn', 'batteryAging', 'chargeLimit', 'noBattery') 'batteryOk'
+    $r
+}
+
 function Invoke-HcC1 { { Test-HcPrinter (Get-HcPrinterFacts) } }
 function Invoke-HcC2 { { Test-HcInputDevices (Get-HcInputFacts) } }
 function Invoke-HcC3 { { Test-HcBluetooth (Get-HcBluetoothFacts) } }
+function Invoke-HcC4 { { Test-HcBattery (Get-HcBatteryFacts) } }
 
 $script:ProblemHandlers['C1'] = 'Invoke-HcC1'
 $script:ProblemHandlers['C2'] = 'Invoke-HcC2'
 $script:ProblemHandlers['C3'] = 'Invoke-HcC3'
+$script:ProblemHandlers['C4'] = 'Invoke-HcC4'
 
 # ==================================================== src\checks\audio-interop.ps1 ==
 <#
@@ -6233,6 +6408,12 @@ $script:Fixes = @{
     startOneDrive = @{
         Note = 'safe'; Admin = $false
         Apply = { param($t) Start-Process -FilePath $t.Exe -ErrorAction Stop }
+        Undo  = $null
+    }
+    # Settings > Power & battery, through explorer.exe like Default apps.
+    openBatterySettings = @{
+        Note = 'safe'; Admin = $false; NoLog = $true
+        Apply = { param($t) Start-Process explorer.exe -ArgumentList 'ms-settings:batterysaver' -ErrorAction Stop }
         Undo  = $null
     }
     # Opens a folder in File Explorer (Downloads, or where a browser saves).

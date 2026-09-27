@@ -1,12 +1,12 @@
 # Housecall — status and checklist
 
 <!-- progress:start -->
-**Progress: 83%** `█████████████████░░░` 63 of 76 done · 0 in progress · 13 open · 0 blocked · 0 waiting on a decision
+**Progress: 84%** `█████████████████░░░` 64 of 76 done · 0 in progress · 12 open · 0 blocked · 0 waiting on a decision
 
 | Section | | Done |
 |---|---|---|
 | Done | `██████████` | 100% (5/5) |
-| Next up | `██░░░░░░░░` | 24% (4/17) |
+| Next up | `███░░░░░░░` | 29% (5/17) |
 | Blocked on Shamil | `░░░░░░░░░░` | (none) |
 | Recently done | `██████████` | 100% (44/44) |
 | Found in testing | `██████████` | 100% (10/10) |
@@ -184,7 +184,7 @@ codes and an area G. Compared against the code (no changes made yet):
 - [x] **G2** "Mijn bestanden zijn weg of staan niet overal" (27 Sep): temporary profile; Desktop/Documents/Pictures (where, exists, item count only); OneDrive installed (its own Run entry or the usual places), signed in (only whether, never the address), running; free disk space (< 2 GB stops syncing); Recycle Bin count. Findings in order: temp profile, **OneDrive removed while the folders still live in its folder**, folder points nowhere, signed out, not running, disk full, files local only, items in the Recycle Bin. Fixes: start OneDrive, open the Recycle Bin. 6 tests (265 in total). Ran on Shamil's PC: found exactly his case (OneDrive removed, folders still in C:\Users\shami\OneDrive); open Recycle Bin verified for real. Start OneDrive not tested for real (not installed on his PC)
 - [x] **G3** "Ik kan een bestand niet vinden, of het opent verkeerd" (27 Sep): Windows Search running; Downloads (count, newest: when and file type, **never names**, so nothing personal reaches the AI); where Edge and Chrome save and whether they ask each time (their own Preferences file); which program opens PDF, .jpg, .docx, .mp4 (user choice, else Windows default; app names via SHLoadIndirectString). Fixes: open Downloads / the browser's folder, open Default apps (through explorer.exe: a bare Start-Process of ms-settings did not reliably open Settings on Shamil's PC), start Windows Search (admin). 5 tests (270 in total). On Shamil's PC it found no program for Word files; open folder and Default apps verified for real. Start Search not tested for real (running, needs admin)
 - [x] **Relay v9** (27 Sep): the AI knows G1-G3, and visit_save accepts area G. It only accepted A-F, so **a visit that used G would not have been saved**
-- [ ] **C4** battery: capacity left vs new, charging, power plan; code shared with Pc-overzicht
+- [x] **C4** "Laptopaccu laadt niet op of is snel leeg" (27 Sep): laptop or desktop (chassis type), battery found, wear (full vs design capacity from root/wmi: < 50% worn, < 70% ageing), plugged in / charging / charge, **a stop at 55-85% while plugged in counts as the maker's battery care, not a fault**, time left, power plan. Fix: open battery settings; the rest is advice (a battery is hardware). 5 tests (275 in total). On Shamil's desktop it says "no battery (desktop)". **Needs a real laptop to test** (father's laptop or a client). The AI does not know C4 yet: add it to CODES with the next relay deploy (visit_save already accepts it)
 - [ ] **B3** flag a large scale / text size / low resolution ("everything is huge")
 - [ ] **C2** keyboard layout (extra layouts, Alt+Shift switching); fix = remove the extra layout (reversible)
 - [ ] **E2** time zone and automatic time, next to the clock check

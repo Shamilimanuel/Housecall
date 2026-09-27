@@ -887,6 +887,52 @@ Describe 'G1: desktop, taskbar and folders' {
     }
 }
 
+Describe 'C4: laptop battery' {
+    $script:Lang = 'en'
+    $bat = { param([hashtable]$Change = @{})
+        $f = [pscustomobject]@{ HasBattery = $true; Laptop = $true; Charge = 64; RunMinutes = 180; PluggedIn = $false; Charging = $false
+                                DesignMWh = 50000; FullMWh = 45000; PowerPlan = 'Balanced' }
+        foreach ($k in $Change.Keys) { $f.$k = $Change[$k] }
+        $f }
+
+    It 'is happy with a healthy battery, and shows the time left on battery' {
+        $r = Test-HcBattery (& $bat)
+        $r.FindingId | Should Be 'batteryOk'
+        @($r.Results | ForEach-Object { $_.Text }) -contains 'Running on the battery (64%), about 180 minutes left' | Should Be $true
+        @($r.Actions | ForEach-Object { $_.FixId }) | Should Be @('openBatterySettings')
+    }
+
+    It 'tells a desktop from a laptop whose battery is gone (Shamil''s PC is a desktop)' {
+        $r = Test-HcBattery (& $bat @{ HasBattery = $false; Laptop = $false })
+        $r.FindingId | Should Be 'noBattery'
+        @($r.Results | Where-Object { $_.Status -ne 'ok' }).Count | Should Be 0
+        @($r.Actions).Count | Should Be 0
+        (Test-HcBattery (& $bat @{ HasBattery = $false; Laptop = $true })).FindingId | Should Be 'batteryMissing'
+    }
+
+    It 'grades the wear: worn below 50%, ageing below 70%, unknown when Windows does not say' {
+        (Test-HcBattery (& $bat @{ FullMWh = 20000 })).FindingId | Should Be 'batteryWorn'
+        (Test-HcBattery (& $bat @{ FullMWh = 20000 })).FindingArgs | Should Be @(40)
+        (Test-HcBattery (& $bat @{ FullMWh = 30000 })).FindingId | Should Be 'batteryAging'
+        $r = Test-HcBattery (& $bat @{ DesignMWh = $null; FullMWh = $null })
+        $r.Results[0].Status | Should Be 'skipped'
+        Get-HcBatteryHealth 50000 55000 | Should Be 100
+    }
+
+    It 'does not call a battery that stops at 80% on purpose broken, but one stuck at 20% is' {
+        $r = Test-HcBattery (& $bat @{ PluggedIn = $true; Charging = $false; Charge = 80 })
+        $r.FindingId | Should Be 'chargeLimit'
+        ($r.Results | Where-Object { $_.Status -eq 'problem' }) | Should Be $null
+        (Test-HcBattery (& $bat @{ PluggedIn = $true; Charging = $false; Charge = 20 })).FindingId | Should Be 'notCharging'
+        (Test-HcBattery (& $bat @{ PluggedIn = $true; Charging = $false; Charge = 100 })).FindingId | Should Be 'batteryOk'
+        (Test-HcBattery (& $bat @{ PluggedIn = $true; Charging = $true; Charge = 40 })).FindingId | Should Be 'batteryOk'
+    }
+
+    It 'puts a battery that does not charge before a worn one' {
+        (Test-HcBattery (& $bat @{ PluggedIn = $true; Charging = $false; Charge = 20; FullMWh = 20000 })).FindingId | Should Be 'notCharging'
+    }
+}
+
 Describe 'G3: a file cannot be found or opens wrong' {
     $script:Lang = 'en'
     $now = [datetime]'2026-09-27 15:00'
