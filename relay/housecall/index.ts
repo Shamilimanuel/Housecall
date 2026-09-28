@@ -12,6 +12,10 @@
 //   visit_delete  removes one visit of a PC (its invoice is kept)
 //   settings_get / settings_save   business details and prices for invoices
 //   invoice_create  numbers and stores an invoice, totals worked out here
+//   mail_status / mail_start / mail_finish / mail_disconnect
+//               connect Shamil's Outlook once (Microsoft's device-code
+//               sign-in); the refresh token stays in the database here
+//   mail_send   mails a note, receipt or invoice (PDF) from that Outlook
 //   health      which secrets are set (booleans only), for setup
 //
 // Everything except health and unlock needs the token. The token is signed
@@ -442,6 +446,128 @@ async function invoiceCreate(body: any): Promise<Response> {
   return json({ invoice: data });
 }
 
+// ---------------------------------------------------------------- mail --
+
+// Microsoft's sign-in for personal accounts (outlook.com). Housecall has its
+// own app registration (a public client, no secret); Shamil signs in once
+// with the device-code flow and the refresh token is kept in mail_account.
+const MS_LOGIN = "https://login.microsoftonline.com/consumers/oauth2/v2.0";
+const MAIL_SCOPE = "offline_access https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read";
+const MAIL_PER_HOUR = 20;
+const MAIL_PER_DAY = 60;
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMAIL = /^[^\s@<>(),;:"\\]+@[^\s@<>(),;:"\\]+\.[a-z]{2,}$/i;
+
+async function msPost(path: string, form: Record<string, string>) {
+  const r = await fetch(`${MS_LOGIN}/${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(form),
+  });
+  return { status: r.status, data: await r.json().catch(() => ({})) };
+}
+
+async function mailStatus(): Promise<Response> {
+  const { data, error } = await database().from("mail_account").select("email, updated_at").eq("id", 1).maybeSingle();
+  if (error) return json({ error: "database" }, 500);
+  return json({ connected: !!data, email: data?.email ?? null });
+}
+
+async function mailStart(clientId: unknown): Promise<Response> {
+  if (typeof clientId !== "string" || !GUID.test(clientId)) return json({ error: "bad_client_id" }, 400);
+  const r = await msPost("devicecode", { client_id: clientId, scope: MAIL_SCOPE });
+  if (r.status !== 200) return json({ error: "mail_ms", detail: r.data.error_description ?? r.data.error ?? r.status }, 502);
+  return json({
+    user_code: r.data.user_code, verification_uri: r.data.verification_uri, device_code: r.data.device_code,
+    interval: r.data.interval ?? 5, expires_in: r.data.expires_in ?? 900,
+  });
+}
+
+async function mailFinish(clientId: unknown, deviceCode: unknown): Promise<Response> {
+  if (typeof clientId !== "string" || !GUID.test(clientId)) return json({ error: "bad_client_id" }, 400);
+  if (typeof deviceCode !== "string" || deviceCode.length > 2000) return json({ error: "bad_device_code" }, 400);
+  const r = await msPost("token", {
+    grant_type: "urn:ietf:params:oauth:grant-type:device_code", client_id: clientId, device_code: deviceCode,
+  });
+  if (r.status !== 200) {
+    const code = String(r.data.error ?? "");
+    if (code === "authorization_pending" || code === "slow_down") return json({ pending: true });
+    return json({ error: "mail_ms", detail: code || r.status }, 400);
+  }
+  let email: string | null = null;
+  const me = await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${r.data.access_token}` } });
+  if (me.ok) {
+    const who = await me.json();
+    email = who.mail ?? who.userPrincipalName ?? null;
+  }
+  const { error } = await database().from("mail_account").upsert({
+    id: 1, client_id: clientId, refresh_token: r.data.refresh_token, email, updated_at: new Date().toISOString(),
+  });
+  if (error) return json({ error: "database" }, 500);
+  return json({ connected: true, email });
+}
+
+async function mailDisconnect(): Promise<Response> {
+  const { error } = await database().from("mail_account").delete().eq("id", 1);
+  if (error) return json({ error: "database" }, 500);
+  return json({ connected: false });
+}
+
+// deno-lint-ignore no-explicit-any
+async function mailSend(body: any): Promise<Response> {
+  const { to, subject, text, pdf_base64, filename } = body;
+  if (typeof to !== "string" || to.length > 254 || !EMAIL.test(to)) return json({ error: "bad_mail", field: "to" }, 400);
+  if (typeof subject !== "string" || subject.trim() === "" || subject.length > 200) return json({ error: "bad_mail", field: "subject" }, 400);
+  if (typeof text !== "string" || text.length > 8000) return json({ error: "bad_mail", field: "text" }, 400);
+  if (pdf_base64 != null) {
+    if (typeof pdf_base64 !== "string" || pdf_base64.length > 3_000_000 || !/^[A-Za-z0-9+/=]+$/.test(pdf_base64)) return json({ error: "bad_mail", field: "pdf" }, 400);
+    if (typeof filename !== "string" || filename.length > 100 || !/^[\p{L}\p{N} ._,()-]+\.pdf$/u.test(filename)) return json({ error: "bad_mail", field: "filename" }, 400);
+  }
+
+  const db = database();
+  const hour = new Date(Date.now() - 3600 * 1000).toISOString();
+  const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const [h, d] = await Promise.all([
+    db.from("mail_log").select("id", { count: "exact", head: true }).gte("sent_at", hour),
+    db.from("mail_log").select("id", { count: "exact", head: true }).gte("sent_at", day),
+  ]);
+  if ((h.count ?? 0) >= MAIL_PER_HOUR || (d.count ?? 0) >= MAIL_PER_DAY) return json({ error: "mail_limit" }, 429);
+
+  const { data: account } = await db.from("mail_account").select("*").eq("id", 1).maybeSingle();
+  if (!account) return json({ error: "mail_not_set_up" }, 400);
+  const t = await msPost("token", {
+    grant_type: "refresh_token", client_id: account.client_id, refresh_token: account.refresh_token, scope: MAIL_SCOPE,
+  });
+  if (t.status !== 200) {
+    if (t.data.error === "invalid_grant") return json({ error: "mail_reconnect" }, 401);
+    return json({ error: "mail_ms", detail: t.data.error ?? t.status }, 502);
+  }
+  // Microsoft hands out a new refresh token now and then; keep the newest.
+  if (t.data.refresh_token && t.data.refresh_token !== account.refresh_token) {
+    await db.from("mail_account").update({ refresh_token: t.data.refresh_token, updated_at: new Date().toISOString() }).eq("id", 1);
+  }
+
+  const message: Record<string, unknown> = {
+    subject: subject.trim(),
+    body: { contentType: "Text", content: text },
+    toRecipients: [{ emailAddress: { address: to } }],
+  };
+  if (pdf_base64) {
+    message.attachments = [{ "@odata.type": "#microsoft.graph.fileAttachment", name: filename, contentType: "application/pdf", contentBytes: pdf_base64 }];
+  }
+  const sent = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${t.data.access_token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ message, saveToSentItems: true }),
+  });
+  if (sent.status !== 202) {
+    const detail = await sent.text().catch(() => "");
+    return json({ error: "mail_failed", status: sent.status, detail: detail.slice(0, 300) }, 502);
+  }
+  await db.from("mail_log").insert({});
+  return json({ sent: true, from: account.email });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "post_only" }, 405);
   // deno-lint-ignore no-explicit-any
@@ -483,6 +609,16 @@ Deno.serve(async (req: Request) => {
       return settingsSave(body.settings);
     case "invoice_create":
       return invoiceCreate(body);
+    case "mail_status":
+      return mailStatus();
+    case "mail_start":
+      return mailStart(body.client_id);
+    case "mail_finish":
+      return mailFinish(body.client_id, body.device_code);
+    case "mail_disconnect":
+      return mailDisconnect();
+    case "mail_send":
+      return mailSend(body);
     default:
       return json({ error: "unknown_action" }, 400);
   }

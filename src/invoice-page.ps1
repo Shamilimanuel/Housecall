@@ -50,7 +50,10 @@ function Get-HcInvoiceWork {
 # -Note: the same page as a plain note, for a visit without an invoice: no
 # number and no amounts, but what was found, and how to reach Shamil.
 function Get-HcInvoiceLayout {
-    param($Invoice, [switch]$Note)
+    # -Receipt: a betaalbewijs, the amounts and "voldaan" without an invoice
+    # number, for visits before the KvK registration.
+    param($Invoice, [switch]$Note, [switch]$Receipt)
+    $plain = $Note -or $Receipt
     $style = Get-HcInvoiceStyle
     $F = $style.Fonts
     $P = $script:HcPage
@@ -85,9 +88,9 @@ function Get-HcInvoiceLayout {
 
     # Top: "Factuur", number and date on the left; the seller on the right.
     # GDI+ pads text by a sixth of its size; at 30 px that shows, so pull it back in line.
-    & $text $(if ($Note) { T 'doc.noteWord' } else { T 'doc.invoiceWord' }) 'title' ($P.Left - 4) $y $half
+    & $text $(if ($Note) { T 'doc.noteWord' } elseif ($Receipt) { T 'doc.receiptWord' } else { T 'doc.invoiceWord' }) 'title' ($P.Left - 4) $y $half
     $leftY = $y + (& $measure 'F' 'title' $half)
-    $dateLine = if ($Note) { Format-HcLongDate $issued } else { T 'doc.numberDate' $Invoice.number (Format-HcLongDate $issued) }
+    $dateLine = if ($plain) { Format-HcLongDate $issued } else { T 'doc.numberDate' $Invoice.number (Format-HcLongDate $issued) }
     & $text $dateLine 'small' $P.Left $leftY $half 'muted'
     $leftY += (& $measure 'x' 'small' $half)
     $rightY = $y + 6
@@ -105,7 +108,7 @@ function Get-HcInvoiceLayout {
     $y = [Math]::Max($leftY, $rightY) + 34
 
     # The client, next to what it was about.
-    & $text $(if ($Note) { T 'doc.forCap' } else { T 'doc.toCap' }) 'cap' $P.Left $y $half 'muted'
+    & $text $(if ($plain) { T 'doc.forCap' } else { T 'doc.toCap' }) 'cap' $P.Left $y $half 'muted'
     & $text (T 'doc.subjectCap') 'cap' $sellerX $y $half 'muted'
     $y += 18
     $clientY = $y
@@ -219,7 +222,7 @@ function Get-HcInvoiceLayout {
 
         # How it was paid, and the BTW note.
         $paidOn = Format-HcLongDate $issued
-        $pay = switch ($Invoice.payment) {
+        $pay = if ($Receipt) { T 'doc.receiptPaid' $paidOn (T ('inv.pay.' + $Invoice.payment)) } else { switch ($Invoice.payment) {
             'pin'      { T 'doc.paidPin' $paidOn }
             'cash'     { T 'doc.paidCash' $paidOn }
             'tikkie'   { T 'doc.paidTikkie' $paidOn }
@@ -227,8 +230,8 @@ function Get-HcInvoiceLayout {
                 $due = Format-HcLongDate ([datetime]::Parse([string]$Invoice.due_date, [Globalization.CultureInfo]::InvariantCulture))
                 T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number
             }
-        }
-        foreach ($para in @($pay, $(if ($Invoice.btw_mode -eq 'kor') { T 'doc.kor' })) | Where-Object { $_ }) {
+        } }
+        foreach ($para in @($pay, $(if ($Invoice.btw_mode -eq 'kor' -and -not $Receipt) { T 'doc.kor' })) | Where-Object { $_ }) {
             $font = if ($para -eq $pay) { 'body' } else { 'small' }
             $h = & $measure $para $font $full
             & $room $h

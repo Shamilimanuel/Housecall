@@ -1582,6 +1582,35 @@ Describe 'The window: Afronden and the history' {
         (New-HcDraftInvoice $fin $settings $now).client_name | Should Be 'Mevr. de Vries'
     }
 
+    It 'draws a betaalbewijs: the amounts and "voldaan", without a number' {
+        $fin = New-HcFinishState
+        $fin.Minutes = 50; $fin.Payment = 'cash'; $fin.Title = 'mrs'; $fin.Name = 'de Vries'
+        $texts = @(Get-HcInvoiceLayout (New-HcDraftInvoice $fin $settings $now) -Receipt | ForEach-Object { $_ } | ForEach-Object { $_.Text })
+        $texts -contains 'Betaalbewijs' | Should Be $true
+        $texts -contains 'VOOR' | Should Be $true
+        $texts -contains 'Mevr. de Vries' | Should Be $true
+        @($texts | Where-Object { $_ -match 'concept' }).Count | Should Be 0
+        @($texts | Where-Object { $_ -match [char]0x20AC }).Count | Should BeGreaterThan 1
+        $texts -contains 'Voldaan op 27 september 2026 (contant).' | Should Be $true
+        # Paying later is no receipt, even once there is an IBAN.
+        Get-HcPayMethods ([pscustomobject]@{ iban = 'NL00BANK0123456789' }) -Receipt | Should Be @('pin', 'cash', 'tikkie')
+    }
+
+    It 'writes the mail in the visit''s language, greeting by salutation' {
+        $who = [pscustomobject]@{ business_name = 'Shamil Imanuel'; phone = '06-12345678' }
+        $m = New-HcMailText 'note' 'mrs' 'Anna de Vries' $now '' $who
+        $m.Subject | Should Be 'Wat er aan uw computer is gedaan'
+        ($m.Text -split "`n")[0] | Should Be 'Beste mevrouw Anna de Vries,'
+        $m.Text | Should Match '27 september 2026'
+        ($m.Text -split "`n")[-1] | Should Be '06-12345678'
+        (New-HcMailText 'invoice' 'none' '' $now '2026-0005' $who).Subject | Should Be 'Uw factuur 2026-0005 van Housecall'
+        ((New-HcMailText 'receipt' 'couple' '' $now '' $who).Text -split "`n")[0] | Should Be 'Beste klant,'
+        $script:Lang = 'en'
+        ((New-HcMailText 'receipt' 'family' 'Smith' $now '' ([pscustomobject]@{})).Text -split "`n")[0] | Should Be 'Dear Smith family,'
+        (New-HcMailText 'receipt' 'family' 'Smith' $now '' ([pscustomobject]@{})).Text | Should Match 'Housecall, computer help at home$'
+        $script:Lang = 'nl'
+    }
+
     It 'gives a name from the history its salutation back' {
         $r = Split-HcClientName 'Dhr. en mevr. Jansen'
         $r.Title | Should Be 'couple'; $r.Name | Should Be 'Jansen'
@@ -2333,7 +2362,7 @@ Describe 'Findings' {
 Describe 'Source files' {
     It 'are plain ASCII, so PowerShell 5.1 reads them correctly' {
         $files = @(Get-ChildItem (Join-Path $root 'src') -Filter *.ps1 -Recurse) +
-                 @(Get-Item (Join-Path $root 'dev.ps1'), (Join-Path $root 'build.ps1'), (Join-Path $root 'tools\setup-ai.ps1'), (Join-Path $root 'tools\setup-invoice.ps1'))
+                 @(Get-Item (Join-Path $root 'dev.ps1'), (Join-Path $root 'build.ps1'), (Join-Path $root 'tools\setup-ai.ps1'), (Join-Path $root 'tools\setup-invoice.ps1'), (Join-Path $root 'tools\setup-mail.ps1'), (Join-Path $root 'tools\install-command.ps1'))
         foreach ($f in $files) {
             $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
             @($bytes | Where-Object { $_ -gt 127 }).Count | Should Be 0

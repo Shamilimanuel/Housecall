@@ -93,12 +93,27 @@ function Split-HcClientName {
     [pscustomobject]@{ Title = 'none'; Name = $text }
 }
 
+# The mail that goes with the PDF, in the visit's language: the greeting by
+# salutation, one sentence on what is attached, and Shamil's name (and
+# phone, once it is in his settings) under it. Kind is invoice, receipt or note.
+function New-HcMailText {
+    param([string]$Kind, [string]$Title, [string]$Name, [datetime]$Date, [string]$Number, $Settings)
+    $n = "$Name".Trim()
+    $greet = if (-not $n) { T 'mail.greet.anon' } else { T "mail.greet.$(if ($Title) { $Title } else { 'none' })" $n }
+    $subject = if ($Kind -eq 'invoice') { T 'mail.subject.invoice' $Number } else { T "mail.subject.$Kind" }
+    $sign = @((T 'mail.regards'), $(if ($Settings.business_name) { [string]$Settings.business_name } else { 'Housecall' }), (T 'mail.brand'))
+    if ($Settings.phone) { $sign += [string]$Settings.phone }
+    $text = @($greet, '', (T "mail.body.$Kind" (Format-HcLongDate $Date)), '', (T 'mail.questions'), '', ($sign -join "`n")) -join "`n"
+    [pscustomobject]@{ Subject = $subject; Text = $text }
+}
+
 # How the client can pay: a transfer only once an IBAN is set, since the
 # invoice has to say where to.
 function Get-HcPayMethods {
-    param($Settings)
+    # -Receipt: a betaalbewijs says "voldaan", so paying later is not one of them.
+    param($Settings, [switch]$Receipt)
     $methods = @('pin', 'cash', 'tikkie')
-    if ($Settings.iban) { $methods += 'transfer' }
+    if ($Settings.iban -and -not $Receipt) { $methods += 'transfer' }
     $methods
 }
 
@@ -108,6 +123,7 @@ function New-HcFinishState {
         Stage = 'new'; Mode = 'invoice'; Settings = $null; Notice = $null; Invoice = $null; Saved = $false; Pages = $null
         Title = (Split-HcClientName $script:HcKnownLabel).Title; Name = (Split-HcClientName $script:HcKnownLabel).Name; Address = ''; Postcode = ''; Email = ''; Minutes = 0; Callout = $true
         Extras = New-Object System.Collections.ArrayList; Payment = 'pin'; Offline = $false; CalcBlock = $null; AllPresets = $false
+        MailAsk = $null; MailBusy = $false; MailResult = $null
     }
 }
 
@@ -530,7 +546,7 @@ function Update-HcFinishPanel {
     [void]$grid.Children.Add((New-HcField (T 'inv.postcode') 'Postcode' $f.Postcode 250))
     & $put $grid
 
-    if ($f.Mode -eq 'invoice' -and $f.Settings) {
+    if ($f.Mode -in @('invoice', 'receipt') -and $f.Settings) {
         # Time and costs.
         & $put (New-HcSection (T 'win.fin.time'))
         $clock = Get-HcClockLine
@@ -578,7 +594,7 @@ function Update-HcFinishPanel {
         # How it is paid.
         & $put (New-HcSection (T 'inv.win.payment'))
         $pay = New-Object Windows.Controls.WrapPanel
-        foreach ($m in @(Get-HcPayMethods $f.Settings)) {
+        foreach ($m in @(Get-HcPayMethods $f.Settings -Receipt:($f.Mode -eq 'receipt'))) {
             $label = T ('inv.pay.' + $m)
             $label = $label.Substring(0, 1).ToUpperInvariant() + $label.Substring(1)
             if ($m -eq 'transfer') { $label += ' (' + (T 'win.fin.days' $(if ($f.Settings.payment_days) { $f.Settings.payment_days } else { 14 })) + ')' }
@@ -612,6 +628,10 @@ function Update-HcFinishBar {
     $add = { param($element) $element.Margin = New-HcThickness @(0, 0, 8, 6); [void]$row.Children.Add($element) }
     $hint = $null
     if ($w.CloseAsk) { [void]$bar.Children.Add((New-HcText (T 'win.fin.closeFirst') 14.5 'Warn' -Bold)) }
+    if ($f.MailAsk) { [void]$bar.Children.Add((New-HcQuestion (T "win.mail.ask.$(Get-HcDocKind)" $f.MailAsk) 'mailYes' 'mailNo')) }
+    if ($f.MailBusy) { [void]$bar.Children.Add((New-HcText (T 'win.mail.busy') 14.5 'Soft' -Bold)) }
+    elseif ($f.MailResult) { [void]$bar.Children.Add((New-HcText $f.MailResult.Text 14.5 $(if ($f.MailResult.Ok) { 'Ok' } else { 'Warn' }) -Bold)) }
+    $mail = { if (-not $f.Offline) { & $add (New-HcButton (T 'win.fin.mail') @{ Do = 'finMail' }) } }
     switch ($f.Stage) {
         'working' { $hint = T 'win.fin.working' }
         'done' {
@@ -620,15 +640,23 @@ function Update-HcFinishBar {
             }
             & $add (New-HcButton (T 'note.print') @{ Do = 'finPrint' } 'HcPrimary')
             & $add (New-HcButton (T 'win.fin.pdf') @{ Do = 'finPdf' })
+            & $mail
             & $add (New-HcButton (T 'win.fin.close') @{ Do = 'finDone' })
         }
         'form' {
             if ($f.Mode -eq 'invoice' -and $f.Settings) {
                 & $add (New-HcButton (T 'win.fin.make') @{ Do = 'finMake' } 'HcPrimary')
                 $hint = T 'win.fin.makeHint'
+            } elseif ($f.Mode -eq 'receipt' -and $f.Settings) {
+                & $add (New-HcButton (T 'win.fin.receiptPrint') @{ Do = 'finPrint' } 'HcPrimary')
+                & $add (New-HcButton (T 'win.fin.pdf') @{ Do = 'finPdf' })
+                & $mail
+                & $add (New-HcButton (T 'win.fin.close') @{ Do = 'finDone' })
+                $hint = T 'win.fin.receiptHint'
             } else {
                 & $add (New-HcButton (T 'win.fin.notePrint') @{ Do = 'finPrint' } 'HcPrimary')
                 & $add (New-HcButton (T 'win.fin.pdf') @{ Do = 'finPdf' })
+                & $mail
                 & $add (New-HcButton (T 'win.fin.close') @{ Do = 'finDone' })
                 $hint = if ($f.Offline) { T 'win.fin.noteOffline' } elseif (Test-HcUnlocked) { T 'win.fin.noteSaves' } else { T 'win.fin.noteNoCode' }
             }
@@ -654,6 +682,7 @@ function Update-HcPreview {
 
     $state = if ($f.Stage -eq 'done' -and $f.Invoice) { T 'win.fin.stateMade' $f.Invoice.number }
              elseif ($f.Mode -eq 'note') { T 'win.fin.stateNote' }
+             elseif ($f.Mode -eq 'receipt') { T 'win.fin.stateReceipt' }
              else { T 'win.fin.stateDraft' }
     $label = New-HcText $state.ToUpperInvariant() 12 $(if ($f.Invoice) { 'Ok' } else { 'Soft' }) -Bold -Margin @(0, 8, 0, 0)
     [Windows.Controls.DockPanel]::SetDock($label, 'Left')
@@ -662,15 +691,15 @@ function Update-HcPreview {
         $modes = New-Object Windows.Controls.StackPanel
         $modes.Orientation = 'Horizontal'
         [Windows.Controls.DockPanel]::SetDock($modes, 'Right')
-        foreach ($m in @('invoice', 'note')) {
+        foreach ($m in @('invoice', 'receipt', 'note')) {
             $b = New-HcChip (T "win.fin.mode.$m") @{ Do = 'finMode'; Mode = $m } -On:($f.Mode -eq $m)
-            $b.IsEnabled = -not ($m -eq 'invoice' -and $f.Offline) -and $f.Stage -ne 'working'
+            $b.IsEnabled = -not ($m -ne 'note' -and $f.Offline) -and $f.Stage -ne 'working'
             [void]$modes.Children.Add($b)
         }
         [void]$top.Children.Add($modes)
     }
 
-    if ($f.Mode -eq 'invoice' -and -not $f.Settings -and -not $f.Invoice) {
+    if ($f.Mode -in @('invoice', 'receipt') -and -not $f.Settings -and -not $f.Invoice) {
         [void]$panel.Children.Add((New-HcText (T 'win.fin.previewAfterCode') 14.5 'Soft' -Margin @(0, 12, 0, 0)))
         $f.Pages = $null
         return
@@ -680,6 +709,7 @@ function Update-HcPreview {
         # and an if-statement would unroll the list of pages into its steps.
         $pages = @(if ($f.Invoice) { Get-HcInvoiceLayout $f.Invoice }
                    elseif ($f.Mode -eq 'note') { Get-HcInvoiceLayout (New-HcDraftInvoice $f $f.Settings) -Note }
+                   elseif ($f.Mode -eq 'receipt') { Get-HcInvoiceLayout (New-HcDraftInvoice $f $f.Settings) -Receipt }
                    else { Get-HcInvoiceLayout (New-HcDraftInvoice $f $f.Settings) })
     } catch {
         [void]$panel.Children.Add((New-HcText (T 'win.error' $_.Exception.Message) 14 'Warn'))
@@ -767,8 +797,10 @@ function Invoke-HcVisitClick {
         'pay'        { $f.Payment = $Tag.Method; Update-HcVisit }
         'clientTitle' { $f.Title = $Tag.Title; Update-HcVisit }
         'finMode'    {
-            if ($Tag.Mode -eq 'invoice' -and -not $f.Settings) {
-                $f.Mode = 'invoice'
+            # A receipt has no paying later.
+            if ($Tag.Mode -eq 'receipt' -and $f.Payment -eq 'transfer') { $f.Payment = 'pin' }
+            if ($Tag.Mode -in @('invoice', 'receipt') -and -not $f.Settings) {
+                $f.Mode = $Tag.Mode
                 if (Test-HcUnlocked) { Start-HcSettingsLoad } else { $f.Stage = 'code' }
             } else {
                 $f.Mode = $Tag.Mode
@@ -787,6 +819,9 @@ function Invoke-HcVisitClick {
             Invoke-HcInvoicePrint
         }
         'finPdf'     { Save-HcWindowPdf }
+        'finMail'    { Request-HcMail }
+        'mailYes'    { Send-HcMail }
+        'mailNo'     { $f.MailAsk = $null; Update-HcFinishBar }
         'finDone'    { Complete-HcVisitWindow }
         'closeAnyway' { $w.CloseAnyway = $true; $w.Outcome = 'done'; $w.Window.Close() }
         'histDelete' { $w.Hist.Confirm = $Tag.Id; $w.Hist.Notice = $null; Update-HcOther }
@@ -867,6 +902,80 @@ function Complete-HcVisitWindow {
     $w.Window.Close()
 }
 
+# "Factuur 2026-0005.pdf", "Betaalbewijs 2026-09-28.pdf" or "Briefje 2026-09-28.pdf".
+function Get-HcPdfName {
+    $f = $script:HcWin.Fin
+    $today = Get-Date -Format 'yyyy-MM-dd'
+    if ($f.Invoice) { return (T 'win.fin.pdfInvoice' $f.Invoice.number) }
+    if ($f.Mode -eq 'receipt') { return (T 'win.fin.pdfReceipt' $today) }
+    T 'win.fin.pdfNote' $today
+}
+
+# invoice, receipt or note: which document the visit ends with.
+function Get-HcDocKind {
+    $f = $script:HcWin.Fin
+    if ($f.Invoice) { 'invoice' } elseif ($f.Mode -eq 'receipt') { 'receipt' } else { 'note' }
+}
+
+# The client's address for the mail: the one on the invoice, else the form's.
+function Get-HcMailTo {
+    $f = $script:HcWin.Fin
+    $to = if ($f.Invoice -and $f.Invoice.client_email) { [string]$f.Invoice.client_email } else { "$($f.Email)".Trim() }
+    if ($to -match '^[^\s@<>(),;:"\\]+@[^\s@<>(),;:"\\]+\.[a-zA-Z]{2,}$') { $to } else { $null }
+}
+
+# Mail naar klant: an address, the code (the relay sends it), then a Ja/Nee.
+function Request-HcMail {
+    $w = $script:HcWin
+    $f = $w.Fin
+    $f.MailResult = $null
+    $to = Get-HcMailTo
+    if (-not $to) { $f.MailResult = @{ Ok = $false; Text = (T 'win.mail.needAddress') }; Update-HcFinishBar; return }
+    if (-not (Test-HcUnlocked)) {
+        if ($f.Stage -eq 'form') { $f.Stage = 'code'; $f.Notice = T 'win.mail.needCode'; Update-HcVisit }
+        else { $f.MailResult = @{ Ok = $false; Text = (T 'relay.expired') }; Update-HcFinishBar }
+        return
+    }
+    $f.MailAsk = $to
+    Update-HcFinishBar
+}
+
+# The page as a PDF (Windows' own PDF printer, into a temporary file that is
+# gone straight after), then through the relay from Shamil's Outlook.
+function Send-HcMail {
+    $w = $script:HcWin
+    $f = $w.Fin
+    $to = $f.MailAsk
+    $f.MailAsk = $null
+    if (-not $f.Pages) { Update-HcPreview }
+    $path = Join-Path $env:TEMP ('housecall-' + [guid]::NewGuid().ToString('N') + '.pdf')
+    $script:HcInvoicePages = $f.Pages
+    $problem = Save-HcPagesPdf $path
+    if ($problem -or -not (Test-Path -LiteralPath $path)) {
+        $f.MailResult = @{ Ok = $false; Text = (T 'win.fin.pdfFailed' "$problem") }
+        Update-HcFinishBar
+        return
+    }
+    try { $bytes = [IO.File]::ReadAllBytes($path) } finally { Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue }
+    $kind = Get-HcDocKind
+    $mail = New-HcMailText $kind $f.Title $f.Name (Get-Date) $(if ($f.Invoice) { [string]$f.Invoice.number } else { '' }) $f.Settings
+    Add-HcJob @{ Kind = 'relay'; To = $to; Done = 'Complete-HcMailSent'; Body = @{
+        action = 'mail_send'; token = $script:HcToken; to = $to; subject = $mail.Subject; text = $mail.Text
+        pdf_base64 = [Convert]::ToBase64String($bytes); filename = (Get-HcPdfName) } }
+    $f.MailBusy = $true
+    Update-HcFinishBar
+}
+
+function Complete-HcMailSent {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $f = $script:HcWin.Fin
+    $f.MailBusy = $false
+    $r = Get-HcRelayResult $Output
+    if (-not $ErrorText -and $r -and $r.Ok) { $f.MailResult = @{ Ok = $true; Text = (T 'win.mail.sent' $Job.To) } }
+    else { $f.MailResult = @{ Ok = $false; Text = (Get-HcRelayMessage $(if ($r) { $r.Error } else { 'unreachable' })) } }
+    Update-HcFinishBar
+}
+
 # Opslaan als PDF: Windows' own PDF printer, to a file the client can get
 # by email. Documents by default; the name says what it is.
 function Save-HcWindowPdf {
@@ -877,7 +986,7 @@ function Save-HcWindowPdf {
     $dialog = New-Object Microsoft.Win32.SaveFileDialog
     $dialog.Filter = 'PDF (*.pdf)|*.pdf'
     $dialog.InitialDirectory = [Environment]::GetFolderPath('MyDocuments')
-    $dialog.FileName = if ($f.Invoice) { T 'win.fin.pdfInvoice' $f.Invoice.number } else { T 'win.fin.pdfNote' (Get-Date -Format 'yyyy-MM-dd') }
+    $dialog.FileName = Get-HcPdfName
     if (-not $dialog.ShowDialog($w.Window)) { return }
     $script:HcInvoicePages = $f.Pages
     $problem = Save-HcPagesPdf $dialog.FileName

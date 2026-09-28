@@ -63,6 +63,12 @@ function Get-HcRelayMessage {
         'ai_busy'     { T 'relay.aiBusy' }
         'ai_credit'   { T 'relay.aiCredit' }
         'no_settings' { T 'inv.noSettings' }
+        'mail_not_set_up' { T 'relay.mailNotSetUp' }
+        'mail_reconnect'  { T 'relay.mailReconnect' }
+        'mail_limit'      { T 'relay.mailLimit' }
+        'bad_mail'        { T 'relay.mailBad' }
+        'mail_failed'     { T 'relay.mailFailed' }
+        'mail_ms'         { T 'relay.mailFailed' }
         default       { T 'relay.error' $Code }
     }
 }
