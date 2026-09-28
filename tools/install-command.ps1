@@ -12,6 +12,7 @@
         housecall              the latest version from GitHub, as clients get it
         housecall -Console     the text menu
         housecall -Dev         from this source folder, to try changes first
+        housecall -Mail        connect your Outlook for mailing (tools\setup-mail.ps1)
 #>
 param([switch]$Remove)
 
@@ -25,9 +26,14 @@ if ($Remove) {
 }
 
 $dev = Join-Path (Split-Path -Parent $PSScriptRoot) 'dev.ps1'
+$mail = Join-Path $PSScriptRoot 'setup-mail.ps1'
 $lines = @(
     '@echo off'
     'rem Housecall. Made by tools\install-command.ps1; run it again to update, or with -Remove.'
+    'if /i "%~1"=="-Mail" ('
+    "    powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$mail`" %2"
+    '    goto :eof'
+    ')'
     'if /i "%~1"=="-Dev" ('
     "    powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$dev`" %2 %3 %4 %5 %6"
     '    goto :eof'
