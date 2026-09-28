@@ -42,7 +42,7 @@ function New-HcDraftInvoice {
         number               = (T 'win.fin.draft')
         issued_at            = $Now.ToUniversalTime().ToString('o')
         seller               = $(if ($Settings) { $Settings } else { [pscustomobject]@{ business_name = 'Housecall' } })
-        client_name          = "$($Fin.Name)".Trim()
+        client_name          = Format-HcClientName $Fin.Title $Fin.Name
         client_address       = "$($Fin.Address)".Trim()
         client_postcode_city = "$($Fin.Postcode)".Trim()
         client_email         = "$($Fin.Email)".Trim()
@@ -54,6 +54,43 @@ function New-HcDraftInvoice {
         payment              = $Fin.Payment
         due_date             = $Now.AddDays($days).ToString('yyyy-MM-dd')
     }
+}
+
+# The salutations a client can get, in the order they are offered. Dutch
+# has one word for a woman, married or not (Mevr.); English tells Mrs.
+# (married) from Ms. (not married, or not known), so Ms. is English only.
+$script:HcTitles = @('none', 'mr', 'mrs', 'ms', 'couple', 'family')
+
+function Get-HcTitleChoices {
+    param([string]$Lang = $script:Lang)
+    @($script:HcTitles | Where-Object { $Lang -ne 'nl' -or $_ -ne 'ms' })
+}
+
+# "Mevr. Anna de Vries", "Mr. and Mrs. Smith", "The Smith family": the name as
+# it goes on the note, the invoice and in the history.
+function Format-HcClientName {
+    param([string]$Title, [string]$Name, [string]$Lang = $script:Lang)
+    $n = "$Name".Trim()
+    if (-not $n -or -not $Title -or $Title -eq 'none') { return $n }
+    $format = $script:Strings[$Lang]["name.$Title"]
+    if (-not $format) { return $n }
+    $format -f $n
+}
+
+# The other way round, for a name from the history: "Mevr. de Vries" gives
+# mrs and "de Vries", in either language; anything else stays as it is.
+function Split-HcClientName {
+    param([string]$Label)
+    $text = "$Label".Trim()
+    foreach ($lang in @('nl', 'en')) {
+        foreach ($title in @('couple', 'family', 'mr', 'mrs', 'ms')) {
+            $format = $script:Strings[$lang]["name.$title"]
+            if (-not $format) { continue }
+            $pattern = '^' + ([regex]::Escape($format) -replace '\\\{0\}', '(.+)') + '$'
+            if ($text -match $pattern) { return [pscustomobject]@{ Title = $title; Name = $Matches[1].Trim() } }
+        }
+    }
+    [pscustomobject]@{ Title = 'none'; Name = $text }
 }
 
 # How the client can pay: a transfer only once an IBAN is set, since the
@@ -69,7 +106,7 @@ function Get-HcPayMethods {
 function New-HcFinishState {
     @{
         Stage = 'new'; Mode = 'invoice'; Settings = $null; Notice = $null; Invoice = $null; Saved = $false; Pages = $null
-        Name = "$script:HcKnownLabel"; Address = ''; Postcode = ''; Email = ''; Minutes = 0; Callout = $true
+        Title = (Split-HcClientName $script:HcKnownLabel).Title; Name = (Split-HcClientName $script:HcKnownLabel).Name; Address = ''; Postcode = ''; Email = ''; Minutes = 0; Callout = $true
         Extras = New-Object System.Collections.ArrayList; Payment = 'pin'; Offline = $false; CalcBlock = $null; AllPresets = $false
     }
 }
@@ -293,7 +330,9 @@ function Complete-HcKnown {
     if (-not $label) { return }
     $script:HcKnownLabel = $label
     if (-not "$($w.Fin.Name)".Trim()) {
-        $w.Fin.Name = $label
+        $known = Split-HcClientName $label
+        $w.Fin.Title = $known.Title
+        $w.Fin.Name = $known.Name
         if ($w.Fin.Stage -eq 'form') { Update-HcVisit }
     }
 }
@@ -476,8 +515,16 @@ function Update-HcFinishPanel {
 
     # The client.
     & $put (New-HcSection (T 'win.fin.client') $(if ($f.Mode -eq 'note') { T 'win.fin.clientNote' } else { '' }))
+    # The salutation, picked with one click: it goes before the name.
+    [void]$form.Children.Add((New-HcText (T 'win.fin.title') 13 'Soft' -Bold -Margin @(0, 0, 0, 3)))
+    $titles = New-Object Windows.Controls.WrapPanel
+    foreach ($t in @(Get-HcTitleChoices)) {
+        [void]$titles.Children.Add((New-HcChip (T "win.title.$t") @{ Do = 'clientTitle'; Title = $t } -On:($f.Title -eq $t -or ($t -eq 'mrs' -and $f.Title -eq 'ms' -and $script:Lang -eq 'nl'))))
+    }
+    & $put $titles
+    & $put (New-HcText (T 'win.fin.titleNote') 13 'Soft' -Margin @(0, 0, 0, 8))
     $grid = New-Object Windows.Controls.WrapPanel
-    [void]$grid.Children.Add((New-HcField (T 'inv.win.name') 'Name' $f.Name 250))
+    [void]$grid.Children.Add((New-HcField (T 'win.fin.fullName') 'Name' $f.Name 250))
     [void]$grid.Children.Add((New-HcField (T 'win.fin.email') 'Email' $f.Email 250))
     [void]$grid.Children.Add((New-HcField (T 'inv.address') 'Address' $f.Address 250))
     [void]$grid.Children.Add((New-HcField (T 'inv.postcode') 'Postcode' $f.Postcode 250))
@@ -718,6 +765,7 @@ function Invoke-HcVisitClick {
         }
         'extraRemove' { $f.Extras.RemoveAt($Tag.Index); Update-HcVisit }
         'pay'        { $f.Payment = $Tag.Method; Update-HcVisit }
+        'clientTitle' { $f.Title = $Tag.Title; Update-HcVisit }
         'finMode'    {
             if ($Tag.Mode -eq 'invoice' -and -not $f.Settings) {
                 $f.Mode = 'invoice'
@@ -760,7 +808,7 @@ function Start-HcMakeInvoice {
     $w = $script:HcWin
     $f = $w.Fin
     $check = ConvertTo-HcInvoiceForm @{
-        Name = $f.Name; Address = $f.Address; Postcode = $f.Postcode; Email = $f.Email
+        Name = (Format-HcClientName $f.Title $f.Name); Address = $f.Address; Postcode = $f.Postcode; Email = $f.Email
         Minutes = $f.Minutes; Callout = $f.Callout; Payment = $f.Payment
         Extras = @($f.Extras | ForEach-Object { [pscustomobject]@{ Description = $_.Description; Amount = ([decimal]$_.Amount).ToString([Globalization.CultureInfo]::InvariantCulture) } })
     } $f.Settings
@@ -809,7 +857,7 @@ function Complete-HcVisitWindow {
     $worth = $script:HcVisit.Count -gt 0 -or $script:HcWork.Count -gt 0
     if (-not $f.Invoice -and -not $f.Saved -and $worth -and -not $script:DryRun -and $w.Environment.Online -and (Test-HcUnlocked)) {
         $f.Stage = 'working'
-        $label = if ("$($f.Name)".Trim()) { "$($f.Name)".Trim() } else { $script:HcKnownLabel }
+        $label = if ("$($f.Name)".Trim()) { Format-HcClientName $f.Title $f.Name } else { $script:HcKnownLabel }
         Add-HcJob @{ Kind = 'relay'; Body = (New-HcVisitBody $w.Environment $label $null (Get-HcWindowPcId)); ThenClose = $true; Done = 'Complete-HcVisitSaved' }
         Update-HcVisit
         return
@@ -866,7 +914,10 @@ function Complete-HcHistory {
         $h.Visits = @($r.Data.visits | Where-Object { $_ })
         $h.Stage = 'list'
         $label = @($h.Visits | Where-Object { $_.label } | Select-Object -First 1).label
-        if ($label) { $script:HcKnownLabel = $label; if (-not "$($w.Fin.Name)".Trim()) { $w.Fin.Name = $label } }
+        if ($label) {
+            $script:HcKnownLabel = $label
+            if (-not "$($w.Fin.Name)".Trim()) { $known = Split-HcClientName $label; $w.Fin.Title = $known.Title; $w.Fin.Name = $known.Name }
+        }
     }
     Update-HcOther
 }

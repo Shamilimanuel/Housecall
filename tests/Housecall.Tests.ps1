@@ -1568,6 +1568,28 @@ Describe 'The window: Afronden and the history' {
         $inv.btw_amount | Should Be 0
     }
 
+    It 'puts the salutation before the name: Dutch has one Mevr., English tells Mrs. from Ms.' {
+        Get-HcTitleChoices 'nl' | Should Be @('none', 'mr', 'mrs', 'couple', 'family')
+        Get-HcTitleChoices 'en' | Should Be @('none', 'mr', 'mrs', 'ms', 'couple', 'family')
+        Format-HcClientName 'mrs' ' Anna de Vries ' 'nl' | Should Be 'Mevr. Anna de Vries'
+        Format-HcClientName 'ms' 'Anna de Vries' 'nl' | Should Be 'Mevr. Anna de Vries'
+        Format-HcClientName 'couple' 'Jansen' 'nl' | Should Be 'Dhr. en mevr. Jansen'
+        Format-HcClientName 'family' 'Smith' 'en' | Should Be 'The Smith family'
+        Format-HcClientName 'mr' '' 'nl' | Should Be ''
+        Format-HcClientName 'none' 'Jan' 'nl' | Should Be 'Jan'
+        $fin = New-HcFinishState
+        $fin.Title = 'mrs'; $fin.Name = 'de Vries'; $fin.Minutes = 30
+        (New-HcDraftInvoice $fin $settings $now).client_name | Should Be 'Mevr. de Vries'
+    }
+
+    It 'gives a name from the history its salutation back' {
+        $r = Split-HcClientName 'Dhr. en mevr. Jansen'
+        $r.Title | Should Be 'couple'; $r.Name | Should Be 'Jansen'
+        (Split-HcClientName 'The Smith family').Name | Should Be 'Smith'
+        (Split-HcClientName 'Jan Jansen').Title | Should Be 'none'
+        (Split-HcClientName '').Name | Should Be ''
+    }
+
     It 'splits out 21% BTW when it is set, the total staying what the client pays' {
         $fin = New-HcFinishState
         $fin.Minutes = 30
