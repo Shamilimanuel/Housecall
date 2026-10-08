@@ -23,6 +23,7 @@
 //               the private bucket "documents", one per visit (same id = replaced)
 //   doc_list    the kept documents: one PC's, or all of them (the overview)
 //   doc_get     one kept PDF
+//   doc_delete  removes one kept PDF, file and all (a document made by mistake)
 //   health      which secrets are set (booleans only), for setup
 //
 // Everything except health and unlock needs the token. The token is signed
@@ -529,6 +530,21 @@ async function docGet(id: unknown): Promise<Response> {
   return json({ document: about, pdf_base64: bytesToBase64(new Uint8Array(await file.data.arrayBuffer())) });
 }
 
+// A document made by mistake (8 Oct: a receipt with the wrong payment, made
+// again on another PC). Storage files cannot be deleted with SQL, so here.
+async function docDelete(id: unknown): Promise<Response> {
+  if (typeof id !== "string" || !UUID.test(id)) return json({ error: "bad_doc", field: "id" }, 400);
+  const db = database();
+  const { data: doc, error } = await db.from("documents").select("path").eq("id", id).maybeSingle();
+  if (error) return json({ error: "database" }, 500);
+  if (!doc) return json({ deleted: 0 });
+  const removed = await db.storage.from("documents").remove([doc.path]);
+  if (removed.error) return json({ error: "storage", detail: removed.error.message }, 500);
+  const gone = await db.from("documents").delete().eq("id", id);
+  if (gone.error) return json({ error: "database" }, 500);
+  return json({ deleted: 1 });
+}
+
 // ---------------------------------------------------------------- mail --
 
 // Microsoft's sign-in for personal accounts (outlook.com). Housecall has its
@@ -934,6 +950,8 @@ Deno.serve(async (req: Request) => {
       return docList(body.pc);
     case "doc_get":
       return docGet(body.id);
+    case "doc_delete":
+      return docDelete(body.id);
     default:
       return json({ error: "unknown_action" }, 400);
   }
