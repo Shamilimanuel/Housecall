@@ -3208,6 +3208,19 @@ Describe 'Kept documents and the overview (7 Oct)' {
         } finally { $script:HcWin = $saved }
     }
 
+    It 'reads the history again after this visit is saved (8 Oct: a list opened earlier stayed old)' {
+        $saved = $script:HcWin
+        try {
+            $script:HcWin = @{ Fin = (New-HcFinishState); Hist = @{ Stage = 'list'; Visits = @(); Notice = $null } }
+            Mock Get-HcRelayResult { [pscustomobject]@{ Ok = $true; Data = [pscustomobject]@{ id = 7 } } }
+            Mock Update-HcFinishBar { }
+            Mock Update-HcFinishPanel { }
+            Complete-HcVisitSaved @{} @() $null @()
+            $script:HcWin.Fin.Saved | Should Be $true
+            $script:HcWin.Hist.Stage | Should Be 'new'
+        } finally { $script:HcWin = $saved }
+    }
+
     It 'groups the documents per month with the money in it (notes count nothing)' {
         $months = @(ConvertTo-HcOverviewMonths $docs)
         $months.Count | Should Be 2

@@ -42,7 +42,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = '47c15026b8b1'
+$HcBuild = '05c7622b2f30'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -16319,6 +16319,8 @@ function Complete-HcVisitSaved {
     if (-not $ErrorText -and $r -and $r.Ok) {
         $f.Saved = $true
         if ($r.Data.id) { $f.VisitId = [long]$r.Data.id }
+        # A list read before this save lacks it: read it again when shown.
+        if ($w.Hist.Stage -eq 'list') { $w.Hist.Stage = 'new' }
     }
     else { $f.Notice = T 'mem.notSaved' (Get-HcRelayMessage $(if ($r) { $r.Error } else { 'unreachable' })) }
     if ($Job.ThenClose) {

@@ -888,6 +888,8 @@ function Complete-HcVisitSaved {
     if (-not $ErrorText -and $r -and $r.Ok) {
         $f.Saved = $true
         if ($r.Data.id) { $f.VisitId = [long]$r.Data.id }
+        # A list read before this save lacks it: read it again when shown.
+        if ($w.Hist.Stage -eq 'list') { $w.Hist.Stage = 'new' }
     }
     else { $f.Notice = T 'mem.notSaved' (Get-HcRelayMessage $(if ($r) { $r.Error } else { 'unreachable' })) }
     if ($Job.ThenClose) {
