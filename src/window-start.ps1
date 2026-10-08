@@ -22,7 +22,7 @@ function Update-HcStartPanel {
     $w = $script:HcWin
     $add = { param($element) [void]$Panel.Children.Add($element) }
     if ($w.Pc.Stage -eq 'new') { Start-HcPcLoad }
-    if ((Test-HcUnlocked) -and $w.Hist.Stage -eq 'new') { Start-HcHistoryLoad }
+    if ((Test-HcUnlocked) -and $w.Hist.Stage -eq 'new') { Start-HcHistoryLoad 'pc' }
 
     # Goedemiddag, het bezoek is gestart om 14:05.
     $hour = (Get-Date).Hour

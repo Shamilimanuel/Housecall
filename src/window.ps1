@@ -1461,7 +1461,7 @@ function Show-HcWindow {
         FromAll = $false; All = $null; BusyText = ''; Clock = $null; SearchFirst = $null; ChangeAsk = $null; UndoInChanges = $false
         Queue = New-Object System.Collections.ArrayList; Job = $null; WasBusy = $false
         Runspace = $null; Outcome = 'done'; Finished = $false; CloseAnyway = $false; CloseAsk = $false
-        VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null }
+        VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null; Scope = 'pc'; AllStage = 'new'; AllVisits = @(); AllDocs = @() }
         Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }; Ai = (New-HcAiState); Ph = (New-HcPhoneState)
         Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
     }

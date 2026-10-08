@@ -42,7 +42,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = '05c7622b2f30'
+$HcBuild = 'be7ab85918ea'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -1827,6 +1827,7 @@ $script:Strings = @{
         'relay.wrongCode'    = 'That code is not right. Type the code the app shows now.'
         'relay.codeUsed'     = 'That code was already used. Wait for the next one (every 30 seconds).'
         'relay.locked'       = 'Too many wrong codes: wait 15 minutes.'
+        'relay.lockedDay'    = 'Too many wrong codes today: Housecall is locked for a day. Shamil got an email about it.'
         'relay.notSetUp'     = 'The relay is not set up yet: run tools\setup-ai.ps1 on your own PC.'
         'relay.expired'      = 'The unlock has expired: type a new code.'
         'relay.unreachable'  = 'The relay cannot be reached. Is the Supabase project paused? Restore it in the Supabase dashboard.'
@@ -1837,6 +1838,10 @@ $script:Strings = @{
         'menu.history'       = 'Visit history'
         'mem.title'          = 'Visit history of this PC'
         'mem.none'           = 'No earlier visits recorded for this PC.'
+        'mem.titleAll'       = 'All clients'
+        'mem.noneAll'        = 'No visits recorded yet.'
+        'mem.scope.pc'       = 'This PC'
+        'mem.scope.all'      = 'All clients'
         'mem.known'          = 'Known PC{0}: last visit {1}'
         'mem.saveAsk'        = 'Save this visit in your visit history? Code from Google Authenticator (Enter = skip)'
         'mem.labelAsk'       = 'Name or note for this PC, for your records (Enter = {0})'
@@ -4001,6 +4006,7 @@ $script:Strings = @{
         'relay.wrongCode'    = 'Die code klopt niet. Typ de code die de app nu laat zien.'
         'relay.codeUsed'     = 'Die code is al gebruikt. Wacht op de volgende (elke 30 seconden).'
         'relay.locked'       = 'Te veel verkeerde codes: wacht 15 minuten.'
+        'relay.lockedDay'    = 'Te veel verkeerde codes vandaag: Housecall zit een dag op slot. Shamil heeft er een mail over gekregen.'
         'relay.notSetUp'     = 'De relay is nog niet ingesteld: start tools\setup-ai.ps1 op uw eigen pc.'
         'relay.expired'      = 'De ontgrendeling is verlopen: typ een nieuwe code.'
         'relay.unreachable'  = 'De relay is niet bereikbaar. Staat het Supabase-project op pauze? Herstel het in het Supabase-dashboard.'
@@ -4011,6 +4017,10 @@ $script:Strings = @{
         'menu.history'       = 'Bezoekgeschiedenis'
         'mem.title'          = 'Bezoekgeschiedenis van deze pc'
         'mem.none'           = 'Geen eerdere bezoeken vastgelegd voor deze pc.'
+        'mem.titleAll'       = 'Alle klanten'
+        'mem.noneAll'        = 'Nog geen bezoeken vastgelegd.'
+        'mem.scope.pc'       = 'Deze pc'
+        'mem.scope.all'      = 'Alle klanten'
         'mem.known'          = 'Bekende pc{0}: laatste bezoek {1}'
         'mem.saveAsk'        = 'Dit bezoek opslaan in uw bezoekgeschiedenis? Code uit Google Authenticator (Enter = overslaan)'
         'mem.labelAsk'       = 'Naam of kenmerk voor deze pc, voor uw administratie (Enter = {0})'
@@ -12607,6 +12617,7 @@ function Get-HcRelayMessage {
         'wrong_code'  { T 'relay.wrongCode' }
         'code_used'   { T 'relay.codeUsed' }
         'locked'      { T 'relay.locked' }
+        'locked_day'  { T 'relay.lockedDay' }
         'not_set_up'  { T 'relay.notSetUp' }
         'locked_out'  { T 'relay.expired' }
         'unreachable' { T 'relay.unreachable' }
@@ -15278,7 +15289,7 @@ function Show-HcWindow {
         FromAll = $false; All = $null; BusyText = ''; Clock = $null; SearchFirst = $null; ChangeAsk = $null; UndoInChanges = $false
         Queue = New-Object System.Collections.ArrayList; Job = $null; WasBusy = $false
         Runspace = $null; Outcome = 'done'; Finished = $false; CloseAnyway = $false; CloseAsk = $false
-        VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null }
+        VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null; Scope = 'pc'; AllStage = 'new'; AllVisits = @(); AllDocs = @() }
         Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }; Ai = (New-HcAiState); Ph = (New-HcPhoneState)
         Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
     }
@@ -16262,13 +16273,17 @@ function Invoke-HcVisitClick {
         'finDone'    { Complete-HcVisitWindow }
         'closeAnyway' { $w.CloseAnyway = $true; $w.Outcome = 'done'; $w.Window.Close() }
         'histDelete' { $w.Hist.Confirm = $Tag.Id; $w.Hist.Notice = $null; Update-HcOther }
+        'histScope'  { $w.Hist.Scope = $Tag.Scope; $w.Hist.Confirm = $null; $w.Hist.Notice = $null; Start-HcHistory; Update-HcOther }
         'histNo'     { $w.Hist.Confirm = $null; Update-HcOther }
         'histDoc'    { Open-HcKeptDoc $Tag.Id }
         'histYes'    {
-            $visit = @($w.Hist.Visits | Where-Object { [long]$_.id -eq [long]$w.Hist.Confirm }) | Select-Object -First 1
+            $all = $w.Hist.Scope -eq 'all'
+            $visit = @($(if ($all) { $w.Hist.AllVisits } else { $w.Hist.Visits }) | Where-Object { [long]$_.id -eq [long]$w.Hist.Confirm }) | Select-Object -First 1
             $w.Hist.Confirm = $null
-            $w.Hist.Stage = 'loading'
-            Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_delete'; token = $script:HcToken; pc = (Get-HcWindowPcId); id = [long]$visit.id }
+            if ($all) { $w.Hist.AllStage = 'loading' } else { $w.Hist.Stage = 'loading' }
+            # In "Alle klanten" a visit can belong to another PC: delete it there.
+            $pc = if ($visit.pc) { [string]$visit.pc } else { Get-HcWindowPcId }
+            Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_delete'; token = $script:HcToken; pc = $pc; id = [long]$visit.id }
                          Visit = $visit; Done = 'Complete-HcHistoryDelete' }
             Update-HcOther
         }
@@ -16321,6 +16336,7 @@ function Complete-HcVisitSaved {
         if ($r.Data.id) { $f.VisitId = [long]$r.Data.id }
         # A list read before this save lacks it: read it again when shown.
         if ($w.Hist.Stage -eq 'list') { $w.Hist.Stage = 'new' }
+        if ($w.Hist.AllStage -eq 'list') { $w.Hist.AllStage = 'new' }
     }
     else { $f.Notice = T 'mem.notSaved' (Get-HcRelayMessage $(if ($r) { $r.Error } else { 'unreachable' })) }
     if ($Job.ThenClose) {
@@ -16598,18 +16614,32 @@ function Format-HcDocLine {
 
 # -------------------------------------------------------------- history --
 
+# "Alle klanten" only on Shamil's own devices, recognised by the housecall
+# command (tools\install-command.ps1), which is never put on a client's PC:
+# there the screen shows that client's history and nobody else's.
+function Test-HcOwnDevice {
+    Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\housecall.cmd')
+}
+
 function Start-HcHistory {
     $w = $script:HcWin
     $h = $w.Hist
     if (-not $w.Environment.Online) { $h.Stage = 'offline'; return }
-    if ($h.Stage -in @('loading', 'list')) { return }
+    if ($h.Scope -eq 'all' -and -not (Test-HcOwnDevice)) { $h.Scope = 'pc' }
+    $stage = if ($h.Scope -eq 'all') { $h.AllStage } else { $h.Stage }
+    if ($stage -in @('loading', 'list')) { return }
     if (Test-HcUnlocked) { Start-HcHistoryLoad } else { $h.Stage = 'code' }
 }
 
+# 'pc': this PC's visits. 'all': every client's, kept apart (AllVisits) so
+# the start page and the name for the invoice keep using this PC's.
 function Start-HcHistoryLoad {
+    param([string]$Scope = $script:HcWin.Hist.Scope)
     $h = $script:HcWin.Hist
-    $h.Stage = 'loading'
-    Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcWindowPcId) }; Done = 'Complete-HcHistory' }
+    if ($h.Stage -eq 'code') { $h.Stage = 'new' }
+    $body = @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcWindowPcId) }
+    if ($Scope -eq 'all') { $h.AllStage = 'loading'; $body.all = $true } else { $h.Stage = 'loading' }
+    Add-HcJob @{ Kind = 'relay'; Body = $body; Scope = $Scope; Done = 'Complete-HcHistory' }
 }
 
 function Complete-HcHistory {
@@ -16617,6 +16647,19 @@ function Complete-HcHistory {
     $w = $script:HcWin
     $h = $w.Hist
     $r = Get-HcRelayResult $Output
+    if ($Job.Scope -eq 'all') {
+        if ($ErrorText -or -not $r -or -not $r.Ok) {
+            $code = if ($r) { $r.Error } else { 'unreachable' }
+            if ($code -eq 'locked_out') { $script:HcToken = $null; $h.Stage = 'code'; $h.AllStage = 'new'; $h.Notice = T 'relay.expired' }
+            else { $h.AllStage = 'list'; $h.AllVisits = @(); $h.AllDocs = @(); $h.Notice = Get-HcRelayMessage $code }
+        } else {
+            $h.AllVisits = @($r.Data.visits | Where-Object { $_ })
+            $h.AllDocs = @($r.Data.documents | Where-Object { $_ })
+            $h.AllStage = 'list'
+        }
+        Update-HcOther
+        return
+    }
     if ($ErrorText -or -not $r -or -not $r.Ok) {
         $code = if ($r) { $r.Error } else { 'unreachable' }
         if ($code -eq 'locked_out') { $script:HcToken = $null; $h.Stage = 'code'; $h.Notice = T 'relay.expired' }
@@ -16644,6 +16687,8 @@ function Complete-HcHistoryDelete {
         $h.Notice = T 'mem.deleted'
         if ($Job.Visit.invoice_number) { $h.Notice += ' ' + (T 'mem.invoiceKept' $Job.Visit.invoice_number) }
     }
+    if ($h.Stage -eq 'list') { $h.Stage = 'new' }
+    if ($h.AllStage -eq 'list') { $h.AllStage = 'new' }
     Start-HcHistoryLoad
     Update-HcOther
 }
@@ -16654,9 +16699,24 @@ function Update-HcHistoryPanel {
     $h = $w.Hist
     $add = { param($element) [void]$Panel.Children.Add($element) }
     & $add (New-HcVisitToggle)
-    & $add (New-HcText (T 'mem.title') 22 'Text' -Bold -Margin @(0, 4, 0, 10))
+    $all = $h.Scope -eq 'all'
+    if (Test-HcOwnDevice) {
+        $scopes = New-Object Windows.Controls.StackPanel
+        $scopes.Orientation = 'Horizontal'
+        $scopes.Margin = New-HcThickness @(0, 0, 0, 4)
+        foreach ($s in @('pc', 'all')) {
+            $chip = New-HcChip (T "mem.scope.$s") @{ Do = 'histScope'; Scope = $s } -On:($h.Scope -eq $s)
+            $chip.IsEnabled = -not (Test-HcBusy)
+            [void]$scopes.Children.Add($chip)
+        }
+        & $add $scopes
+    }
+    & $add (New-HcText $(if ($all) { T 'mem.titleAll' } else { T 'mem.title' }) 22 'Text' -Bold -Margin @(0, 4, 0, 10))
     if ($h.Notice) { & $add (New-HcText $h.Notice 14.5 'Ok' -Bold) }
-    switch ($h.Stage) {
+    $visits = if ($all) { $h.AllVisits } else { $h.Visits }
+    $docs = if ($all) { $h.AllDocs } else { $h.Docs }
+    $stage = if ($h.Stage -in @('offline', 'code') -or -not $all) { $h.Stage } else { $h.AllStage }
+    switch ($stage) {
         'offline' { & $add (New-HcText (T 'win.hist.offline') 15 'Soft') }
         'code'    { & $add (New-HcCodeBox 'history' (T 'win.hist.codeIntro')) }
         'loading' {
@@ -16670,8 +16730,8 @@ function Update-HcHistoryPanel {
             & $add $bar
         }
         'list' {
-            if (@($h.Visits).Count -eq 0 -and @($h.Docs).Count -eq 0) { & $add (New-HcText (T 'mem.none') 15 'Soft'); return }
-            foreach ($v in @($h.Visits)) {
+            if (@($visits).Count -eq 0 -and @($docs).Count -eq 0) { & $add (New-HcText $(if ($all) { T 'mem.noneAll' } else { T 'mem.none' }) 15 'Soft'); return }
+            foreach ($v in @($visits)) {
                 $card = New-Object Windows.Controls.StackPanel
                 $head = New-Object Windows.Controls.DockPanel
                 $delete = New-HcChip (T 'win.hist.delete') @{ Do = 'histDelete'; Id = [long]$v.id }
@@ -16684,7 +16744,7 @@ function Update-HcHistoryPanel {
                 if ($v.invoice_number) { [void]$card.Children.Add((New-HcText (T 'mem.invoice' $v.invoice_number) 13.5 'Hi' -Bold -Margin @(0, 0, 0, 4))) }
                 foreach ($p in @($v.problems)) { [void]$card.Children.Add((New-HcText ($p.code + '  ' + (T "problem.$($p.code)")) 14 'Soft' -Margin @(0, 0, 0, 2))) }
                 foreach ($c in @($v.changes)) { [void]$card.Children.Add((New-HcLine 'ok' $c)) }
-                foreach ($d in @($h.Docs | Where-Object { $_.visit_id -and [long]$_.visit_id -eq [long]$v.id })) { [void]$card.Children.Add((New-HcDocRow $d)) }
+                foreach ($d in @($docs | Where-Object { $_.visit_id -and [long]$_.visit_id -eq [long]$v.id })) { [void]$card.Children.Add((New-HcDocRow $d)) }
                 if ($h.Confirm -eq [long]$v.id) {
                     [void]$card.Children.Add((New-HcQuestion (T 'win.hist.deleteAsk' (Format-HcVisitLine $v)) 'histYes' 'histNo'))
                 }
@@ -16693,8 +16753,8 @@ function Update-HcHistoryPanel {
                 & $add $box
             }
             # Kept documents whose visit is not among these (an older one, or one never saved).
-            $shown = @($h.Visits | ForEach-Object { [long]$_.id })
-            $other = @($h.Docs | Where-Object { -not $_.visit_id -or [long]$_.visit_id -notin $shown })
+            $shown = @($visits | ForEach-Object { [long]$_.id })
+            $other = @($docs | Where-Object { -not $_.visit_id -or [long]$_.visit_id -notin $shown })
             if ($other.Count) {
                 $card = New-Object Windows.Controls.StackPanel
                 [void]$card.Children.Add((New-HcText (T 'doc.other') 16 'Text' -Bold -Margin @(0, 4, 0, 4)))
@@ -17413,7 +17473,7 @@ function Update-HcStartPanel {
     $w = $script:HcWin
     $add = { param($element) [void]$Panel.Children.Add($element) }
     if ($w.Pc.Stage -eq 'new') { Start-HcPcLoad }
-    if ((Test-HcUnlocked) -and $w.Hist.Stage -eq 'new') { Start-HcHistoryLoad }
+    if ((Test-HcUnlocked) -and $w.Hist.Stage -eq 'new') { Start-HcHistoryLoad 'pc' }
 
     # Goedemiddag, het bezoek is gestart om 14:05.
     $hour = (Get-Date).Hour

@@ -831,13 +831,17 @@ function Invoke-HcVisitClick {
         'finDone'    { Complete-HcVisitWindow }
         'closeAnyway' { $w.CloseAnyway = $true; $w.Outcome = 'done'; $w.Window.Close() }
         'histDelete' { $w.Hist.Confirm = $Tag.Id; $w.Hist.Notice = $null; Update-HcOther }
+        'histScope'  { $w.Hist.Scope = $Tag.Scope; $w.Hist.Confirm = $null; $w.Hist.Notice = $null; Start-HcHistory; Update-HcOther }
         'histNo'     { $w.Hist.Confirm = $null; Update-HcOther }
         'histDoc'    { Open-HcKeptDoc $Tag.Id }
         'histYes'    {
-            $visit = @($w.Hist.Visits | Where-Object { [long]$_.id -eq [long]$w.Hist.Confirm }) | Select-Object -First 1
+            $all = $w.Hist.Scope -eq 'all'
+            $visit = @($(if ($all) { $w.Hist.AllVisits } else { $w.Hist.Visits }) | Where-Object { [long]$_.id -eq [long]$w.Hist.Confirm }) | Select-Object -First 1
             $w.Hist.Confirm = $null
-            $w.Hist.Stage = 'loading'
-            Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_delete'; token = $script:HcToken; pc = (Get-HcWindowPcId); id = [long]$visit.id }
+            if ($all) { $w.Hist.AllStage = 'loading' } else { $w.Hist.Stage = 'loading' }
+            # In "Alle klanten" a visit can belong to another PC: delete it there.
+            $pc = if ($visit.pc) { [string]$visit.pc } else { Get-HcWindowPcId }
+            Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_delete'; token = $script:HcToken; pc = $pc; id = [long]$visit.id }
                          Visit = $visit; Done = 'Complete-HcHistoryDelete' }
             Update-HcOther
         }
@@ -890,6 +894,7 @@ function Complete-HcVisitSaved {
         if ($r.Data.id) { $f.VisitId = [long]$r.Data.id }
         # A list read before this save lacks it: read it again when shown.
         if ($w.Hist.Stage -eq 'list') { $w.Hist.Stage = 'new' }
+        if ($w.Hist.AllStage -eq 'list') { $w.Hist.AllStage = 'new' }
     }
     else { $f.Notice = T 'mem.notSaved' (Get-HcRelayMessage $(if ($r) { $r.Error } else { 'unreachable' })) }
     if ($Job.ThenClose) {
@@ -1167,18 +1172,32 @@ function Format-HcDocLine {
 
 # -------------------------------------------------------------- history --
 
+# "Alle klanten" only on Shamil's own devices, recognised by the housecall
+# command (tools\install-command.ps1), which is never put on a client's PC:
+# there the screen shows that client's history and nobody else's.
+function Test-HcOwnDevice {
+    Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\housecall.cmd')
+}
+
 function Start-HcHistory {
     $w = $script:HcWin
     $h = $w.Hist
     if (-not $w.Environment.Online) { $h.Stage = 'offline'; return }
-    if ($h.Stage -in @('loading', 'list')) { return }
+    if ($h.Scope -eq 'all' -and -not (Test-HcOwnDevice)) { $h.Scope = 'pc' }
+    $stage = if ($h.Scope -eq 'all') { $h.AllStage } else { $h.Stage }
+    if ($stage -in @('loading', 'list')) { return }
     if (Test-HcUnlocked) { Start-HcHistoryLoad } else { $h.Stage = 'code' }
 }
 
+# 'pc': this PC's visits. 'all': every client's, kept apart (AllVisits) so
+# the start page and the name for the invoice keep using this PC's.
 function Start-HcHistoryLoad {
+    param([string]$Scope = $script:HcWin.Hist.Scope)
     $h = $script:HcWin.Hist
-    $h.Stage = 'loading'
-    Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcWindowPcId) }; Done = 'Complete-HcHistory' }
+    if ($h.Stage -eq 'code') { $h.Stage = 'new' }
+    $body = @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcWindowPcId) }
+    if ($Scope -eq 'all') { $h.AllStage = 'loading'; $body.all = $true } else { $h.Stage = 'loading' }
+    Add-HcJob @{ Kind = 'relay'; Body = $body; Scope = $Scope; Done = 'Complete-HcHistory' }
 }
 
 function Complete-HcHistory {
@@ -1186,6 +1205,19 @@ function Complete-HcHistory {
     $w = $script:HcWin
     $h = $w.Hist
     $r = Get-HcRelayResult $Output
+    if ($Job.Scope -eq 'all') {
+        if ($ErrorText -or -not $r -or -not $r.Ok) {
+            $code = if ($r) { $r.Error } else { 'unreachable' }
+            if ($code -eq 'locked_out') { $script:HcToken = $null; $h.Stage = 'code'; $h.AllStage = 'new'; $h.Notice = T 'relay.expired' }
+            else { $h.AllStage = 'list'; $h.AllVisits = @(); $h.AllDocs = @(); $h.Notice = Get-HcRelayMessage $code }
+        } else {
+            $h.AllVisits = @($r.Data.visits | Where-Object { $_ })
+            $h.AllDocs = @($r.Data.documents | Where-Object { $_ })
+            $h.AllStage = 'list'
+        }
+        Update-HcOther
+        return
+    }
     if ($ErrorText -or -not $r -or -not $r.Ok) {
         $code = if ($r) { $r.Error } else { 'unreachable' }
         if ($code -eq 'locked_out') { $script:HcToken = $null; $h.Stage = 'code'; $h.Notice = T 'relay.expired' }
@@ -1213,6 +1245,8 @@ function Complete-HcHistoryDelete {
         $h.Notice = T 'mem.deleted'
         if ($Job.Visit.invoice_number) { $h.Notice += ' ' + (T 'mem.invoiceKept' $Job.Visit.invoice_number) }
     }
+    if ($h.Stage -eq 'list') { $h.Stage = 'new' }
+    if ($h.AllStage -eq 'list') { $h.AllStage = 'new' }
     Start-HcHistoryLoad
     Update-HcOther
 }
@@ -1223,9 +1257,24 @@ function Update-HcHistoryPanel {
     $h = $w.Hist
     $add = { param($element) [void]$Panel.Children.Add($element) }
     & $add (New-HcVisitToggle)
-    & $add (New-HcText (T 'mem.title') 22 'Text' -Bold -Margin @(0, 4, 0, 10))
+    $all = $h.Scope -eq 'all'
+    if (Test-HcOwnDevice) {
+        $scopes = New-Object Windows.Controls.StackPanel
+        $scopes.Orientation = 'Horizontal'
+        $scopes.Margin = New-HcThickness @(0, 0, 0, 4)
+        foreach ($s in @('pc', 'all')) {
+            $chip = New-HcChip (T "mem.scope.$s") @{ Do = 'histScope'; Scope = $s } -On:($h.Scope -eq $s)
+            $chip.IsEnabled = -not (Test-HcBusy)
+            [void]$scopes.Children.Add($chip)
+        }
+        & $add $scopes
+    }
+    & $add (New-HcText $(if ($all) { T 'mem.titleAll' } else { T 'mem.title' }) 22 'Text' -Bold -Margin @(0, 4, 0, 10))
     if ($h.Notice) { & $add (New-HcText $h.Notice 14.5 'Ok' -Bold) }
-    switch ($h.Stage) {
+    $visits = if ($all) { $h.AllVisits } else { $h.Visits }
+    $docs = if ($all) { $h.AllDocs } else { $h.Docs }
+    $stage = if ($h.Stage -in @('offline', 'code') -or -not $all) { $h.Stage } else { $h.AllStage }
+    switch ($stage) {
         'offline' { & $add (New-HcText (T 'win.hist.offline') 15 'Soft') }
         'code'    { & $add (New-HcCodeBox 'history' (T 'win.hist.codeIntro')) }
         'loading' {
@@ -1239,8 +1288,8 @@ function Update-HcHistoryPanel {
             & $add $bar
         }
         'list' {
-            if (@($h.Visits).Count -eq 0 -and @($h.Docs).Count -eq 0) { & $add (New-HcText (T 'mem.none') 15 'Soft'); return }
-            foreach ($v in @($h.Visits)) {
+            if (@($visits).Count -eq 0 -and @($docs).Count -eq 0) { & $add (New-HcText $(if ($all) { T 'mem.noneAll' } else { T 'mem.none' }) 15 'Soft'); return }
+            foreach ($v in @($visits)) {
                 $card = New-Object Windows.Controls.StackPanel
                 $head = New-Object Windows.Controls.DockPanel
                 $delete = New-HcChip (T 'win.hist.delete') @{ Do = 'histDelete'; Id = [long]$v.id }
@@ -1253,7 +1302,7 @@ function Update-HcHistoryPanel {
                 if ($v.invoice_number) { [void]$card.Children.Add((New-HcText (T 'mem.invoice' $v.invoice_number) 13.5 'Hi' -Bold -Margin @(0, 0, 0, 4))) }
                 foreach ($p in @($v.problems)) { [void]$card.Children.Add((New-HcText ($p.code + '  ' + (T "problem.$($p.code)")) 14 'Soft' -Margin @(0, 0, 0, 2))) }
                 foreach ($c in @($v.changes)) { [void]$card.Children.Add((New-HcLine 'ok' $c)) }
-                foreach ($d in @($h.Docs | Where-Object { $_.visit_id -and [long]$_.visit_id -eq [long]$v.id })) { [void]$card.Children.Add((New-HcDocRow $d)) }
+                foreach ($d in @($docs | Where-Object { $_.visit_id -and [long]$_.visit_id -eq [long]$v.id })) { [void]$card.Children.Add((New-HcDocRow $d)) }
                 if ($h.Confirm -eq [long]$v.id) {
                     [void]$card.Children.Add((New-HcQuestion (T 'win.hist.deleteAsk' (Format-HcVisitLine $v)) 'histYes' 'histNo'))
                 }
@@ -1262,8 +1311,8 @@ function Update-HcHistoryPanel {
                 & $add $box
             }
             # Kept documents whose visit is not among these (an older one, or one never saved).
-            $shown = @($h.Visits | ForEach-Object { [long]$_.id })
-            $other = @($h.Docs | Where-Object { -not $_.visit_id -or [long]$_.visit_id -notin $shown })
+            $shown = @($visits | ForEach-Object { [long]$_.id })
+            $other = @($docs | Where-Object { -not $_.visit_id -or [long]$_.visit_id -notin $shown })
             if ($other.Count) {
                 $card = New-Object Windows.Controls.StackPanel
                 [void]$card.Children.Add((New-HcText (T 'doc.other') 16 'Text' -Bold -Margin @(0, 4, 0, 4)))

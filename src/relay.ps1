@@ -56,6 +56,7 @@ function Get-HcRelayMessage {
         'wrong_code'  { T 'relay.wrongCode' }
         'code_used'   { T 'relay.codeUsed' }
         'locked'      { T 'relay.locked' }
+        'locked_day'  { T 'relay.lockedDay' }
         'not_set_up'  { T 'relay.notSetUp' }
         'locked_out'  { T 'relay.expired' }
         'unreachable' { T 'relay.unreachable' }

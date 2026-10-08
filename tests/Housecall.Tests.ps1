@@ -3221,6 +3221,50 @@ Describe 'Kept documents and the overview (7 Oct)' {
         } finally { $script:HcWin = $saved }
     }
 
+    It 'offers Alle klanten only where the housecall command is installed (Shamil''s own devices)' {
+        $savedLocal = $env:LOCALAPPDATA
+        $fake = Join-Path $env:TEMP ('hc-own-' + [guid]::NewGuid().ToString('N'))
+        try {
+            $env:LOCALAPPDATA = $fake
+            Test-HcOwnDevice | Should Be $false
+            New-Item -ItemType Directory -Path (Join-Path $fake 'Microsoft\WindowsApps') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $fake 'Microsoft\WindowsApps\housecall.cmd') -Value '@echo off'
+            Test-HcOwnDevice | Should Be $true
+        } finally {
+            $env:LOCALAPPDATA = $savedLocal
+            Remove-Item -LiteralPath $fake -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'keeps Alle klanten apart from this PC''s history and the client''s name' {
+        $saved = $script:HcWin; $savedToken = $script:HcToken
+        try {
+            $fin = New-HcFinishState
+            $script:HcWin = @{ Fin = $fin; PcId = ('a' * 64); Queue = New-Object System.Collections.ArrayList
+                Hist = @{ Stage = 'list'; Visits = @('mine'); Docs = @(); Notice = $null; Scope = 'all'; AllStage = 'new'; AllVisits = @(); AllDocs = @() } }
+            $script:HcToken = 'x.y'
+            Start-HcHistoryLoad
+            $job = $script:HcWin.Queue[0]
+            $job.Body.all | Should Be $true
+            $job.Scope | Should Be 'all'
+            $script:HcWin.Hist.AllStage | Should Be 'loading'
+            $script:HcWin.Hist.Stage | Should Be 'list'
+
+            Mock Update-HcOther { }
+            Mock Get-HcRelayResult { [pscustomobject]@{ Ok = $true; Data = [pscustomobject]@{
+                visits = @([pscustomobject]@{ id = 1; pc = ('b' * 64); label = 'Mevr. de Vries' }); documents = @() } } }
+            Complete-HcHistory $job @() $null @()
+            $script:HcWin.Hist.AllStage | Should Be 'list'
+            @($script:HcWin.Hist.AllVisits).Count | Should Be 1
+            @($script:HcWin.Hist.Visits) | Should Be @('mine')
+            "$($fin.Name)" | Should Be ''
+        } finally { $script:HcWin = $saved; $script:HcToken = $savedToken }
+    }
+
+    It 'says the day lock in words' {
+        Get-HcRelayMessage 'locked_day' | Should Match 'dag|day'
+    }
+
     It 'groups the documents per month with the money in it (notes count nothing)' {
         $months = @(ConvertTo-HcOverviewMonths $docs)
         $months.Count | Should Be 2

@@ -7,7 +7,8 @@
 //   unlock      a 6-digit Authenticator code -> a session token (4 hours)
 //   chat        one round of the AI chat: forwards the conversation to Claude
 //               with Housecall's system prompt and tools, returns the reply
-//   visit_get   the last visits recorded for a PC
+//   visit_get   the last visits recorded for a PC; with all: true, every
+//               client's (the history's "Alle klanten", on Shamil's own devices)
 //   visit_save  records a visit
 //   visit_delete  removes one visit of a PC (its invoice is kept)
 //   settings_get / settings_save   business details and prices for invoices
@@ -44,11 +45,16 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const MODEL = "claude-opus-5";
 const TOKEN_HOURS = 4;
-// Wrong codes allowed in 15 minutes. Per address, so a stranger who knows
-// the (public) relay URL cannot lock Shamil out; and a high cap for everyone
-// together, against a spread-out guessing attack.
+// Wrong codes allowed. Per address in 15 minutes, so one stranger who knows
+// the (public) relay URL cannot lock Shamil out by himself; and for everyone
+// together in 24 hours, against guessing spread over many addresses. With
+// three codes valid at a time, 20 a day makes a lucky guess take about 45
+// years on average (50 per 15 minutes took about two months). The price: a
+// determined attacker can lock Shamil out for a day, so he gets a mail at
+// WARN_AT wrong codes and at the lock (8 Oct).
 const MAX_FAILED_PER_IP = 5;
-const MAX_FAILED_TOTAL = 50;
+const MAX_FAILED_PER_DAY = 20;
+const WARN_AT = 10;
 const CODES = [
   "A1", "A2", "A3", "A4", "B1", "B2", "B3", "C1", "C2", "C3", "C4",
   "D1", "D2", "D3", "D4", "E1", "E2", "E3", "F1", "F2", "F3",
@@ -269,28 +275,54 @@ async function ipHash(secret: string, req: Request): Promise<string> {
   return b64url(new Uint8Array(digest)).slice(0, 22);
 }
 
+// Mails Shamil (the address in the business details) about wrong codes.
+// Never in the way of unlock: a mail that cannot go is simply not sent.
+async function warnOwner(total: number): Promise<void> {
+  if (!resendReady()) return;
+  try {
+    const { data: s } = await database().from("settings").select("email").eq("id", 1).maybeSingle();
+    if (!s?.email || !EMAIL.test(s.email)) return;
+    const locked = total >= MAX_FAILED_PER_DAY;
+    const text = locked
+      ? `${total} wrong Authenticator codes were typed for Housecall in the last 24 hours, so Housecall now refuses every code for a day.\n\n` +
+        "Was it you? Then wait, or ask Claude to unlock it early.\n" +
+        "Was it not you? Then someone is guessing. Your clients' data is safe: the lock stops them."
+      : `${total} wrong Authenticator codes were typed for Housecall in the last 24 hours.\n\n` +
+        `Was it you? Then nothing is wrong. Was it not you? Then someone may be guessing; at ${MAX_FAILED_PER_DAY} Housecall locks itself for a day.`;
+    await resendSend(resendKey(), {
+      fromName: "Housecall", from: mailFrom(), to: s.email,
+      subject: locked ? "Housecall is locked: too many wrong codes" : "Housecall: wrong Authenticator codes",
+      text,
+    });
+  } catch { /* the lock works without the mail */ }
+}
+
+async function failedUnlock(db: ReturnType<typeof database>, ip: string, before: number): Promise<Response> {
+  await db.from("failed_unlocks").insert({ failed_at: new Date().toISOString(), ip_hash: ip });
+  const total = before + 1;
+  if (total === WARN_AT || total === MAX_FAILED_PER_DAY) await warnOwner(total);
+  return json({ error: "wrong_code" }, 401);
+}
+
 async function unlock(secret: string, code: unknown, ip: string): Promise<Response> {
   const db = database();
   const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const today = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const [mine, all] = await Promise.all([
     db.from("failed_unlocks").select("id", { count: "exact", head: true }).eq("ip_hash", ip).gte("failed_at", since),
-    db.from("failed_unlocks").select("id", { count: "exact", head: true }).gte("failed_at", since),
+    db.from("failed_unlocks").select("id", { count: "exact", head: true }).gte("failed_at", today),
   ]);
-  if ((mine.count ?? 0) >= MAX_FAILED_PER_IP || (all.count ?? 0) >= MAX_FAILED_TOTAL) return json({ error: "locked" }, 429);
-  if (typeof code !== "string" || !/^\d{6}$/.test(code)) {
-    await db.from("failed_unlocks").insert({ failed_at: new Date().toISOString(), ip_hash: ip });
-    return json({ error: "wrong_code" }, 401);
-  }
+  const before = all.count ?? 0;
+  if (before >= MAX_FAILED_PER_DAY) return json({ error: "locked_day" }, 429);
+  if ((mine.count ?? 0) >= MAX_FAILED_PER_IP) return json({ error: "locked" }, 429);
+  if (typeof code !== "string" || !/^\d{6}$/.test(code)) return failedUnlock(db, ip, before);
 
   const now = Math.floor(Date.now() / 1000 / 30);
   let matched: number | null = null;
   for (const step of [now - 1, now, now + 1]) {
     if (sameString(await totpAt(secret, step), code)) matched = step;
   }
-  if (matched === null) {
-    await db.from("failed_unlocks").insert({ failed_at: new Date().toISOString(), ip_hash: ip });
-    return json({ error: "wrong_code" }, 401);
-  }
+  if (matched === null) return failedUnlock(db, ip, before);
   const { error } = await db.from("used_codes").insert({ step: matched });
   if (error) {
     if (error.code === "23505") return json({ error: "code_used" }, 401);
@@ -304,7 +336,17 @@ async function unlock(secret: string, code: unknown, ip: string): Promise<Respon
 
 const PC = /^[0-9a-f]{64}$/;
 
-async function visitGet(pc: unknown): Promise<Response> {
+async function visitGet(pc: unknown, all: unknown): Promise<Response> {
+  if (all === true) {
+    // Every client's, newest first, each with its PC so a visit can be deleted there.
+    const db = database();
+    const { data, error } = await db.from("visits")
+      .select("id, pc, visited_at, label, lang, problems, changes, invoice_number")
+      .order("visited_at", { ascending: false }).limit(100);
+    if (error) return json({ error: "database" }, 500);
+    const docs = await db.from("documents").select(DOC_FIELDS).order("created_at", { ascending: false }).limit(300);
+    return json({ visits: data, documents: docs.error ? [] : docs.data });
+  }
   if (typeof pc !== "string" || !PC.test(pc)) return json({ error: "bad_pc" }, 400);
   const { data, error } = await database().from("visits")
     .select("id, visited_at, label, lang, problems, changes, invoice_number")
@@ -923,7 +965,7 @@ Deno.serve(async (req: Request) => {
       return chat(messages);
     }
     case "visit_get":
-      return visitGet(body.pc);
+      return visitGet(body.pc, body.all);
     case "visit_save":
       return visitSave(body);
     case "visit_delete":
