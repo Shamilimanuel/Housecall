@@ -1,0 +1,11 @@
+desktop.ini
+Thumbs.db
+.vscode/
+
+# Kept off the public repo: the business card (it has a phone number) and
+# the project diary.
+brand/card/
+TASK.md
+
+# Real client documents (invoices, receipts) are never published.
+*.pdf

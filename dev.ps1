@@ -1,0 +1,101 @@
+<#
+    Housecall -- finds and fixes computer problems at a client's desk.
+
+        irm housecall.shamilimanuel.nl | iex
+
+    Pick a letter for the area and a number for the problem (A1 = no
+    internet), or ? to describe it in your own words. Housecall checks that
+    part of the PC read-only, and changes nothing without a yes.
+
+    Options (these need the longer form, because `iex` cannot take arguments):
+
+        $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
+        & ([scriptblock]::Create((irm $s))) -DryRun      # check, never fix
+        & ([scriptblock]::Create((irm $s))) -Lang nl     # force Dutch or English
+        & ([scriptblock]::Create((irm $s))) -Console    # the text menu, not the window
+
+    setup.ps1 is built by build.ps1 from dev.ps1 and the files in src\.
+    Edit those, never setup.ps1 by hand: the next build overwrites it.
+#>
+
+[CmdletBinding()]
+param(
+    # Diagnose only. Every fix is skipped, so it is safe to try on any PC.
+    [switch]$DryRun,
+    # Language for everything on screen: nl or en. Defaults to the Windows
+    # language. No [ValidateSet] on purpose: under `irm | iex` this block runs
+    # as plain variable declarations, and the empty default would fail it.
+    [string]$Lang,
+    # Open this problem straight away, e.g. A1. Used when Housecall restarts
+    # itself as administrator, so it carries on where it was.
+    [string]$Start,
+    # Leave the AI chat (?) out of the menu, e.g. when the client does not
+    # want anything sent over the internet.
+    [switch]$NoAI,
+    # The text menu instead of the window, e.g. when the window does not
+    # show well on a PC. Without a desktop the text menu comes by itself.
+    [switch]$Console
+)
+
+$ErrorActionPreference = 'Stop'
+
+# Which build this is: build.ps1 puts a fingerprint of the code here, and
+# writes the same one to version.txt. A copy run from a USB stick compares
+# the two and says when it is out of date. 'dev' = straight from src\.
+$HcBuild = 'dev'
+
+<#
+    All of Housecall's code is kept as text in $HcSource and run from there.
+    That way it can hand itself to a new administrator window (see
+    Start-HcElevated in src\fixes.ps1) even when it came in through
+    `irm | iex` and there is no file on disk, and even with no internet.
+#>
+# >>> sources (build.ps1 replaces this block with the files' text)
+$HcSource = @(
+    'strings.ps1'
+    'ui.ps1'
+    'environment.ps1'
+    'menu.ps1'
+    'checks\common.ps1'
+    'checks\network.ps1'
+    'checks\email.ps1'
+    'checks\security.ps1'
+    'checks\devices.ps1'
+    'checks\audio-interop.ps1'
+    'checks\sound.ps1'
+    'checks\performance.ps1'
+    'checks\updates.ps1'
+    'checks\desktop.ps1'
+    'checks\overview.ps1'
+    'checks\win11.ps1'
+    'checks\comfort.ps1'
+    'checks\daily.ps1'
+    'checks\trouble.ps1'
+    'checks\android.ps1'
+    'fixes.ps1'
+    'note.ps1'
+    'relay.ps1'
+    'invoice.ps1'
+    'invoice-page.ps1'
+    'window.ps1'
+    'window-visit.ps1'
+    'window-pc.ps1'
+    'window-phone.ps1'
+    'window-start.ps1'
+    'window-ai.ps1'
+    'ai.ps1'
+) | ForEach-Object { [IO.File]::ReadAllText((Join-Path (Join-Path $PSScriptRoot 'src') $_)) }
+$HcSource = $HcSource -join "`r`n"
+# <<< sources
+
+# The options, saved before the code loads: run as a file (a USB stick),
+# this script's scope is Housecall's script: scope, and loading the code
+# resets $script:Lang -- which is this same $Lang.
+$HcOptions = @{ DryRun = [bool]$DryRun; Lang = $Lang; Start = $Start; NoAI = [bool]$NoAI; Console = [bool]$Console }
+
+. ([scriptblock]::Create($HcSource))
+$script:HcSource = $HcSource
+$script:HcBuild = $HcBuild
+# Run from a file (a USB stick) rather than through irm | iex.
+$script:HcFromFile = [bool]$PSCommandPath
+Start-Housecall -DryRun:$HcOptions.DryRun -Lang $HcOptions.Lang -Start $HcOptions.Start -NoAI:$HcOptions.NoAI -Console:$HcOptions.Console

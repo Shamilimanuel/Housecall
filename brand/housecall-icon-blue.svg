@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512">
+  <!-- Housecall: a house with signal waves (house + call) -->
+  <path d="M6 33 L28 14 L50 33" fill="none" stroke="#1d4e63" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 31 V54 a3 3 0 0 0 3 3 H40 a3 3 0 0 0 3 -3 V31" fill="none" stroke="#1d4e63" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="23" y="41" width="10" height="16" rx="2" fill="#1d4e63"/>
+  <path d="M46 16 a8 8 0 0 1 6 6" fill="none" stroke="#e8862e" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M47 7.5 a16 16 0 0 1 13.5 13.5" fill="none" stroke="#e8862e" stroke-width="4.5" stroke-linecap="round"/>
+</svg>
