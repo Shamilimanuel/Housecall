@@ -3190,6 +3190,24 @@ Describe 'Kept documents and the overview (7 Oct)' {
         [pscustomobject]@{ id = '4'; created_at = '2026-09-13T12:00:00Z'; kind = 'invoice'; invoice_number = '2026-0002'; client_name = 'Mevr. de Vries'; total = 40; payment = 'tikkie' }
     )
 
+    It 'keeps a one-page document one page, printed by the worker (8 Oct: a receipt came out a page per line)' {
+        $saved = $script:HcWin
+        try {
+            $fin = New-HcFinishState
+            $fin.Mode = 'receipt'; $fin.Name = 'Test'
+            $fin.Settings = [pscustomobject]@{ business_name = 'X'; start_fee = 15; start_minutes = 30 }
+            $script:HcWin = @{ Fin = $fin; Queue = New-Object System.Collections.ArrayList }
+            Mock Update-HcVisit { }
+            Start-HcDocSave
+            $job = $script:HcWin.Queue[0]
+            $job.Kind | Should Be 'pdf'
+            $job.DocKind | Should Be 'receipt'
+            @($job.Body.Pages).Count | Should Be 1
+            @($job.Body.Pages[0]).Count | Should BeGreaterThan 5
+            $fin.Stage | Should Be 'working'
+        } finally { $script:HcWin = $saved }
+    }
+
     It 'groups the documents per month with the money in it (notes count nothing)' {
         $months = @(ConvertTo-HcOverviewMonths $docs)
         $months.Count | Should Be 2
