@@ -43,7 +43,9 @@
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const MODEL = "claude-opus-5";
+// Claude Opus 5.5: the current Opus, cheaper than Opus 5 ($4 / $20 per MTok).
+// Thinking stays on (it cannot be turned off); effort is set explicitly below.
+const MODEL = "claude-opus-5-5";
 const TOKEN_HOURS = 4;
 // Wrong codes allowed. Per address in 15 minutes, so one stranger who knows
 // the (public) relay URL cannot lock Shamil out by himself; and for everyone
@@ -240,6 +242,9 @@ async function chat(messages: Anthropic.Beta.BetaMessageParam[]): Promise<Respon
     const params = {
       model: MODEL,
       max_tokens: 16000,
+      // medium is Opus 5.5's own default, written out so it stays put: a few
+      // checks and a short answer do not need deeper thinking.
+      output_config: { effort: "medium" },
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       cache_control: { type: "ephemeral" },
