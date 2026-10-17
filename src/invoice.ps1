@@ -74,15 +74,16 @@ function Get-HcLabourLines {
     $start = [decimal]$(if ($Settings.start_fee) { $Settings.start_fee } else { 0 })
     $included = [int]$(if ($Settings.start_minutes) { $Settings.start_minutes } else { 0 })
     if ($start -gt 0 -and $included -gt 0) {
-        # The first line names the whole time worked, so the client sees how long it took.
-        [pscustomobject]@{ Description = (T 'inv.startLine' $Minutes $included); Amount = $start }
+        # "Starttarief, eerste 30 minuten", then "Extra tijd, 30 minuten (2 x EUR 7,50)":
+        # the two lines add up to the time worked (17 Oct, clearer than "Arbeid 60 min: ...").
+        [pscustomobject]@{ Description = (T 'inv.startLine' $included); Amount = $start }
         # After the starting price: per quarter of an hour, every one begun,
         # so the amounts stay round (50 min = 2 quarters extra, not 20 min).
         $extra = $Minutes - $included
         if ($extra -gt 0 -and $rate -gt 0) {
             $quarters = [int][Math]::Ceiling($extra / 15)
             $perQuarter = [Math]::Round($rate / 4, 2)
-            [pscustomobject]@{ Description = (T 'inv.extraTime' $quarters (Format-HcMoney $perQuarter)); Amount = $quarters * $perQuarter }
+            [pscustomobject]@{ Description = (T 'inv.extraTime' ($quarters * 15) $quarters (Format-HcMoney $perQuarter)); Amount = $quarters * $perQuarter }
         }
         return
     }

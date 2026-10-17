@@ -13,6 +13,7 @@
 //   visit_delete  removes one visit of a PC (its invoice is kept)
 //   settings_get / settings_save   business details and prices for invoices
 //   invoice_create  numbers and stores an invoice, totals worked out here
+//   receipt_number  the next betaalbewijs number, B-YYYY-NNNN (own counter)
 //   mail_status / mail_start / mail_finish / mail_disconnect
 //               connect Shamil's Outlook once (Microsoft's device-code
 //               sign-in); the refresh token stays in the database here
@@ -506,13 +507,22 @@ async function invoiceCreate(body: any): Promise<Response> {
   return json({ invoice: data });
 }
 
+// A betaalbewijs gets its number when the visit switches to one (17 Oct).
+// A number is used once it is given, like an invoice number.
+async function receiptNumber(): Promise<Response> {
+  const { data, error } = await database().rpc("issue_receipt_number");
+  if (error || typeof data !== "string") return json({ error: "database" }, 500);
+  return json({ receipt_number: data });
+}
+
 // ----------------------------------------------------------- documents --
 
 // The PDF a visit ended with, for Shamil's administration (7 Oct): the file
 // in the private bucket, what it is about in the table. The client sends
 // one id per visit, so printing, mailing and a corrected amount replace the
 // same document instead of adding one.
-const DOC_FIELDS = "id, created_at, pc, visit_id, kind, client_name, invoice_number, total, payment, lang";
+const DOC_FIELDS = "id, created_at, pc, visit_id, kind, client_name, invoice_number, receipt_number, total, payment, lang";
+const RECEIPT_NUMBER = /^B-\d{4}-\d{4,}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -523,13 +533,14 @@ function bytesToBase64(bytes: Uint8Array): string {
 
 // deno-lint-ignore no-explicit-any
 async function docSave(body: any): Promise<Response> {
-  const { id, pc, visit_id, kind, client_name, invoice_number, total, payment, lang, pdf_base64 } = body;
+  const { id, pc, visit_id, kind, client_name, invoice_number, receipt_number, total, payment, lang, pdf_base64 } = body;
   if (typeof id !== "string" || !UUID.test(id)) return json({ error: "bad_doc", field: "id" }, 400);
   if (pc != null && (typeof pc !== "string" || !PC.test(pc))) return json({ error: "bad_pc" }, 400);
   if (visit_id != null && (typeof visit_id !== "number" || !Number.isInteger(visit_id))) return json({ error: "bad_doc", field: "visit_id" }, 400);
   if (!["invoice", "receipt", "note"].includes(kind)) return json({ error: "bad_doc", field: "kind" }, 400);
   if (client_name != null && (typeof client_name !== "string" || client_name.length > 100)) return json({ error: "bad_doc", field: "client_name" }, 400);
   if (invoice_number != null && (typeof invoice_number !== "string" || !/^\d{4}-\d{4,}$/.test(invoice_number))) return json({ error: "bad_doc", field: "invoice_number" }, 400);
+  if (receipt_number != null && (typeof receipt_number !== "string" || !RECEIPT_NUMBER.test(receipt_number))) return json({ error: "bad_doc", field: "receipt_number" }, 400);
   if (total != null && (typeof total !== "number" || !Number.isFinite(total) || total < 0 || total > 100000)) return json({ error: "bad_doc", field: "total" }, 400);
   if (payment != null && !["pin", "cash", "transfer", "tikkie"].includes(payment)) return json({ error: "bad_doc", field: "payment" }, 400);
   if (lang !== "nl" && lang !== "en") return json({ error: "bad_lang" }, 400);
@@ -549,8 +560,8 @@ async function docSave(body: any): Promise<Response> {
   if (stored.error) return json({ error: "storage", detail: stored.error.message }, 500);
   const { error } = await db.from("documents").upsert({
     id, pc: pc ?? null, visit_id: visit_id ?? null, kind, client_name: client_name || null,
-    invoice_number: invoice_number ?? null, total: total ?? null, payment: payment ?? null, lang,
-    path, size: bytes.length, updated_at: new Date().toISOString(),
+    invoice_number: invoice_number ?? null, receipt_number: receipt_number ?? null,
+    total: total ?? null, payment: payment ?? null, lang, path, size: bytes.length, updated_at: new Date().toISOString(),
   });
   if (error) return json({ error: "database" }, 500);
   return json({ saved: true, id });
@@ -981,6 +992,8 @@ Deno.serve(async (req: Request) => {
       return settingsSave(body.settings);
     case "invoice_create":
       return invoiceCreate(body);
+    case "receipt_number":
+      return receiptNumber();
     case "mail_status":
       return mailStatus();
     case "mail_start":

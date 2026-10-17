@@ -53,6 +53,7 @@ function New-HcDraftInvoice {
         total                = $total
         payment              = $Fin.Payment
         due_date             = $Now.AddDays($days).ToString('yyyy-MM-dd')
+        receipt_number       = "$($Fin.ReceiptNumber)"
     }
 }
 
@@ -126,6 +127,8 @@ function New-HcFinishState {
         MailAsk = $null; MailBusy = $false; MailResult = $null
         # The kept PDF: one id per visit, so a second save replaces the first.
         DocId = [guid]::NewGuid().ToString(); VisitId = $null; DocSaved = $false; DocFailed = $false
+        # The betaalbewijs number (B-2026-0001), asked once when the visit becomes a receipt.
+        ReceiptNumber = $null; ReceiptAsked = $false
     }
 }
 
@@ -189,8 +192,32 @@ function Complete-HcSettings {
     $script:HcStartMinutes = if ([decimal]$(if ($s.start_fee) { $s.start_fee } else { 0 }) -gt 0) { [int]$s.start_minutes } else { 0 }
     if ((Get-HcPayMethods $s) -notcontains $f.Payment) { $f.Payment = 'pin' }
     $f.Stage = 'form'
+    Request-HcReceiptNumber
     Update-HcVisit
     Update-HcClock
+}
+
+# A betaalbewijs gets its number from the relay as soon as the visit
+# becomes one, so the preview, the print and the PDF all show it. Asked
+# once per visit: switching back and forth keeps the same number, and a
+# number is used once given (a visit that then ends with a note leaves a
+# gap, which is fine for receipts). Without it the receipt has no number.
+function Request-HcReceiptNumber {
+    $w = $script:HcWin
+    $f = $w.Fin
+    if ($f.Mode -ne 'receipt' -or -not $f.Settings -or $f.ReceiptAsked -or $script:DryRun -or -not $w.Environment.Online -or -not (Test-HcUnlocked)) { return }
+    $f.ReceiptAsked = $true
+    Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'receipt_number'; token = $script:HcToken }; Done = 'Complete-HcReceiptNumber' }
+}
+
+function Complete-HcReceiptNumber {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $f = $script:HcWin.Fin
+    $r = Get-HcRelayResult $Output
+    if (-not $ErrorText -and $r -and $r.Ok -and "$($r.Data.receipt_number)" -match '^B-\d{4}-\d{4,}$') {
+        $f.ReceiptNumber = [string]$r.Data.receipt_number
+        Update-HcVisit
+    }
 }
 
 # ----------------------------------------------------------- code slots --
@@ -812,6 +839,7 @@ function Invoke-HcVisitClick {
                 $f.Mode = $Tag.Mode
                 # The note needs no code: leave the code slots for the note's form.
                 if ($f.Mode -eq 'note' -and $f.Stage -in @('code', 'new')) { $f.Stage = 'form'; $w.Totp = $null }
+                Request-HcReceiptNumber
             }
             $f.Notice = $null
             Update-HcVisit
@@ -928,7 +956,7 @@ function Get-HcPdfName {
     $f = $script:HcWin.Fin
     $today = Get-Date -Format 'yyyy-MM-dd'
     if ($f.Invoice) { return (T 'win.fin.pdfInvoice' $f.Invoice.number) }
-    if ($f.Mode -eq 'receipt') { return (T 'win.fin.pdfReceipt' $today) }
+    if ($f.Mode -eq 'receipt') { return (T 'win.fin.pdfReceipt' $(if ($f.ReceiptNumber) { $f.ReceiptNumber } else { $today })) }
     T 'win.fin.pdfNote' $today
 }
 
@@ -1053,18 +1081,19 @@ function Get-HcDocPages {
 # What doc_save gets: the PDF and what it is about, for the overview.
 function New-HcDocBody {
     param([hashtable]$Fin, [string]$Kind, [byte[]]$Pdf, [string]$PcId, [string]$Label)
-    $total = $null; $payment = $null; $number = $null; $client = $Label
+    $total = $null; $payment = $null; $number = $null; $client = $Label; $receipt = $null
     if ($Kind -eq 'invoice') {
         $total = [double]$Fin.Invoice.total; $payment = [string]$Fin.Invoice.payment
         $number = [string]$Fin.Invoice.number; $client = [string]$Fin.Invoice.client_name
     } elseif ($Kind -eq 'receipt') {
         $total = [double](New-HcDraftInvoice $Fin $Fin.Settings).total; $payment = [string]$Fin.Payment
+        if ($Fin.ReceiptNumber) { $receipt = [string]$Fin.ReceiptNumber }
     }
     if ($client -and $client.Length -gt 100) { $client = $client.Substring(0, 100) }
     @{
         action = 'doc_save'; token = $script:HcToken; id = $Fin.DocId; pc = $PcId
         visit_id = $(if ($Fin.VisitId) { [long]$Fin.VisitId } else { $null })
-        kind = $Kind; client_name = $(if ($client) { $client } else { $null }); invoice_number = $number
+        kind = $Kind; client_name = $(if ($client) { $client } else { $null }); invoice_number = $number; receipt_number = $receipt
         total = $total; payment = $(if ($payment) { $payment } else { $null }); lang = $script:Lang
         pdf_base64 = [Convert]::ToBase64String($Pdf)
     }
@@ -1164,7 +1193,9 @@ function Remove-HcOpenedDocs {
 # "Betaalbewijs  EUR 32,50  pin": a kept document in one line.
 function Format-HcDocLine {
     param($Doc)
-    $parts = @(if ($Doc.kind -eq 'invoice' -and $Doc.invoice_number) { T 'mem.invoice' $Doc.invoice_number } else { T "doc.kind.$($Doc.kind)" })
+    $parts = @(if ($Doc.kind -eq 'invoice' -and $Doc.invoice_number) { T 'mem.invoice' $Doc.invoice_number }
+               elseif ($Doc.kind -eq 'receipt' -and $Doc.receipt_number) { T 'mem.receipt' $Doc.receipt_number }
+               else { T "doc.kind.$($Doc.kind)" })
     if ($null -ne $Doc.total -and "$($Doc.total)" -ne '') { $parts += Format-HcMoney ([decimal]$Doc.total) }
     if ($Doc.payment) { $parts += T "inv.pay.$($Doc.payment)" }
     $parts -join ('  ' + [char]0x00B7 + '  ')

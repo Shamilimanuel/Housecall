@@ -1886,16 +1886,29 @@ Describe 'The window: Afronden and the history' {
         (New-HcDraftInvoice $fin $settings $now).client_name | Should Be 'Mevr. de Vries'
     }
 
-    It 'draws a betaalbewijs: the amounts and "voldaan", without a number' {
+    It 'draws a betaalbewijs: the amounts, its number and the VOLDAAN stamp' {
         $fin = New-HcFinishState
-        $fin.Minutes = 50; $fin.Payment = 'cash'; $fin.Title = 'mrs'; $fin.Name = 'de Vries'
-        $texts = @(Get-HcInvoiceLayout (New-HcDraftInvoice $fin $settings $now) -Receipt | ForEach-Object { $_ } | ForEach-Object { $_.Text })
+        $fin.Minutes = 50; $fin.Payment = 'cash'; $fin.Title = 'mrs'; $fin.Name = 'de Vries'; $fin.ReceiptNumber = 'B-2026-0007'
+        $steps = @(Get-HcInvoiceLayout (New-HcDraftInvoice $fin $settings $now) -Receipt | ForEach-Object { $_ })
+        $texts = @($steps | ForEach-Object { $_.Text })
         $texts -contains 'Betaalbewijs' | Should Be $true
+        $texts -contains 'B-2026-0007' | Should Be $true
         $texts -contains 'VOOR' | Should Be $true
         $texts -contains 'Mevr. de Vries' | Should Be $true
         @($texts | Where-Object { $_ -match 'concept' }).Count | Should Be 0
         @($texts | Where-Object { $_ -match [char]0x20AC }).Count | Should BeGreaterThan 1
-        $texts -contains 'Voldaan op 27 september 2026 (contant).' | Should Be $true
+        $texts -contains 'TOTAAL, VOLDAAN' | Should Be $true
+        $texts -contains 'Contant' | Should Be $true
+        $stamp = @($steps | Where-Object { $_.Kind -eq 'stamp' })
+        $stamp.Count | Should Be 1
+        $stamp[0].Text | Should Be 'VOLDAAN'
+        $stamp[0].Sub | Should Match '^27-09-2026 .+ contant$'
+        # The box names the number to mention.
+        @($texts | Where-Object { $_ -match 'Noem nummer B-2026-0007' }).Count | Should Be 1
+        # Without a number from the relay: still a receipt, just without one.
+        $fin.ReceiptNumber = $null
+        $texts = @(Get-HcInvoiceLayout (New-HcDraftInvoice $fin $settings $now) -Receipt | ForEach-Object { $_ } | ForEach-Object { $_.Text })
+        @($texts | Where-Object { $_ -match 'B-20' -or $_ -match 'Noem nummer' }).Count | Should Be 0
         # Paying later is no receipt, even once there is an IBAN.
         Get-HcPayMethods ([pscustomobject]@{ iban = 'NL00BANK0123456789' }) -Receipt | Should Be @('pin', 'cash', 'tikkie')
     }
@@ -2053,7 +2066,7 @@ Describe 'The invoice' {
         $out = Start-Housecall -Lang nl -Answers @('A1', '', 'Q', '123456', 'Mevr. de Vries', 'Dorpsstraat 1', '1234 AB Utrecht', '', '45', '', 'Draadloze muis 19,95', '', '1', 'j') 6>&1 | Out-String
         $lines = @($script:Sent['invoice_create'].lines)
         $lines.Count | Should Be 3
-        $lines[0].description | Should Be "Arbeid: 45 min, $euro 40,00 per uur"
+        $lines[0].description | Should Be "Arbeid, 45 minuten ($euro 40,00 per uur)"
         $lines[0].amount | Should Be 30
         $lines[1].description | Should Be 'Voorrijkosten'
         $lines[2].description | Should Be 'Draadloze muis'
@@ -2114,23 +2127,24 @@ Describe 'The invoice' {
         $settings = [pscustomobject]@{ hourly_rate = 20; start_fee = 15; start_minutes = 30 }
         $short = @(Get-HcLabourLines 30 $settings)
         $short.Count | Should Be 1
-        $short[0].Description | Should Be 'Arbeid 30 min: starttarief (tot 30 min)'
+        $short[0].Description | Should Be 'Starttarief, eerste 30 minuten'
         $short[0].Amount | Should Be 15
         $long = @(Get-HcLabourLines 75 $settings)
         $long.Count | Should Be 2
-        $long[0].Description | Should Be 'Arbeid 75 min: starttarief (tot 30 min)'
-        $long[1].Description | Should Be "+ 3 x 15 min extra, $euro 5,00 per kwartier"
+        $long[0].Description | Should Be 'Starttarief, eerste 30 minuten'
+        $long[1].Description | Should Be "Extra tijd, 45 minuten (3 x $euro 5,00)"
         # Both fit the invoice's description column (44 characters), also at 3-digit minutes.
         foreach ($l in @(Get-HcLabourLines 240 $settings)) { $l.Description.Length | Should BeLessThan 45 }
         $long[1].Amount | Should Be 15
         @(Get-HcLabourLines 0 $settings).Count | Should Be 0
         # Without a starting price: all of it by the hour, as before.
         $plain = @(Get-HcLabourLines 45 ([pscustomobject]@{ hourly_rate = 20 }))
-        $plain[0].Description | Should Be "Arbeid: 45 min, $euro 20,00 per uur"
+        $plain[0].Description | Should Be "Arbeid, 45 minuten ($euro 20,00 per uur)"
         $plain[0].Amount | Should Be 15
         # Every quarter begun counts: 50 min is 2 quarters after the first 30, EUR 25 in all.
         $fifty = @(Get-HcLabourLines 50 $settings)
-        $fifty[1].Description | Should Be "+ 2 x 15 min extra, $euro 5,00 per kwartier"
+        # A begun quarter counts whole: 50 min is 30 + 30, not 30 + 20.
+        $fifty[1].Description | Should Be "Extra tijd, 30 minuten (2 x $euro 5,00)"
         $fifty[1].Amount | Should Be 10
         Get-HcRateText $settings | Should Be "$euro 15,00 voor de eerste 30 min, daarna $euro 5,00 per begonnen kwartier"
     }
@@ -2179,7 +2193,7 @@ Describe 'The invoice' {
         $script:HcStartedAt = $start
     }
 
-    It 'the drawn invoice: layout B on A4, the work with ticks, more pages when it is long' {
+    It 'the drawn invoice: the Kader look on A4, the work with ticks, more pages when it is long' {
         $script:Lang = 'nl'
         $script:HcVisit.Clear(); $script:HcChanges.Clear(); $script:HcWork.Clear()
         [void]$script:HcVisit.Add([pscustomobject]@{ Code = 'C1'; FindingId = $null; FindingArgs = @() })
@@ -2193,8 +2207,16 @@ Describe 'The invoice' {
         ($texts -contains 'Factuur') | Should Be $true
         ($texts -contains 'BETREFT') | Should Be $true
         ($texts -contains 'Printer doet het niet sinds de verhuizing') | Should Be $true
-        ($texts -contains 'Computerhulp aan huis') | Should Be $true
+        ($texts -contains 'Housecall') | Should Be $true
+        @($texts | Where-Object { $_ -match 'Computerhulp aan huis$' }).Count | Should Be 1
+        ($texts -contains 'Wat er is gedaan') | Should Be $true
         ($texts -contains 'Onderdeel moet besteld worden (nog niet opgelost)') | Should Be $true
+        @($pages[0] | Where-Object { $_.Kind -eq 'logo' }).Count | Should Be 1
+        # Paid by payment request: not paid yet, so no stamp and "Te betalen".
+        @($pages[0] | Where-Object { $_.Kind -eq 'stamp' }).Count | Should Be 0
+        ($texts -contains 'TE BETALEN') | Should Be $true
+        # The heavy box for the total and the two others, plus the box to ask questions in.
+        @($pages[0] | Where-Object { $_.Kind -eq 'rect' }).Count | Should BeGreaterThan 2
         ($texts -contains "$euro 45,00") | Should Be $true
         ($texts -contains 'Pagina 1 van 1') | Should Be $true
         @($pages[0] | Where-Object { $_.Kind -eq 'check' }).Count | Should Be 1
@@ -3317,7 +3339,57 @@ Describe 'Kept documents and the overview (7 Oct)' {
         Format-HcDocLine ([pscustomobject]@{ kind = 'receipt'; total = 32.5; payment = 'pin' }) | Should Be ('Betaalbewijs' + $dot + [char]0x20AC + ' 32,50' + $dot + 'pin')
         Format-HcDocLine ([pscustomobject]@{ kind = 'invoice'; invoice_number = '2026-0003'; total = 65; payment = 'tikkie' }) | Should Be ('factuur 2026-0003' + $dot + [char]0x20AC + ' 65,00' + $dot + 'betaalverzoek')
         Format-HcDocLine ([pscustomobject]@{ kind = 'note'; total = $null; payment = $null }) | Should Be 'Briefje'
+        Format-HcDocLine ([pscustomobject]@{ kind = 'receipt'; receipt_number = 'B-2026-0001'; total = 40; payment = 'cash' }) | Should Be ('betaalbewijs B-2026-0001' + $dot + [char]0x20AC + ' 40,00' + $dot + 'contant')
+        $fin.ReceiptNumber = 'B-2026-0001'
+        (New-HcDocBody $fin 'receipt' ([byte[]](37)) ('a' * 64) 'X').receipt_number | Should Be 'B-2026-0001'
+        $null -eq (New-HcDocBody $fin 'invoice' ([byte[]](37)) ('a' * 64) 'X').receipt_number | Should Be $true
         $script:HcToken = $null
+    }
+}
+Describe 'The Kader look: stamp, logo and the questions box (17 Oct)' {
+    $script:Lang = 'nl'
+    $seller = [pscustomobject]@{ business_name = 'Shamil Imanuel'; phone = '06-11111111'; email = 'x@example.nl'; iban = 'NL00BANK0123456789' }
+    $make = { param([hashtable]$c = @{})
+        $i = [pscustomobject]@{ number = '2026-0005'; issued_at = '2026-10-17T12:00:00Z'; seller = $seller
+            client_name = 'Mevr. de Vries'; client_address = $null; client_postcode_city = $null; client_email = $null
+            lines = @([pscustomobject]@{ description = 'Starttarief, eerste 30 minuten'; amount = 25 })
+            btw_mode = 'unset'; subtotal = 25; btw_amount = 0; total = 25; payment = 'pin'; due_date = '2026-10-31' }
+        foreach ($k in $c.Keys) { $i.$k = $c[$k] }
+        $i }
+
+    It 'stamps an invoice paid on the spot, and only that' {
+        foreach ($p in 'pin', 'cash') { @(Get-HcInvoiceLayout (& $make @{ payment = $p }) | ForEach-Object { $_ } | Where-Object { $_.Kind -eq 'stamp' }).Count | Should Be 1 }
+        foreach ($p in 'tikkie', 'transfer') { @(Get-HcInvoiceLayout (& $make @{ payment = $p }) | ForEach-Object { $_ } | Where-Object { $_.Kind -eq 'stamp' }).Count | Should Be 0 }
+        $texts = @(Get-HcInvoiceLayout (& $make @{ payment = 'transfer' }) | ForEach-Object { $_ } | ForEach-Object { $_.Text })
+        $texts -contains 'Overmaken voor 31 oktober 2026' | Should Be $true
+        @($texts | Where-Object { $_ -match 'NL00BANK0123456789' }).Count | Should BeGreaterThan 0
+        # The note: the same header, no boxes, no stamp, no amounts.
+        $note = @(Get-HcInvoiceLayout (& $make) -Note | ForEach-Object { $_ })
+        @($note | Where-Object { $_.Kind -in @('stamp', 'rect') }).Count | Should Be 0
+        @($note | Where-Object { $_.Kind -eq 'logo' }).Count | Should Be 1
+    }
+
+    It 'says how to reach Shamil, with the number when there is a real one' {
+        Get-HcAskText $seller 'B-2026-0001' | Should Be 'Bel of app 06-11111111, of mail x@example.nl. Noem nummer B-2026-0001, dan weet ik meteen wat er is gedaan.'
+        Get-HcAskText $seller 'concept' | Should Be 'Bel of app 06-11111111, of mail x@example.nl.'
+        Get-HcAskText ([pscustomobject]@{ email = 'x@example.nl' }) '' | Should Be 'Mail x@example.nl.'
+        Get-HcAskText ([pscustomobject]@{}) '2026-0005' | Should Be ''
+    }
+
+    It 'draws every page, stamp and logo included, without an error' {
+        $pages = @(Get-HcInvoiceLayout (& $make))
+        $bmp = New-HcInvoiceBitmap $pages[0]
+        $bmp.Width | Should Be 794
+        # Something dark where the logo sits (top right), so it was really drawn.
+        $dark = 0
+        for ($x = 680; $x -lt 730; $x += 2) { for ($y = 90; $y -lt 135; $y += 2) { if ($bmp.GetPixel($x, $y).R -lt 100) { $dark++ } } }
+        $bmp.Dispose()
+        $dark | Should BeGreaterThan 20
+    }
+
+    It 'keeps the labour lines short enough for the description column' {
+        $settings = [pscustomobject]@{ hourly_rate = 30; start_fee = 25; start_minutes = 30 }
+        foreach ($l in @(Get-HcLabourLines 600 $settings)) { $l.Description.Length | Should BeLessThan 45 }
     }
 }
 Describe 'The internet badge (17 Oct)' {
