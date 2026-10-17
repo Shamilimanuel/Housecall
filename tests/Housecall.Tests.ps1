@@ -3320,3 +3320,21 @@ Describe 'Kept documents and the overview (7 Oct)' {
         $script:HcToken = $null
     }
 }
+Describe 'The internet badge (17 Oct)' {
+    It 'goes offline only after two failed rounds, and back online after one good one' {
+        $s = Get-HcNetState $true 0 $false
+        $s.Online | Should Be $true
+        $s.Fails | Should Be 1
+        $s = Get-HcNetState $true 1 $false
+        $s.Online | Should Be $false
+        $s.Fails | Should Be 2
+        $s = Get-HcNetState $false 5 $true
+        $s.Online | Should Be $true
+        $s.Fails | Should Be 0
+        (Get-HcNetState $false 0 $false).Online | Should Be $false
+        (New-HcNetState).Fails | Should Be 0
+        foreach ($lang in 'en', 'nl') {
+            foreach ($key in 'net.online', 'net.offline', 'net.tipOnline', 'net.tipOffline') { "$lang $key $([bool]$script:Strings[$lang][$key])" | Should Be "$lang $key True" }
+        }
+    }
+}

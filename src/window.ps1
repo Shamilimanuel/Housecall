@@ -529,12 +529,116 @@ function Update-HcStatus {
     $w = $script:HcWin
     $panel = $w.Window.FindName('Status')
     $panel.Children.Clear()
+    [void]$panel.Children.Add((New-HcNetBadge ([bool]$w.Environment.Online)))
     [void]$panel.Children.Add((New-HcButton (T 'menu.language') @{ Do = 'language' } 'HcPill'))
     $icon = if ($w.Theme -eq 'dark') { [string][char]0x2600 } else { [string][char]0x263E }
     $theme = New-HcButton $icon @{ Do = 'theme' } 'HcPill'
     $theme.FontFamily = New-Object Windows.Media.FontFamily('Segoe UI Symbol')
     $theme.ToolTip = T 'win.theme'
     [void]$panel.Children.Add($theme)
+}
+
+# ------------------------------------------------- the internet badge --
+
+<#
+    Online or Offline, always in sight at the top right (17 Oct). Measured
+    at the start, then every 15 seconds while the window is open, so a visit
+    sees the internet drop or come back without a restart. The test is one
+    TCP connection (1.1.1.1:443, else 8.8.8.8:53, as Get-HcInternetMs), made
+    asynchronously on the window's own thread: it never waits in the
+    worker's queue behind a check, and a check never waits for it. One
+    failed round is not enough to call the PC offline, so a hiccup does not
+    lock Afronden or the history; one good round is enough to come back.
+#>
+$script:HcNetTargets = @(@('1.1.1.1', 443), @('8.8.8.8', 53))
+$script:HcNetEvery = 15
+$script:HcNetTimeout = 3
+
+function New-HcNetState {
+    @{ Task = $null; Client = $null; Started = $null; Target = 0; Fails = 0; Next = (Get-Date).AddSeconds($script:HcNetEvery) }
+}
+
+# Pure: after one round (both targets tried when the first fails), whether
+# the PC counts as online, and how many failed rounds in a row there are.
+function Get-HcNetState {
+    param([bool]$Online, [int]$Fails, [bool]$Ok)
+    if ($Ok) { return @{ Online = $true; Fails = 0 } }
+    $Fails++
+    @{ Online = ($Online -and $Fails -lt 2); Fails = $Fails }
+}
+
+function New-HcNetBadge {
+    param([bool]$Online)
+    $border = New-Object Windows.Controls.Border
+    $border.CornerRadius = New-Object Windows.CornerRadius(999)
+    $border.Padding = New-HcThickness @(10, 4, 12, 4)
+    $border.Margin = New-HcThickness @(0, 0, 8, 0)
+    $border.VerticalAlignment = 'Center'
+    $border.BorderThickness = New-HcThickness @(1, 1, 1, 1)
+    $border.SetResourceReference([Windows.Controls.Border]::BackgroundProperty, 'Panel')
+    $border.SetResourceReference([Windows.Controls.Border]::BorderBrushProperty, 'Line')
+    $border.ToolTip = T $(if ($Online) { 'net.tipOnline' } else { 'net.tipOffline' })
+    $row = New-Object Windows.Controls.StackPanel
+    $row.Orientation = 'Horizontal'
+    $dot = New-Object Windows.Shapes.Ellipse
+    $dot.Width = 9; $dot.Height = 9
+    $dot.Margin = New-HcThickness @(0, 0, 7, 0)
+    $dot.VerticalAlignment = 'Center'
+    $dot.SetResourceReference([Windows.Shapes.Shape]::FillProperty, $(if ($Online) { 'Ok' } else { 'Warn' }))
+    [void]$row.Children.Add($dot)
+    $text = New-HcText (T $(if ($Online) { 'net.online' } else { 'net.offline' })) 13 $(if ($Online) { 'Text' } else { 'Warn' }) -Bold -Margin @(0, 0, 0, 0)
+    $text.VerticalAlignment = 'Center'
+    [void]$row.Children.Add($text)
+    $border.Child = $row
+    $border
+}
+
+function Start-HcNetProbe {
+    $n = $script:HcWin.Net
+    $target = $script:HcNetTargets[$n.Target]
+    try {
+        $n.Client = New-Object System.Net.Sockets.TcpClient
+        $n.Task = $n.Client.ConnectAsync($target[0], [int]$target[1])
+        $n.Started = Get-Date
+    } catch {
+        if ($n.Client) { try { $n.Client.Close() } catch { } }
+        $n.Client = $null; $n.Task = $null
+        Complete-HcNetRound $false
+    }
+}
+
+# The window's one-second timer: starts a round when it is due, and reads
+# the answer (or gives up after three seconds) without ever blocking.
+function Update-HcNetProbe {
+    $w = $script:HcWin
+    $n = $w.Net
+    if (-not $n) { return }
+    if (-not $n.Task) {
+        if ((Get-Date) -ge $n.Next) { $n.Target = 0; Start-HcNetProbe }
+        return
+    }
+    $done = $n.Task.IsCompleted
+    if (-not $done -and ((Get-Date) - $n.Started).TotalSeconds -lt $script:HcNetTimeout) { return }
+    $ok = $done -and "$($n.Task.Status)" -eq 'RanToCompletion' -and $n.Client.Connected
+    if ($done -and $n.Task.IsFaulted) { $null = $n.Task.Exception }   # read, so it is not reported unobserved
+    try { $n.Client.Close() } catch { }
+    $n.Client = $null; $n.Task = $null
+    if (-not $ok -and $n.Target -lt $script:HcNetTargets.Count - 1) { $n.Target++; Start-HcNetProbe; return }
+    Complete-HcNetRound $ok
+}
+
+function Complete-HcNetRound {
+    param([bool]$Ok)
+    $w = $script:HcWin
+    $n = $w.Net
+    $n.Next = (Get-Date).AddSeconds($script:HcNetEvery)
+    $state = Get-HcNetState ([bool]$w.Environment.Online) $n.Fails $Ok
+    $n.Fails = $state.Fails
+    if ($state.Online -eq [bool]$w.Environment.Online) { return }
+    $w.Environment.Online = $state.Online
+    Update-HcStatus
+    Update-HcSide
+    if ($w.Tab -eq 'start') { Update-HcOther }
 }
 
 function Update-HcClock {
@@ -1391,6 +1495,8 @@ function Complete-HcOnline {
     $w = $script:HcWin
     if (-not $ErrorText -and @($Output) -contains $true) {
         $w.Environment.Online = $true
+        if ($w.Net) { $w.Net.Fails = 0 }
+        Update-HcStatus
         Update-HcSide
     }
 }
@@ -1464,6 +1570,7 @@ function Show-HcWindow {
         VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null; Scope = 'pc'; AllStage = 'new'; AllVisits = @(); AllDocs = @() }
         Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }; Ai = (New-HcAiState); Ph = (New-HcPhoneState)
         Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
+        Net = (New-HcNetState)
     }
     $w = $script:HcWin
     try { $window.Icon = New-HcLogoImage } catch { }
@@ -1531,13 +1638,20 @@ function Show-HcWindow {
     $window.Add_ContentRendered({ $this.Topmost = $true; $this.Activate(); $this.Topmost = $false })
     $window.Add_SizeChanged({ try { Update-HcZoom } catch { } })
 
+    $net = New-Object Windows.Threading.DispatcherTimer
+    $net.Interval = [TimeSpan]::FromSeconds(1)
+    $net.Add_Tick({ try { Update-HcNetProbe } catch { } })
+
     $timer.Start()
     $clock.Start()
+    if (-not $script:DryRun) { $net.Start() }
     try {
         [void]$window.ShowDialog()
     } finally {
         $timer.Stop()
         $clock.Stop()
+        $net.Stop()
+        if ($w.Net.Client) { try { $w.Net.Client.Close() } catch { } }
         if ($w.Job) { try { [void]$w.Job.PS.BeginStop($null, $null) } catch { } }
         try { $rs.CloseAsync() } catch { }
     }
