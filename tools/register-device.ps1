@@ -76,9 +76,17 @@ $sha.Dispose()
 
 Write-Host ''
 Write-Host '  Two codes from Google Authenticator, one after the other.'
-$code1 = ((Read-Host '  The code the app shows now') -replace '\s', '')
-Write-Host '  Wait until the app shows a NEW code (every 30 seconds).'
-$code2 = ((Read-Host '  The next code') -replace '\s', '')
+$code1 = ((Read-Host '  1. The code the app shows now') -replace '\s', '')
+# The app makes a new code at every whole half minute: count down to it,
+# so it is clear the script is waiting for the phone, not stuck.
+$left = 30 - ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() % 30)
+while ($left -gt 0) {
+    Write-Host -NoNewline ("`r  Your app shows a new code in $left s...   ")
+    Start-Sleep -Seconds 1
+    $left--
+}
+Write-Host "`r  The app shows a new code now.                 "
+$code2 = ((Read-Host '  2. Type that new code') -replace '\s', '')
 $name = "$env:COMPUTERNAME".Trim()
 $r = Invoke-Relay @{ action = 'device_register'; code1 = $code1; code2 = $code2; hash = $hash; name = $name }
 if ($r.registered) {
