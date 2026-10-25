@@ -398,12 +398,13 @@ async function wrongCode(day: number): Promise<Response> {
   return json({ error: "wrong_code" }, 401);
 }
 
-// The time step a 6-digit code belongs to (one step either side), or null.
-async function codeStep(secret: string, code: unknown): Promise<number | null> {
+// The time step a 6-digit code belongs to (one step either side, or `back`
+// steps into the past), or null.
+async function codeStep(secret: string, code: unknown, back = 1): Promise<number | null> {
   if (typeof code !== "string" || !/^\d{6}$/.test(code)) return null;
   const now = Math.floor(Date.now() / 1000 / 30);
   let matched: number | null = null;
-  for (const step of [now - 1, now, now + 1]) {
+  for (let step = now - back; step <= now + 1; step++) {
     if (sameString(await totpAt(secret, step), code)) matched = step;
   }
   return matched;
@@ -461,9 +462,12 @@ async function deviceRegister(secret: string, body: any, ip: string): Promise<Re
   const db = database();
   const g = await gate(db, ip);
   if (g instanceof Response) return g;
-  const a = await codeStep(secret, body?.code1);
+  // Both codes are checked when the second arrives, so the first may be up
+  // to two minutes old (it had stopped working by then: fixed 25 Oct); the
+  // second must be a later one.
+  const a = await codeStep(secret, body?.code1, 4);
   const b = await codeStep(secret, body?.code2);
-  if (a === null || b === null || a === b) return wrongCode(g.day);
+  if (a === null || b === null || a >= b) return wrongCode(g.day);
   for (const s of [a, b]) {
     const used = await useStep(db, s);
     if (used) return used;
