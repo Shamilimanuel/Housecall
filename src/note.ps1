@@ -39,6 +39,10 @@ $script:HcWork = New-Object System.Collections.ArrayList
 # faster"), for the note and the invoice: short sentences, in order.
 $script:HcAdvice = New-Object System.Collections.ArrayList
 
+# What the AI found, from AI-hulp with "Op het briefje" on (25 Oct): its
+# short summaries, for the note ("Wat er gevonden is") and the invoice.
+$script:HcAiNotes = New-Object System.Collections.ArrayList
+
 # The ready-made options for that list; any other text can be typed.
 function Get-HcWorkPresets {
     @((T 'work.presets') -split '\|' | ForEach-Object { $_.Trim() } | Where-Object { $_ })

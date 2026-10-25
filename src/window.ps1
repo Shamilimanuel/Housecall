@@ -133,7 +133,7 @@ $script:HcWorkerScript = {
         'ai'     {
             $script:HcToken = $Body.Token
             $script:HcTokenExpires = $Body.Expires
-            Invoke-HcAiConversation $Text
+            Invoke-HcAiTurn $Body.Convo $Text $Body.Effort
         }
     }
 }.ToString()
@@ -261,6 +261,14 @@ function New-HcWindowXaml {
       <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBg}"/>
       <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
       <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+    <Style x:Key="HcQuiet" TargetType="{x:Type Button}" BasedOn="{StaticResource HcButton}">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource Soft}"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="Padding" Value="6,4"/>
+      <Setter Property="Margin" Value="0"/>
     </Style>
     <Style x:Key="HcGroup" TargetType="{x:Type Button}" BasedOn="{StaticResource HcButton}">
       <Setter Property="Background" Value="Transparent"/>
@@ -393,6 +401,15 @@ function New-HcWindowXaml {
       </Border>
     </Grid>
 
+    <DockPanel Grid.Row="1" x:Name="AiTab" Visibility="Collapsed">
+      <Border DockPanel.Dock="Bottom" Padding="20,0,20,12">
+        <StackPanel x:Name="AiDock" MaxWidth="760"/>
+      </Border>
+      <ScrollViewer x:Name="AiScroll" VerticalScrollBarVisibility="Auto">
+        <StackPanel x:Name="AiThread" Margin="20,10,20,18" MaxWidth="760"/>
+      </ScrollViewer>
+    </DockPanel>
+
     <ScrollViewer Grid.Row="1" x:Name="OtherTab" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
       <StackPanel x:Name="OtherPanel" Margin="26,22,26,22" MaxWidth="1100" HorizontalAlignment="Center"/>
     </ScrollViewer>
@@ -519,8 +536,8 @@ function Update-HcTabs {
         $style = if ($w.Tab -eq $tab) { 'HcTabOn' } else { 'HcTab' }
         [void]$panel.Children.Add((New-HcButton (T "win.tab.$tab") @{ Do = 'tab'; Tab = $tab } $style))
     }
-    $body = if ($w.Tab -eq 'problems') { 'ProblemsTab' } elseif ($w.Tab -eq 'phone') { 'PhoneTab' } elseif ($w.Tab -eq 'visit' -and $w.VisitView -in @('finish', 'correct')) { 'VisitTab' } else { 'OtherTab' }
-    foreach ($name in @('ProblemsTab', 'PhoneTab', 'VisitTab', 'OtherTab')) {
+    $body = if ($w.Tab -eq 'problems') { 'ProblemsTab' } elseif ($w.Tab -eq 'phone') { 'PhoneTab' } elseif ($w.Tab -eq 'visit' -and $w.VisitView -in @('finish', 'correct')) { 'VisitTab' } elseif ($w.Tab -eq 'ai') { 'AiTab' } else { 'OtherTab' }
+    foreach ($name in @('ProblemsTab', 'PhoneTab', 'VisitTab', 'AiTab', 'OtherTab')) {
         $w.Window.FindName($name).Visibility = if ($name -eq $body) { 'Visible' } else { 'Collapsed' }
     }
 }
@@ -1210,7 +1227,7 @@ function Update-HcOther {
         }
         'visit' { Update-HcHistoryPanel $panel }
         'pc' { Update-HcPcPanel $panel }
-        'ai' { Update-HcAiPanel $panel }
+        'ai' { Update-HcAiPanel }
     }
 }
 

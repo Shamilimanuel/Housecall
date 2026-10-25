@@ -26,6 +26,7 @@ function Get-HcInvoiceStyle {
             title = & $f 30 'Bold'; body = & $f 14; bodyBold = & $f 14 'Bold'; small = & $f 12.5
             cap = & $f 11 'Bold'; total = & $f 17 'Bold'; item = & $f 13.5; itemItalic = & $f 13.5 'Italic'
             head = & $f 15 'Bold'; brand = & $f 19 'Bold'; tile = & $f 22 'Bold'; stamp = & $f 24 'Bold'; stampSub = & $f 12 'Bold'
+            bigTitle = & $f 34 'Bold'; big = & $f 25
         }
         # Pure black prints as solid toner; anything lighter is dithered.
         Colors = @{
@@ -232,7 +233,8 @@ function Get-HcInvoiceLayout {
         $y += 12
     }
     # Advice from the Pc-overzicht, under the work: what would help next.
-    $advice = @(if (-not $Record -and -not $credit) { $script:HcAdvice })
+    # On an invoice or receipt the AI's summaries (Op het briefje) join the advice.
+    $advice = @(if (-not $Record -and -not $credit) { $script:HcAdvice; if (-not $Note) { $script:HcAiNotes } })
     if ($advice.Count) {
         & $room 30
         & $text (T 'doc.adviceTitle') 'head' $P.Left $y $full
@@ -253,13 +255,13 @@ function Get-HcInvoiceLayout {
         }
         # What was found, so the client can read back what was going on.
         $found = @($script:HcVisit | Where-Object { $_.FindingId })
-        if ($found.Count) {
+        # The AI's summaries (Op het briefje) read as findings too.
+        $foundTexts = @(foreach ($v in $found) { $all = @('finding.' + $v.FindingId) + @($v.FindingArgs); T @all }) + @($script:HcAiNotes)
+        if ($foundTexts.Count) {
             & $room 40
             & $text (T 'note.found') 'head' $P.Left $y $full
             $y += (& $measure 'x' 'head' $full) + 2
-            foreach ($v in $found) {
-                $all = @('finding.' + $v.FindingId) + @($v.FindingArgs)
-                $t = T @all
+            foreach ($t in $foundTexts) {
                 $h = & $measure $t 'item' $full
                 & $room $h
                 & $text $t 'item' $P.Left $y $full
@@ -362,6 +364,50 @@ function Get-HcInvoiceLayout {
     $g.Dispose(); $bmp.Dispose()
     # One array of steps per page (a plain list, so @() gives the pages).
     foreach ($pg in $pages) { , $pg.ToArray() }
+}
+
+# A big-print sheet for the client (25 Oct, AI-hulp /stappen): a title,
+# the explanation and numbered steps in large letters, black on white, with
+# the same header and foot as the other documents. One page; what does not
+# fit is left off.
+function Get-HcBigSheetLayout {
+    param([string]$Title, [string]$Text, [string[]]$Steps)
+    $style = Get-HcInvoiceStyle
+    $F = $style.Fonts
+    $P = $script:HcPage
+    $bmp = New-Object Drawing.Bitmap(1, 1)
+    $g = [Drawing.Graphics]::FromImage($bmp)
+    $g.PageUnit = [Drawing.GraphicsUnit]::Pixel
+    $measure = { param($t, $font, $width) $g.MeasureString([string]$t, $F[$font], [int]$width).Height }
+    $page = New-Object System.Collections.ArrayList
+    $full = $P.Right - $P.Left
+    $add = { param($t, $font, $x, $yy, $w, $color = 'ink')
+        [void]$page.Add([pscustomobject]@{ Kind = 'text'; Text = [string]$t; Font = $font; X = [single]$x; Y = [single]$yy; W = [single]$w; Color = $color; Align = 'left' }) }
+    $y = [single]$P.Top
+    [void]$page.Add([pscustomobject]@{ Kind = 'line'; Y = [single]($y + 3); X = [single]$P.Left; X2 = [single]$P.Right; Color = 'ink'; Width = [single]7 })
+    [void]$page.Add([pscustomobject]@{ Kind = 'logo'; X = [single]($P.Right - 52); Y = [single]($y + 26); Size = [single]52; Color = 'ink' })
+    $y += 26
+    & $add $Title 'bigTitle' ($P.Left - 4) $y ($full - 70)
+    $y += (& $measure $Title 'bigTitle' ($full - 70)) + 30
+    foreach ($para in @($Text | Where-Object { "$_".Trim() })) {
+        $h = & $measure $para 'big' $full
+        if ($y + $h -gt $P.Bottom) { break }
+        & $add $para 'big' $P.Left $y $full
+        $y += $h + 24
+    }
+    $n = 0
+    foreach ($s in @($Steps | Where-Object { "$_".Trim() })) {
+        $n++
+        $h = & $measure $s 'big' ($full - 56)
+        if ($y + $h -gt $P.Bottom) { break }
+        & $add "$n." 'big' $P.Left $y 56
+        & $add $s 'big' ($P.Left + 56) $y ($full - 56)
+        $y += $h + 14
+    }
+    [void]$page.Add([pscustomobject]@{ Kind = 'line'; Y = [single]($P.Bottom + 22); X = [single]$P.Left; X2 = [single]$P.Right; Color = 'rule'; Width = [single]1 })
+    & $add (T 'doc.thanks') 'small' $P.Left ($P.Bottom + 30) $full 'muted'
+    $g.Dispose(); $bmp.Dispose()
+    , $page.ToArray()
 }
 
 # A rectangle with round corners, as a path GDI+ can stroke or fill.

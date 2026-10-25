@@ -1725,9 +1725,10 @@ Describe 'The window (phase 6)' {
         Set-HcFinding $r 'micMuted' @('Mic')
         Add-HcAction $r 'restartAudio'
         Add-HcAction $r 'unmute' @{ Label = 'Mic'; Id = 'x' }
-        $script:HcWin = @{ Ai = @{ State = [pscustomobject]@{ Answer = [pscustomobject]@{ problem_code = 'B2'; fix_ids = @('unmute') }; Reports = @{ B2 = $r } } } }
+        # Since 25 Oct each problem card in the chat passes its own code and fixes.
+        $script:HcWin = @{ Ai = @{ Reports = @{ B2 = $r } } }
         Mock Update-HcTabs { }; Mock Update-HcGroups { }; Mock Update-HcResult { }
-        Open-HcAiFixes
+        Open-HcAiFixes 'B2' @('unmute')
         $script:HcWin.Tab | Should Be 'problems'
         $script:HcWin.Code | Should Be 'B2'
         @($script:HcWin.Report.Actions | ForEach-Object { $_.FixId }) | Should Be 'unmute'
@@ -2326,7 +2327,8 @@ Describe 'The AI chat' {
     It 'stops at the limit of checks and tells the AI so' {
         $script:HcToken = 't.s'; $script:HcTokenExpires = (Get-Date).AddHours(1)
         $script:Requests = New-Object System.Collections.ArrayList
-        Mock Invoke-HcRelay { [void]$script:Requests.Add($Body); & $reply $toolUse }
+        # A new input each time: the same check with the same input is not run again (25 Oct).
+        Mock Invoke-HcRelay { [void]$script:Requests.Add($Body); & $reply ($toolUse -replace '"input":""', ('"input":"' + $script:Requests.Count + '"')) }
         $script:AiMaxChecks = 2
         $state = Invoke-HcAiConversation 'x'
         $script:AiMaxChecks = 6
@@ -2355,6 +2357,115 @@ Describe 'The AI chat' {
         { Start-Housecall -Lang nl -Answers @('?', 'geen geluid meer', '', 'Q') } | Should Not Throw
         (Invoke-HcAiConversation 'x').Error | Should Be 'unreachable'
         Get-HcRelayMessage 'unreachable' | Should Match 'Supabase'
+    }
+}
+
+Describe 'AI-hulp as a conversation (25 Oct)' {
+    $script:Lang = 'en'
+    $printers = [pscustomobject]@{ Now = Get-Date; SpoolerRunning = $true; SpoolerDisabled = $false; Jobs = @()
+        Printers = @([pscustomobject]@{ Name = 'HP DeskJet 2700'; Default = $true; Virtual = $false; Offline = $true; State = 0; HostAddress = $null; Reachable = $null }) }
+    Mock Get-HcPrinterFacts { $script:PrinterReads++; $printers }
+    $reply = { param($json) [pscustomobject]@{ Ok = $true; Status = 200; Error = $null; Data = [pscustomobject]@{ stop_reason = 'tool_use'; content_json = $json; content = ($json | ConvertFrom-Json) } } }
+    $check = '[{"type":"tool_use","id":"tu_1","name":"run_check","input":{"code":"C1","input":""}}]'
+    $ask = '[{"type":"tool_use","id":"tu_2","name":"ask_client","input":{"question":"Does it print nothing at all?","options":["Nothing","Strange signs"]}}]'
+    $answer = '[{"type":"tool_use","id":"tu_3","name":"give_answer","input":{"summary":"The printer is offline.","confidence":"high","problem_code":"C1","fix_ids":[],"more_problems":[],"steps":[],"follow_ups":["Why?"]}}]'
+
+    It 'stops at a question back, then sends the answer as that question''s reply' {
+        $script:HcToken = 't.s'; $script:HcTokenExpires = (Get-Date).AddHours(1)
+        $script:Requests = New-Object System.Collections.ArrayList
+        $script:PrinterReads = 0
+        Mock Invoke-HcRelay {
+            [void]$script:Requests.Add((ConvertTo-Json -InputObject $Body -Depth 30 -Compress))
+            switch ($script:Requests.Count) { 1 { & $reply $check } 2 { & $reply $ask } default { & $reply $answer } }
+        }
+        $s = Invoke-HcAiTurn $null (New-HcAiFirstText 'printer does nothing' @('D1 The whole computer is slow: 14 programs start')) 'high'
+        $s.Question.question | Should Be 'Does it print nothing at all?'
+        $s.Answer | Should Be $null
+        @($s.Ran).Count | Should Be 1
+        $s.Convo.PendingIds[0].Kind | Should Be 'ask'
+        ($script:Requests[0] | ConvertFrom-Json).effort | Should Be 'high'
+        (($script:Requests[0] | ConvertFrom-Json).messages[0].content_json | ConvertFrom-Json)[0].text | Should Match 'already found on this PC'
+
+        $s2 = Invoke-HcAiTurn $s.Convo 'Nothing'
+        $s2.Answer.summary | Should Be 'The printer is offline.'
+        $last = ($script:Requests[2] | ConvertFrom-Json).messages
+        $sent = $last[-1].content_json | ConvertFrom-Json
+        @($sent)[0].type | Should Be 'tool_result'
+        @($sent)[0].tool_use_id | Should Be 'tu_2'
+        @($sent)[0].content | Should Be 'Nothing'
+
+        # A follow-up after the answer: "shown" for the answer, then the new words.
+        $s3 = Invoke-HcAiTurn $s2.Convo 'Why?'
+        $sent = (($script:Requests[3] | ConvertFrom-Json).messages[-1].content_json | ConvertFrom-Json)
+        @($sent)[0].tool_use_id | Should Be 'tu_3'
+        @($sent)[1].text | Should Be 'Why?'
+        $script:PrinterReads | Should Be 1
+    }
+
+    It 'does not run a check again that already ran with the same input' {
+        $script:HcToken = 't.s'; $script:HcTokenExpires = (Get-Date).AddHours(1)
+        $script:Requests = New-Object System.Collections.ArrayList
+        $script:PrinterReads = 0
+        Mock Invoke-HcRelay {
+            [void]$script:Requests.Add($Body)
+            switch ($script:Requests.Count) { 1 { & $reply $check } 2 { & $reply $answer } 3 { & $reply ($check -replace 'tu_1', 'tu_9') } default { & $reply $answer } }
+        }
+        $s = Invoke-HcAiTurn $null 'x'
+        $s2 = Invoke-HcAiTurn $s.Convo 'and again?'
+        $script:PrinterReads | Should Be 1
+        $s2.Convo.ChecksRun | Should Be 1
+        @($s2.Ran).Count | Should Be 0
+    }
+
+    It 'finds the nearest problems without the AI' {
+        @(Get-HcAiNearest 'de printer doet niets meer')[0] | Should Be 'C1'
+        @(Get-HcAiNearest 'wifi valt steeds weg')[0] | Should Be 'A2'
+        @(Get-HcAiNearest 'mijn computer is zo traag') -contains 'D1' | Should Be $true
+        @(Get-HcAiNearest '').Count | Should Be 0
+    }
+
+    It 'lists the "/" commands and checks for what is typed' {
+        $all = @(Get-HcAiSlashItems '/')
+        @($all | Where-Object { $_.Cmd -eq '/klant' }).Count | Should Be 1
+        @($all | Where-Object { $_.Code -eq 'C1' }).Count | Should Be 1
+        @($all | Where-Object { $_.Code -in @('A3', 'A4') }).Count | Should Be 0
+        @(Get-HcAiSlashItems '/kl')[0].Name | Should Be 'klant'
+        @(Get-HcAiSlashItems '/c1')[0].Code | Should Be 'C1'
+        @(Get-HcAiSlashItems 'printer').Count | Should Be 0
+        foreach ($lang in 'en', 'nl') { foreach ($c in $script:HcAiCommands) { $script:Strings[$lang]["win.ai.cmd.$c"] | Should Not BeNullOrEmpty } }
+        foreach ($lang in 'en', 'nl') { foreach ($k in 'win.ai.slash.cmds', 'win.ai.slash.checks', 'win.ai.effort.low', 'win.ai.effort.medium', 'win.ai.effort.high', 'win.ai.effortNext.low', 'win.ai.effortNext.high', 'win.ai.langNow.en', 'win.ai.langNow.nl') { $script:Strings[$lang][$k] | Should Not BeNullOrEmpty } }
+    }
+
+    It 'sends what Housecall knows only with the first message, and a language switch later' {
+        $script:HcVisit.Clear()
+        [void]$script:HcVisit.Add([pscustomobject]@{ Code = 'A1'; FindingId = 'allGood'; FindingArgs = @() })
+        $ai = New-HcAiState
+        $first = New-HcAiPayload $ai 'slow' ([pscustomobject]@{ Os = 'Windows 11 Home' })
+        $first | Should Match '^\[en\]'
+        $first | Should Match 'A1'
+        $first | Should Match 'Windows 11 Home'
+        $ai.SendKnown = $false
+        New-HcAiPayload $ai 'slow' $null | Should Be "[en]`nslow"
+        $ai.Convo = New-HcAiConvo
+        $ai.AnswerLang = 'nl'
+        $ai.Extra = @('Shamil ran check C1 himself')
+        New-HcAiPayload $ai 'en nu?' $null | Should Be "[nl]`nShamil ran check C1 himself`nen nu?"
+        $script:HcVisit.Clear()
+    }
+
+    It 'puts the AI''s summary on the note once, and draws a big sheet' {
+        $script:HcAiNotes.Clear()
+        Add-HcAiNote 'The printer was offline.'
+        Add-HcAiNote 'The printer was offline.'
+        $script:HcAiNotes.Count | Should Be 1
+        $inv = [pscustomobject]@{ number = 'concept'; issued_at = '2026-10-25T12:00:00Z'; seller = [pscustomobject]@{ business_name = 'X' }
+            client_name = 'Y'; client_address = $null; client_postcode_city = $null; client_email = $null
+            lines = @(); btw_mode = 'unset'; subtotal = 0; btw_amount = 0; total = 0; payment = 'pin'; due_date = $null }
+        (@(Get-HcInvoiceLayout $inv -Note | ForEach-Object { $_ } | ForEach-Object { $_.Text }) -contains 'The printer was offline.') | Should Be $true
+        $script:HcAiNotes.Clear()
+        $sheet = @(Get-HcBigSheetLayout 'How to do it' 'The printer was offline.' @('Switch it off and on.'))
+        $sheet.Count | Should Be 1
+        (@($sheet[0] | ForEach-Object { $_.Text }) -contains 'Switch it off and on.') | Should Be $true
     }
 }
 
