@@ -3355,17 +3355,29 @@ Describe 'Kept documents and the overview (7 Oct)' {
         } finally { $script:HcWin = $saved }
     }
 
-    It 'offers Alle klanten only where the housecall command is installed (Shamil''s own devices)' {
-        $savedLocal = $env:LOCALAPPDATA
+    It 'offers Alle klanten only where the device key is (Shamil''s own devices; the relay enforces it)' {
+        $savedPath = $script:HcDeviceKeyPath
         $fake = Join-Path $env:TEMP ('hc-own-' + [guid]::NewGuid().ToString('N'))
         try {
-            $env:LOCALAPPDATA = $fake
+            $script:HcDeviceKeyPath = Join-Path $fake 'device.key'
             Test-HcOwnDevice | Should Be $false
-            New-Item -ItemType Directory -Path (Join-Path $fake 'Microsoft\WindowsApps') -Force | Out-Null
-            Set-Content -LiteralPath (Join-Path $fake 'Microsoft\WindowsApps\housecall.cmd') -Value '@echo off'
+            Get-HcDeviceKey | Should Be $null
+            New-Item -ItemType Directory -Path $fake -Force | Out-Null
+            # A key locked to this Windows user, as tools\register-device.ps1 writes it.
+            Add-Type -AssemblyName System.Security
+            $key = 'k' * 43
+            [IO.File]::WriteAllBytes($script:HcDeviceKeyPath, [Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes($key), $null, 'CurrentUser'))
             Test-HcOwnDevice | Should Be $true
+            Get-HcDeviceKey | Should Be $key
+            $body = New-HcUnlockBody '123456' ('a' * 64)
+            $body.device_key | Should Be $key
+            $body.pc | Should Be ('a' * 64)
+            # Not readable (another user, or a copied file): no key, a visit pass.
+            [IO.File]::WriteAllBytes($script:HcDeviceKeyPath, [byte[]](1, 2, 3))
+            Get-HcDeviceKey | Should Be $null
+            (New-HcUnlockBody '123456' ('a' * 64)).ContainsKey('device_key') | Should Be $false
         } finally {
-            $env:LOCALAPPDATA = $savedLocal
+            $script:HcDeviceKeyPath = $savedPath
             Remove-Item -LiteralPath $fake -Recurse -Force -ErrorAction SilentlyContinue
         }
     }

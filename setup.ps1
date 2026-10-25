@@ -42,7 +42,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'fb31f9594904'
+$HcBuild = 'ac406ab717d5'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -1691,6 +1691,9 @@ $script:Strings = @{
         'win.hist.offline'           = 'This PC is offline, so the history cannot be fetched.'
         'win.hist.codeIntro'         = 'With the code, Housecall fetches this PC''s earlier visits.'
         'win.hist.delete'            = 'Delete'
+        'win.hist.revoke'            = 'Cancel all passes'
+        'win.hist.revokeAsk'         = 'Cancel every pass that is open now, this one too? Every PC then needs a new code.'
+        'win.hist.revoked'           = 'All passes are cancelled. Type a new code to go on.'
         'doc.open'                   = 'Open'
         'doc.opening'                = 'Fetching the PDF...'
         'doc.openFailed'             = 'The PDF could not be opened: {0}'
@@ -1957,6 +1960,8 @@ $script:Strings = @{
         'relay.aiKey'        = 'The AI key in Supabase is not right: check ANTHROPIC_API_KEY.'
         'relay.aiBusy'       = 'The AI is busy right now: try again in a minute.'
         'relay.aiCredit'     = 'The Anthropic account has no credit: add credit at console.anthropic.com > Billing.'
+        'relay.ownDevice'    = 'That only works on your own PC (with the device key), not on a client''s PC.'
+        'relay.aiLimit'      = 'The AI''s limit for today is reached. The menu still works; the AI is back tomorrow.'
         'relay.error'        = 'The relay answered with an error ({0}).'
         'menu.history'       = 'Visit history'
         'mem.title'          = 'Visit history of this PC'
@@ -3995,6 +4000,9 @@ $script:Strings = @{
         'win.hist.offline'           = 'Deze pc is offline, dus de geschiedenis kan niet worden opgehaald.'
         'win.hist.codeIntro'         = 'Met de code haalt Housecall de eerdere bezoeken aan deze pc op.'
         'win.hist.delete'            = 'Verwijderen'
+        'win.hist.revoke'            = 'Alle passen intrekken'
+        'win.hist.revokeAsk'         = 'Elke pas die nu open is intrekken, ook deze? Elke pc heeft daarna een nieuwe code nodig.'
+        'win.hist.revoked'           = 'Alle passen zijn ingetrokken. Typ een nieuwe code om verder te gaan.'
         'doc.open'                   = 'Openen'
         'doc.opening'                = 'De PDF wordt opgehaald...'
         'doc.openFailed'             = 'De PDF kon niet worden geopend: {0}'
@@ -4261,6 +4269,8 @@ $script:Strings = @{
         'relay.aiKey'        = 'De AI-sleutel in Supabase klopt niet: controleer ANTHROPIC_API_KEY.'
         'relay.aiBusy'       = 'De AI is nu druk: probeer het over een minuut opnieuw.'
         'relay.aiCredit'     = 'Het Anthropic-account heeft geen tegoed: voeg tegoed toe via console.anthropic.com > Billing.'
+        'relay.ownDevice'    = 'Dat kan alleen op uw eigen pc (met de apparaatsleutel), niet op de pc van een klant.'
+        'relay.aiLimit'      = 'De AI heeft zijn limiet voor vandaag bereikt. Het menu werkt gewoon; morgen doet de AI weer mee.'
         'relay.error'        = 'De relay gaf een fout ({0}).'
         'menu.history'       = 'Bezoekgeschiedenis'
         'mem.title'          = 'Bezoekgeschiedenis van deze pc'
@@ -12878,7 +12888,40 @@ function Invoke-HcNotePrint {
 $script:RelayUrl = 'https://btwbtxjawubtgeizcrir.supabase.co/functions/v1/housecall'
 $script:HcToken = $null
 $script:HcTokenExpires = [datetime]::MinValue
+# Which pass the code gave (25 Oct): 'full' on Shamil's own devices, 'visit'
+# on a client's PC (only that PC's records; the relay holds it to that).
+$script:HcTokenScope = $null
 $script:HcKnownLabel = $null
+
+<#
+    The device key: what makes a PC one of Shamil's own (25 Oct). A random
+    secret in %LOCALAPPDATA%\Housecall\device.key, locked to his Windows
+    account with Windows' own encryption (DPAPI), made and registered by
+    tools\register-device.ps1 -- never on a client's PC. With it, the code
+    gives the full pass; without it, a pass for this one PC. $null when
+    there is none (or it cannot be read, e.g. another Windows user).
+#>
+$script:HcDeviceKeyPath = Join-Path $env:LOCALAPPDATA 'Housecall\device.key'
+
+function Get-HcDeviceKey {
+    if (-not (Test-Path -LiteralPath $script:HcDeviceKeyPath)) { return $null }
+    try {
+        Add-Type -AssemblyName System.Security -ErrorAction Stop
+        $bytes = [Security.Cryptography.ProtectedData]::Unprotect([IO.File]::ReadAllBytes($script:HcDeviceKeyPath), $null, 'CurrentUser')
+        $text = [Text.Encoding]::UTF8.GetString($bytes)
+        if ($text -match '^[A-Za-z0-9_-]{40,100}$') { return $text }
+    } catch { }
+    $null
+}
+
+# What unlock sends: the code, this PC's id, and the device key when there is one.
+function New-HcUnlockBody {
+    param([string]$Code, [string]$PcId)
+    $body = @{ action = 'unlock'; code = $Code; pc = $PcId }
+    $key = Get-HcDeviceKey
+    if ($key) { $body.device_key = $key }
+    $body
+}
 
 # One POST to the relay. Returns Ok, Status, Data (the parsed JSON) and
 # Error (the relay's error code, or 'unreachable').
@@ -12935,6 +12978,8 @@ function Get-HcRelayMessage {
         'mail_ms'         { T 'relay.mailFailed' }
         'not_found'       { T 'doc.notFound' }
         'already_credited' { T 'corr.already' }
+        'own_device_only' { T 'relay.ownDevice' }
+        'ai_limit'        { T 'relay.aiLimit' }
         'is_credit'       { T 'corr.isCredit' }
         default       { T 'relay.error' $Code }
     }
@@ -12956,10 +13001,11 @@ function Unlock-HcRelay {
     for ($try = 0; $try -lt 3; $try++) {
         $code = ("$(Read-HcLine (T $PromptKey))" -replace '\s', '')
         if ($code -notmatch '^\d{6}$') { return $false }
-        $r = Invoke-HcRelay @{ action = 'unlock'; code = $code }
+        $r = Invoke-HcRelay (New-HcUnlockBody $code (Get-HcPcId))
         if ($r.Ok) {
             $script:HcToken = $r.Data.token
             $script:HcTokenExpires = [datetime]::Parse($r.Data.expires, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime()
+            $script:HcTokenScope = [string]$r.Data.scope
             Write-Ok (T 'relay.unlocked' $script:HcTokenExpires.ToString('HH:mm'))
             Show-HcKnownPc
             return $true
@@ -16458,7 +16504,7 @@ function Submit-HcCode {
     foreach ($s in $c.Slots) { $s.IsEnabled = $false }
     if ($c.For -eq 'pair') { $c.Hint.Text = T 'ph.pairing'; Submit-HcPairCode $code; return }
     $c.Hint.Text = T 'win.code.checking'
-    Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'unlock'; code = $code }; For = $c.For; Done = 'Complete-HcUnlock' }
+    Add-HcJob @{ Kind = 'relay'; Body = (New-HcUnlockBody $code (Get-HcWindowPcId)); For = $c.For; Done = 'Complete-HcUnlock' }
 }
 
 function Complete-HcUnlock {
@@ -16480,6 +16526,7 @@ function Complete-HcUnlock {
     }
     $script:HcToken = $r.Data.token
     $script:HcTokenExpires = [datetime]::Parse($r.Data.expires, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime()
+    $script:HcTokenScope = [string]$r.Data.scope
     $w.Totp = $null
     Update-HcSide
     if ($Job.For -eq 'history') {
@@ -17003,6 +17050,13 @@ function Invoke-HcVisitClick {
         'histDelete' { $w.Hist.Confirm = $Tag.Id; $w.Hist.Notice = $null; Update-HcOther }
         'histScope'  { $w.Hist.Scope = $Tag.Scope; $w.Hist.Confirm = $null; $w.Hist.Notice = $null; Start-HcHistory; Update-HcOther }
         'histNo'     { $w.Hist.Confirm = $null; Update-HcOther }
+        'histRevoke' { $w.Hist.RevokeAsk = $true; Update-HcOther }
+        'histRevokeNo' { $w.Hist.RevokeAsk = $false; Update-HcOther }
+        'histRevokeYes' {
+            $w.Hist.RevokeAsk = $false
+            Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'passes_revoke'; token = $script:HcToken }; Done = 'Complete-HcRevoke' }
+            Update-HcOther
+        }
         'histDoc'    { Open-HcKeptDoc $Tag.Id }
         default      { [void](Invoke-HcCorrClick $Tag) }
         'histYes'    {
@@ -17351,7 +17405,10 @@ function Format-HcDocLine {
 # command (tools\install-command.ps1), which is never put on a client's PC:
 # there the screen shows that client's history and nobody else's.
 function Test-HcOwnDevice {
-    Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\housecall.cmd')
+    # Since 25 Oct the device key (tools\register-device.ps1), not the housecall
+    # command. This only shows the button: the relay itself refuses "Alle
+    # klanten" to a pass that came without the key.
+    Test-Path -LiteralPath $script:HcDeviceKeyPath
 }
 
 function Start-HcHistory {
@@ -17412,6 +17469,24 @@ function Complete-HcHistory {
     Update-HcOther
 }
 
+# Every pass cancelled, this one too: the next step asks for a new code.
+function Complete-HcRevoke {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $h = $script:HcWin.Hist
+    $r = Get-HcRelayResult $Output
+    if (-not $ErrorText -and $r -and $r.Ok) {
+        $script:HcToken = $null
+        $script:HcTokenScope = $null
+        $h.Notice = T 'win.hist.revoked'
+        $h.Stage = 'code'
+        $h.AllStage = 'new'
+    } else {
+        $h.Notice = Get-HcRelayMessage $(if ($r) { $r.Error } else { 'unreachable' })
+    }
+    Update-HcOther
+    Update-HcSide
+}
+
 function Complete-HcHistoryDelete {
     param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
     $h = $script:HcWin.Hist
@@ -17444,7 +17519,13 @@ function Update-HcHistoryPanel {
             $chip.IsEnabled = -not (Test-HcBusy)
             [void]$scopes.Children.Add($chip)
         }
+        # Every pass at once, for a lost laptop or a PC that seemed off.
+        $revoke = New-HcChip (T 'win.hist.revoke') @{ Do = 'histRevoke' }
+        $revoke.IsEnabled = -not (Test-HcBusy) -and (Test-HcUnlocked)
+        $revoke.Margin = New-HcThickness @(18, 0, 6, 6)
+        [void]$scopes.Children.Add($revoke)
         & $add $scopes
+        if ($h.RevokeAsk) { & $add (New-HcQuestion (T 'win.hist.revokeAsk') 'histRevokeYes' 'histRevokeNo') }
     }
     & $add (New-HcText $(if ($all) { T 'mem.titleAll' } else { T 'mem.title' }) 22 'Text' -Bold -Margin @(0, 4, 0, 10))
     if ($h.Notice) { & $add (New-HcText $h.Notice 14.5 'Ok' -Bold) }

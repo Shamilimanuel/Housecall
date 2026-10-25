@@ -3,8 +3,9 @@
 
         powershell -ExecutionPolicy Bypass -File tools\setup-ai.ps1
 
-    1. Makes a new Google Authenticator secret, shows it as a QR code (in the
-       browser, drawn locally) and as a key to type, and checks that the
+    1. Makes a new Google Authenticator secret, shows it as a QR code (drawn
+       in the browser on this PC by qrcode.js from cdnjs, pinned by its
+       fingerprint so a changed file is refused) and as a key to type, and checks that the
        code on the phone matches.
     2. Puts the secret on the clipboard for the Supabase secret
        HOUSECALL_TOTP_SECRET, and clears the clipboard afterwards.
@@ -149,7 +150,7 @@ $html = @"
 <h2>Scan this with Google Authenticator</h2><div id="qr" style="display:inline-block;padding:16px;background:#fff"></div>
 <p>Or tap + &gt; "Enter a setup key": account <b>Housecall</b>, key <code>$secret</code>, time based.</p>
 <p>Then go back to the PowerShell window.</p>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous"></script>
 <script>new QRCode(document.getElementById("qr"), { text: "$uri", width: 256, height: 256 });</script>
 </body>
 "@

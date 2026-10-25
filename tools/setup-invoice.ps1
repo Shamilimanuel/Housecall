@@ -60,10 +60,16 @@ Write-Host ''
 Write-Host '  Housecall: your details for the invoice' -ForegroundColor Yellow
 Write-Host ''
 
+. (Join-Path $PSScriptRoot 'device-key.ps1')
+# Your business details change only from your own device (the relay checks).
+if (-not (Get-HcDeviceKey)) {
+    Write-Host '  This PC is not one of your own devices yet: run tools\register-device.ps1 first.' -ForegroundColor Yellow
+    return
+}
 $token = $null
 while (-not $token) {
     $code = (Read-Host '  Code from Google Authenticator') -replace '\s', ''
-    $r = Invoke-Relay @{ action = 'unlock'; code = $code }
+    $r = Invoke-Relay (New-HcToolUnlock $code)
     if ($r.token) { $token = $r.token }
     elseif ($r.error -eq 'code_used') { Write-Host '  That code was already used: wait for the next one.' -ForegroundColor Yellow }
     elseif ($r.error -eq 'locked') { Write-Host '  Too many wrong codes: wait 15 minutes.' -ForegroundColor Yellow; return }
@@ -133,7 +139,7 @@ if ($x.start_fee -and $x.start_minutes) {
 } else {
     Write-Host "     Rate $($x.hourly_rate) per hour, call-out fee $($x.callout_fee)"
 }
-if (-not $x.iban) { Write-Host '     Payment choices: card, cash, payment request (Tikkie or your bank's betaalverzoek); bank transfer appears once an IBAN is set' -ForegroundColor DarkGray }
+if (-not $x.iban) { Write-Host '     Payment choices: card, cash, payment request (Tikkie or your bank''s betaalverzoek); bank transfer appears once an IBAN is set' -ForegroundColor DarkGray }
 Write-Host ''
 Write-Host '  Filled in something that is not needed? Run this again and type a dash (-) to empty it.' -ForegroundColor DarkGray
 Write-Host ''

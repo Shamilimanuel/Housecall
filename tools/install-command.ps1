@@ -49,3 +49,7 @@ $lines = @(
 [IO.File]::WriteAllText($target, (($lines -join "`r`n") + "`r`n"), (New-Object Text.ASCIIEncoding))
 Write-Host "  Made $target"
 Write-Host '  Type housecall in a new PowerShell window (or housecall -Dev for this folder).'
+# Since 25 Oct the full pass needs this PC's device key, made apart from the command.
+if (-not (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA 'Housecall\device.key'))) {
+    Write-Host '  Not one of your own devices yet: run tools\register-device.ps1 for Alle klanten, the overview and your business details.' -ForegroundColor Yellow
+}

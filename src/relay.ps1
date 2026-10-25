@@ -15,7 +15,40 @@
 $script:RelayUrl = 'https://btwbtxjawubtgeizcrir.supabase.co/functions/v1/housecall'
 $script:HcToken = $null
 $script:HcTokenExpires = [datetime]::MinValue
+# Which pass the code gave (25 Oct): 'full' on Shamil's own devices, 'visit'
+# on a client's PC (only that PC's records; the relay holds it to that).
+$script:HcTokenScope = $null
 $script:HcKnownLabel = $null
+
+<#
+    The device key: what makes a PC one of Shamil's own (25 Oct). A random
+    secret in %LOCALAPPDATA%\Housecall\device.key, locked to his Windows
+    account with Windows' own encryption (DPAPI), made and registered by
+    tools\register-device.ps1 -- never on a client's PC. With it, the code
+    gives the full pass; without it, a pass for this one PC. $null when
+    there is none (or it cannot be read, e.g. another Windows user).
+#>
+$script:HcDeviceKeyPath = Join-Path $env:LOCALAPPDATA 'Housecall\device.key'
+
+function Get-HcDeviceKey {
+    if (-not (Test-Path -LiteralPath $script:HcDeviceKeyPath)) { return $null }
+    try {
+        Add-Type -AssemblyName System.Security -ErrorAction Stop
+        $bytes = [Security.Cryptography.ProtectedData]::Unprotect([IO.File]::ReadAllBytes($script:HcDeviceKeyPath), $null, 'CurrentUser')
+        $text = [Text.Encoding]::UTF8.GetString($bytes)
+        if ($text -match '^[A-Za-z0-9_-]{40,100}$') { return $text }
+    } catch { }
+    $null
+}
+
+# What unlock sends: the code, this PC's id, and the device key when there is one.
+function New-HcUnlockBody {
+    param([string]$Code, [string]$PcId)
+    $body = @{ action = 'unlock'; code = $Code; pc = $PcId }
+    $key = Get-HcDeviceKey
+    if ($key) { $body.device_key = $key }
+    $body
+}
 
 # One POST to the relay. Returns Ok, Status, Data (the parsed JSON) and
 # Error (the relay's error code, or 'unreachable').
@@ -72,6 +105,8 @@ function Get-HcRelayMessage {
         'mail_ms'         { T 'relay.mailFailed' }
         'not_found'       { T 'doc.notFound' }
         'already_credited' { T 'corr.already' }
+        'own_device_only' { T 'relay.ownDevice' }
+        'ai_limit'        { T 'relay.aiLimit' }
         'is_credit'       { T 'corr.isCredit' }
         default       { T 'relay.error' $Code }
     }
@@ -93,10 +128,11 @@ function Unlock-HcRelay {
     for ($try = 0; $try -lt 3; $try++) {
         $code = ("$(Read-HcLine (T $PromptKey))" -replace '\s', '')
         if ($code -notmatch '^\d{6}$') { return $false }
-        $r = Invoke-HcRelay @{ action = 'unlock'; code = $code }
+        $r = Invoke-HcRelay (New-HcUnlockBody $code (Get-HcPcId))
         if ($r.Ok) {
             $script:HcToken = $r.Data.token
             $script:HcTokenExpires = [datetime]::Parse($r.Data.expires, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime()
+            $script:HcTokenScope = [string]$r.Data.scope
             Write-Ok (T 'relay.unlocked' $script:HcTokenExpires.ToString('HH:mm'))
             Show-HcKnownPc
             return $true

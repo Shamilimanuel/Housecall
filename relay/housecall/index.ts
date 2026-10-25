@@ -4,7 +4,12 @@
 // and the Google Authenticator secret -- and does the following, chosen by
 // the "action" field of a JSON POST:
 //
-//   unlock      a 6-digit Authenticator code -> a session token (4 hours)
+//   unlock      a 6-digit Authenticator code -> a session token (4 hours):
+//               the full pass with a registered device key (Shamil's own
+//               PCs), else a pass for that one client PC only (25 Oct)
+//   device_register  two codes in a row + a device key's hash: this PC
+//               becomes one of Shamil's own devices (tools\register-device.ps1)
+//   passes_revoke  cancels every pass at once (own device only)
 //   chat        one round of the AI chat: forwards the conversation to Claude
 //               with Housecall's system prompt and tools, returns the reply
 //   visit_get   the last visits recorded for a PC; with all: true, every
@@ -17,13 +22,11 @@
 //   invoice_correct a credit invoice for a wrong invoice and (unless only
 //               crediting) the corrected invoice, both numbered in one go
 //   receipt_number  the next betaalbewijs number, B-YYYY-NNNN (own counter)
-//   mail_status / mail_start / mail_finish / mail_disconnect
-//               connect Shamil's Outlook once (Microsoft's device-code
-//               sign-in); the refresh token stays in the database here
+//   mail_status whether mail can go out, and from which address
 //   mail_send   mails a note, receipt or invoice (PDF): through Resend from
 //               his own domain when RESEND_API_KEY and MAIL_FROM are set, else
-//               through Gmail when GMAIL_USER and GMAIL_APP_PASSWORD are, else
-//               that Outlook
+//               through Gmail when GMAIL_USER and GMAIL_APP_PASSWORD are
+//               (the Outlook connection of v11 was removed 25 Oct)
 //   doc_save    keeps the PDF a visit ended with (invoice, receipt, note, credit) in
 //               the private bucket "documents", one per visit (same id = replaced)
 //   doc_list    the kept documents: one PC's, or all of them (the overview)
@@ -31,10 +34,14 @@
 //   doc_delete  removes one kept PDF, file and all (a document made by mistake)
 //   health      which secrets are set (booleans only), for setup
 //
-// Everything except health and unlock needs the token. The token is signed
-// with a key derived from the Authenticator secret, so nothing else has to
-// be configured. The PowerShell client runs the checks on the client's PC;
-// this function never sees more than the problem text and the check results.
+// Everything except health, unlock and device_register needs the token. The
+// token is signed with a key derived from the Authenticator secret, so
+// nothing else has to be configured. It says which pass it is: "full" (an
+// own device) or "visit" with the client PC's id, and the server holds a
+// visit pass to that PC (auth.ts); the window hiding a button is not what
+// keeps it out (independent review, 25 Oct). The PowerShell client runs the
+// checks on the client's PC; this function never sees more than the problem
+// text and the check results.
 //
 // Secrets (Supabase dashboard > Edge Functions > Secrets):
 //   ANTHROPIC_API_KEY       from console.anthropic.com
@@ -46,21 +53,28 @@
 
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { allowedFor, type Claims, ownPc } from "./auth.ts";
 
 // Claude Opus 5.5: the current Opus, cheaper than Opus 5 ($4 / $20 per MTok).
 // Thinking stays on (it cannot be turned off); effort is set explicitly below.
 const MODEL = "claude-opus-5-5";
 const TOKEN_HOURS = 4;
-// Wrong codes allowed. Per address in 15 minutes, so one stranger who knows
-// the (public) relay URL cannot lock Shamil out by himself; and for everyone
-// together in 24 hours, against guessing spread over many addresses. With
-// three codes valid at a time, 20 a day makes a lucky guess take about 45
-// years on average (50 per 15 minutes took about two months). The price: a
-// determined attacker can lock Shamil out for a day, so he gets a mail at
-// WARN_AT wrong codes and at the lock (8 Oct).
+// Wrong codes allowed: for everyone together in 24 hours, against guessing
+// spread over many addresses, and per address in 15 minutes (a softer
+// limit: behind proxies an address is not a sure thing). With three codes
+// valid at a time, 20 a day makes a lucky guess take about 45 years on
+// average. Since 25 Oct each attempt is counted in the database before its
+// code is checked (unlock_gate), so guesses sent at the same moment cannot
+// get past the count. The price: a determined attacker can lock Shamil out
+// for a day, so he gets a mail at WARN_AT wrong codes and at the lock (8 Oct).
 const MAX_FAILED_PER_IP = 5;
 const MAX_FAILED_PER_DAY = 20;
 const WARN_AT = 10;
+// What one pass, and everyone together, may spend on the AI and on mail:
+// a stolen pass cannot empty the credit or send spam from his domain.
+const AI_ROUNDS_PER_PASS = 80;
+const AI_ROUNDS_PER_DAY = 400;
+const MAILS_PER_VISIT_PASS = 5;
 // Every problem the PC side can check; the 14 from B4 on were added 25 Oct
 // (they existed in Housecall since 6 Oct, but the AI could not pick them).
 const CODES = [
@@ -130,24 +144,44 @@ async function tokenKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.importKey("raw", raw, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
 }
 
-async function makeToken(secret: string): Promise<{ token: string; expires: string }> {
+async function makeToken(secret: string, scope: "full" | "visit", pc: string | null, epoch: number): Promise<{ token: string; expires: string; scope: string }> {
   const exp = Date.now() + TOKEN_HOURS * 3600 * 1000;
-  const payload = b64url(encoder.encode(JSON.stringify({ exp })));
+  const claims: Claims = { exp, s: scope, pc, e: epoch, j: crypto.randomUUID() };
+  const payload = b64url(encoder.encode(JSON.stringify(claims)));
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", await tokenKey(secret), encoder.encode(payload)));
-  return { token: `${payload}.${b64url(sig)}`, expires: new Date(exp).toISOString() };
+  return { token: `${payload}.${b64url(sig)}`, expires: new Date(exp).toISOString(), scope };
 }
 
-async function tokenValid(secret: string, token: unknown): Promise<boolean> {
-  if (typeof token !== "string" || !token.includes(".")) return false;
+// The pass's claims when its signature is right and it has not expired;
+// null otherwise. Passes from before 25 Oct have no scope and are refused.
+async function readToken(secret: string, token: unknown): Promise<Claims | null> {
+  if (typeof token !== "string" || !token.includes(".")) return null;
   const [payload, sig] = token.split(".");
   const expected = new Uint8Array(await crypto.subtle.sign("HMAC", await tokenKey(secret), encoder.encode(payload)));
-  if (!sameString(b64url(expected), sig)) return false;
+  if (!sameString(b64url(expected), sig)) return null;
   try {
-    const { exp } = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-    return typeof exp === "number" && exp > Date.now();
+    const c = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    if (typeof c.exp !== "number" || c.exp <= Date.now()) return null;
+    if (c.s !== "full" && c.s !== "visit") return null;
+    if (typeof c.e !== "number" || typeof c.j !== "string") return null;
+    return { exp: c.exp, s: c.s, pc: typeof c.pc === "string" ? c.pc : null, e: c.e, j: c.j };
   } catch {
-    return false;
+    return null;
   }
+}
+
+// Which actions a pass may use (allowedFor), and a visit pass held to its
+// own PC inside the actions (ownPc): auth.ts.
+const notYours = () => json({ error: "own_device_only" }, 403);
+
+async function currentEpoch(): Promise<number> {
+  const { data } = await database().from("relay_state").select("token_epoch").eq("id", 1).maybeSingle();
+  return data?.token_epoch ?? 1;
+}
+
+async function sha256Hex(text: string): Promise<string> {
+  const d = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(text)));
+  return Array.from(d, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 function database() {
@@ -315,8 +349,11 @@ async function chat(messages: Anthropic.Beta.BetaMessageParam[], effort: unknown
 // ------------------------------------------------------------ actions --
 
 // The caller's address, only ever kept as a keyed hash (for at most a day).
+// The address the platform saw, not one the caller wrote in the request:
+// the first x-forwarded-for value can be anything a caller sends (25 Oct).
 async function ipHash(secret: string, req: Request): Promise<string> {
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const forwarded = (req.headers.get("x-forwarded-for") ?? "").split(",").map((s) => s.trim()).filter((s) => s);
+  const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? forwarded[forwarded.length - 1] ?? "unknown";
   const digest = await crypto.subtle.digest("SHA-256", encoder.encode("housecall-ip:" + secret + ":" + ip));
   return b64url(new Uint8Array(digest)).slice(0, 22);
 }
@@ -343,46 +380,112 @@ async function warnOwner(total: number): Promise<void> {
   } catch { /* the lock works without the mail */ }
 }
 
-async function failedUnlock(db: ReturnType<typeof database>, ip: string, before: number): Promise<Response> {
-  await db.from("failed_unlocks").insert({ failed_at: new Date().toISOString(), ip_hash: ip });
-  const total = before + 1;
-  if (total === WARN_AT || total === MAX_FAILED_PER_DAY) await warnOwner(total);
+// Every attempt is counted before its code is checked, inside the database
+// under a lock (unlock_gate), so guesses fired at the same moment cannot all
+// get past the limits (independent review, 25 Oct). A good code takes its
+// count away again. Returns the attempt, or the refusal to send.
+async function gate(db: ReturnType<typeof database>, ip: string): Promise<{ id: number; day: number } | Response> {
+  const { data, error } = await db.rpc("unlock_gate", { p_ip: ip, p_max_ip: MAX_FAILED_PER_IP, p_max_day: MAX_FAILED_PER_DAY });
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !row) return json({ error: "database" }, 500);
+  if (row.status === "locked_day") return json({ error: "locked_day" }, 429);
+  if (row.status === "locked") return json({ error: "locked" }, 429);
+  return { id: row.attempt_id, day: row.day_count };
+}
+
+async function wrongCode(day: number): Promise<Response> {
+  if (day === WARN_AT || day === MAX_FAILED_PER_DAY) await warnOwner(day);
   return json({ error: "wrong_code" }, 401);
 }
 
-async function unlock(secret: string, code: unknown, ip: string): Promise<Response> {
-  const db = database();
-  const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-  const today = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const [mine, all] = await Promise.all([
-    db.from("failed_unlocks").select("id", { count: "exact", head: true }).eq("ip_hash", ip).gte("failed_at", since),
-    db.from("failed_unlocks").select("id", { count: "exact", head: true }).gte("failed_at", today),
-  ]);
-  const before = all.count ?? 0;
-  if (before >= MAX_FAILED_PER_DAY) return json({ error: "locked_day" }, 429);
-  if ((mine.count ?? 0) >= MAX_FAILED_PER_IP) return json({ error: "locked" }, 429);
-  if (typeof code !== "string" || !/^\d{6}$/.test(code)) return failedUnlock(db, ip, before);
-
+// The time step a 6-digit code belongs to (one step either side), or null.
+async function codeStep(secret: string, code: unknown): Promise<number | null> {
+  if (typeof code !== "string" || !/^\d{6}$/.test(code)) return null;
   const now = Math.floor(Date.now() / 1000 / 30);
   let matched: number | null = null;
   for (const step of [now - 1, now, now + 1]) {
     if (sameString(await totpAt(secret, step), code)) matched = step;
   }
-  if (matched === null) return failedUnlock(db, ip, before);
-  const { error } = await db.from("used_codes").insert({ step: matched });
-  if (error) {
-    if (error.code === "23505") return json({ error: "code_used" }, 401);
-    return json({ error: "database" }, 500);
-  }
+  return matched;
+}
+
+// A code works once: the step is written down, and a second use is refused.
+async function useStep(db: ReturnType<typeof database>, step: number): Promise<Response | null> {
+  const { error } = await db.from("used_codes").insert({ step });
+  if (!error) return null;
+  if (error.code === "23505") return json({ error: "code_used" }, 401);
+  return json({ error: "database" }, 500);
+}
+
+async function tidy(db: ReturnType<typeof database>) {
   const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   await db.from("used_codes").delete().lt("used_at", day);
   await db.from("failed_unlocks").delete().lt("failed_at", day);
-  return json(await makeToken(secret));
+}
+
+const DEVICE_KEY = /^[A-Za-z0-9_-]{40,100}$/;
+
+// A good code gives a pass: the full one when a registered device key comes
+// along (Shamil's own PCs), else one for this client PC only.
+// deno-lint-ignore no-explicit-any
+async function unlock(secret: string, body: any, ip: string): Promise<Response> {
+  const db = database();
+  const g = await gate(db, ip);
+  if (g instanceof Response) return g;
+  const step = await codeStep(secret, body?.code);
+  if (step === null) return wrongCode(g.day);
+  const used = await useStep(db, step);
+  if (used) return used;
+  await db.from("failed_unlocks").delete().eq("id", g.id);
+  await tidy(db);
+
+  let scope: "full" | "visit" = "visit";
+  if (typeof body?.device_key === "string" && DEVICE_KEY.test(body.device_key)) {
+    const hash = await sha256Hex(body.device_key);
+    const { data: device } = await db.from("devices").select("hash").eq("hash", hash).maybeSingle();
+    if (device) {
+      scope = "full";
+      await db.from("devices").update({ last_used: new Date().toISOString() }).eq("hash", hash);
+    }
+  }
+  const pc = typeof body?.pc === "string" && PC.test(body.pc) ? body.pc : null;
+  return json(await makeToken(secret, scope, pc, await currentEpoch()));
+}
+
+// One of Shamil's own PCs (tools\register-device.ps1): two codes from the
+// app, one after the other, so a single code seen on a client's PC is never
+// enough. Only the device key's hash is kept.
+// deno-lint-ignore no-explicit-any
+async function deviceRegister(secret: string, body: any, ip: string): Promise<Response> {
+  if (typeof body?.hash !== "string" || !/^[0-9a-f]{64}$/.test(body.hash)) return json({ error: "bad_device" }, 400);
+  const db = database();
+  const g = await gate(db, ip);
+  if (g instanceof Response) return g;
+  const a = await codeStep(secret, body?.code1);
+  const b = await codeStep(secret, body?.code2);
+  if (a === null || b === null || a === b) return wrongCode(g.day);
+  for (const s of [a, b]) {
+    const used = await useStep(db, s);
+    if (used) return used;
+  }
+  await db.from("failed_unlocks").delete().eq("id", g.id);
+  const name = typeof body?.name === "string" ? body.name.slice(0, 80) : null;
+  const { error } = await db.from("devices").upsert({ hash: body.hash, name });
+  if (error) return json({ error: "database" }, 500);
+  return json({ registered: true });
+}
+
+async function passesRevoke(): Promise<Response> {
+  const { data, error } = await database().rpc("revoke_passes");
+  if (error) return json({ error: "database" }, 500);
+  return json({ revoked: true, epoch: data });
 }
 
 const PC = /^[0-9a-f]{64}$/;
 
-async function visitGet(pc: unknown, all: unknown): Promise<Response> {
+async function visitGet(pc: unknown, all: unknown, claims: Claims): Promise<Response> {
+  // Every client's visits only for an own device; a client PC sees its own.
+  if (all === true ? claims.s !== "full" : !ownPc(claims, pc)) return notYours();
   if (all === true) {
     // Every client's, newest first, each with its PC so a visit can be deleted there.
     const db = database();
@@ -416,9 +519,10 @@ async function creditList(): Promise<{ number: string; credit_for: string; repla
 }
 
 // deno-lint-ignore no-explicit-any
-async function visitSave(body: any): Promise<Response> {
+async function visitSave(body: any, claims: Claims): Promise<Response> {
   const { pc, label, lang, os, problems, changes, invoice_number } = body;
   if (typeof pc !== "string" || !PC.test(pc)) return json({ error: "bad_pc" }, 400);
+  if (!ownPc(claims, pc)) return notYours();
   if (label != null && (typeof label !== "string" || label.length > 80)) return json({ error: "bad_label" }, 400);
   if (lang !== "nl" && lang !== "en") return json({ error: "bad_lang" }, 400);
   if (!Array.isArray(problems) || problems.length > 20) return json({ error: "bad_problems" }, 400);
@@ -441,8 +545,9 @@ async function visitSave(body: any): Promise<Response> {
   return json({ saved: true, id: data.id });
 }
 
-async function visitDelete(pc: unknown, id: unknown): Promise<Response> {
+async function visitDelete(pc: unknown, id: unknown, claims: Claims): Promise<Response> {
   if (typeof pc !== "string" || !PC.test(pc)) return json({ error: "bad_pc" }, 400);
+  if (!ownPc(claims, pc)) return notYours();
   if (typeof id !== "number" || !Number.isInteger(id)) return json({ error: "bad_id" }, 400);
   // Only a visit of this same PC can be deleted from it.
   const { data, error } = await database().from("visits").delete().eq("id", id).eq("pc", pc).select("id");
@@ -503,7 +608,8 @@ const cents = (n: number) => Math.round(n * 100);
 // The client composes the lines (it knows the language); the numbers, the
 // totals, the BTW and the seller's details are decided here.
 // deno-lint-ignore no-explicit-any
-async function invoiceCreate(body: any): Promise<Response> {
+async function invoiceCreate(body: any, claims: Claims): Promise<Response> {
+  if (!ownPc(claims, body?.pc)) return notYours();
   const db = database();
   const { data: settings } = await db.from("settings").select("*").eq("id", 1).maybeSingle();
   if (!settings?.business_name) return json({ error: "no_settings" }, 400);
@@ -589,12 +695,13 @@ function sellerOf(settings: any) {
 const INVOICE_NUMBER = /^\d{4}-\d{4,}$/;
 
 // One stored invoice, with whether it was credited already.
-async function invoiceGet(number: unknown): Promise<Response> {
+async function invoiceGet(number: unknown, claims: Claims): Promise<Response> {
   if (typeof number !== "string" || !INVOICE_NUMBER.test(number)) return json({ error: "bad_invoice_number" }, 400);
   const db = database();
   const { data, error } = await db.from("invoices").select("*").eq("number", number).maybeSingle();
   if (error) return json({ error: "database" }, 500);
   if (!data) return json({ error: "not_found" }, 404);
+  if (!ownPc(claims, data.pc)) return notYours();
   const { data: credit } = await db.from("invoices").select("number").eq("credit_for", number).maybeSingle();
   return json({ invoice: data, credited_by: credit?.number ?? null });
 }
@@ -604,7 +711,7 @@ async function invoiceGet(number: unknown): Promise<Response> {
 // a new invoice (from the form, checked like invoice_create) replaces it.
 // The database makes both in one transaction and refuses a second credit.
 // deno-lint-ignore no-explicit-any
-async function invoiceCorrect(body: any): Promise<Response> {
+async function invoiceCorrect(body: any, claims: Claims): Promise<Response> {
   const db = database();
   const { data: settings } = await db.from("settings").select("*").eq("id", 1).maybeSingle();
   if (!settings?.business_name) return json({ error: "no_settings" }, 400);
@@ -613,10 +720,12 @@ async function invoiceCorrect(body: any): Promise<Response> {
   const { data: orig, error: readError } = await db.from("invoices").select("*").eq("number", number).maybeSingle();
   if (readError) return json({ error: "database" }, 500);
   if (!orig) return json({ error: "not_found" }, 404);
+  if (!ownPc(claims, orig.pc)) return notYours();
   if (orig.credit_for) return json({ error: "is_credit" }, 400);
 
   let inv: Record<string, unknown> | null = null;
   if (credit_only !== true) {
+    if (!ownPc(claims, body?.pc)) return notYours();
     const read = readInvoice(body, settings);
     if (read instanceof Response) return read;
     inv = read;
@@ -666,7 +775,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 // deno-lint-ignore no-explicit-any
-async function docSave(body: any): Promise<Response> {
+async function docSave(body: any, claims: Claims): Promise<Response> {
   const { id, pc, visit_id, kind, client_name, invoice_number, receipt_number, total, payment, lang, pdf_base64 } = body;
   if (typeof id !== "string" || !UUID.test(id)) return json({ error: "bad_doc", field: "id" }, 400);
   if (pc != null && (typeof pc !== "string" || !PC.test(pc))) return json({ error: "bad_pc" }, 400);
@@ -688,8 +797,11 @@ async function docSave(body: any): Promise<Response> {
   }
   if (new TextDecoder().decode(bytes.subarray(0, 5)) !== "%PDF-") return json({ error: "bad_doc", field: "pdf" }, 400);
 
+  if (!ownPc(claims, pc)) return notYours();
   const db = database();
-  const { data: before } = await db.from("documents").select("path, created_at").eq("id", id).maybeSingle();
+  const { data: before } = await db.from("documents").select("path, created_at, pc").eq("id", id).maybeSingle();
+  // A client PC cannot overwrite another PC's kept document by its id.
+  if (before && !ownPc(claims, before.pc)) return notYours();
   const path = before?.path ?? `${new Date().getUTCFullYear()}/${id}.pdf`;
   const stored = await db.storage.from("documents").upload(path, bytes, { contentType: "application/pdf", upsert: true });
   if (stored.error) return json({ error: "storage", detail: stored.error.message }, 500);
@@ -702,8 +814,10 @@ async function docSave(body: any): Promise<Response> {
   return json({ saved: true, id });
 }
 
-async function docList(pc: unknown): Promise<Response> {
+async function docList(pc: unknown, claims: Claims): Promise<Response> {
   if (pc != null && (typeof pc !== "string" || !PC.test(pc))) return json({ error: "bad_pc" }, 400);
+  // All documents (the overview) only for an own device.
+  if (!ownPc(claims, pc)) return notYours();
   let query = database().from("documents").select(DOC_FIELDS).order("created_at", { ascending: false });
   query = pc ? query.eq("pc", pc).limit(20) : query.limit(1000);
   const { data, error } = await query;
@@ -711,12 +825,15 @@ async function docList(pc: unknown): Promise<Response> {
   return json({ documents: data });
 }
 
-async function docGet(id: unknown): Promise<Response> {
+async function docGet(id: unknown, claims: Claims): Promise<Response> {
   if (typeof id !== "string" || !UUID.test(id)) return json({ error: "bad_doc", field: "id" }, 400);
   const db = database();
-  const { data: doc, error } = await db.from("documents").select(DOC_FIELDS + ", path").eq("id", id).maybeSingle();
-  if (error) return json({ error: "database" }, 500);
+  const found = await db.from("documents").select(DOC_FIELDS + ", path").eq("id", id).maybeSingle();
+  if (found.error) return json({ error: "database" }, 500);
+  // The column list is built from a string, so the typings cannot see its fields.
+  const doc = found.data as unknown as { pc: string | null; path: string } | null;
   if (!doc) return json({ error: "not_found" }, 404);
+  if (!ownPc(claims, doc.pc)) return notYours();
   const file = await db.storage.from("documents").download(doc.path);
   if (file.error || !file.data) return json({ error: "storage", detail: file.error?.message ?? "" }, 500);
   const { path: _path, ...about } = doc;
@@ -740,24 +857,9 @@ async function docDelete(id: unknown): Promise<Response> {
 
 // ---------------------------------------------------------------- mail --
 
-// Microsoft's sign-in for personal accounts (outlook.com). Housecall has its
-// own app registration (a public client, no secret); Shamil signs in once
-// with the device-code flow and the refresh token is kept in mail_account.
-const MS_LOGIN = "https://login.microsoftonline.com/consumers/oauth2/v2.0";
-const MAIL_SCOPE = "offline_access https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/User.Read";
 const MAIL_PER_HOUR = 20;
 const MAIL_PER_DAY = 60;
-const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMAIL = /^[^\s@<>(),;:"\\]+@[^\s@<>(),;:"\\]+\.[a-z]{2,}$/i;
-
-async function msPost(path: string, form: Record<string, string>) {
-  const r = await fetch(`${MS_LOGIN}/${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams(form),
-  });
-  return { status: r.status, data: await r.json().catch(() => ({})) };
-}
 
 // ---- Gmail (v12, 6 Oct): the Microsoft app registration was too much of a
 // hurdle, so mail goes out through a Gmail account with an app password,
@@ -945,53 +1047,11 @@ export async function smtpSend(conn: SmtpConn, user: string, password: string, t
 async function mailStatus(): Promise<Response> {
   if (resendReady()) return json({ connected: true, email: mailFrom(), via: "resend" });
   if (gmailReady()) return json({ connected: true, email: gmailUser(), via: "gmail" });
-  const { data, error } = await database().from("mail_account").select("email, updated_at").eq("id", 1).maybeSingle();
-  if (error) return json({ error: "database" }, 500);
-  return json({ connected: !!data, email: data?.email ?? null });
-}
-
-async function mailStart(clientId: unknown): Promise<Response> {
-  if (typeof clientId !== "string" || !GUID.test(clientId)) return json({ error: "bad_client_id" }, 400);
-  const r = await msPost("devicecode", { client_id: clientId, scope: MAIL_SCOPE });
-  if (r.status !== 200) return json({ error: "mail_ms", detail: r.data.error_description ?? r.data.error ?? r.status }, 502);
-  return json({
-    user_code: r.data.user_code, verification_uri: r.data.verification_uri, device_code: r.data.device_code,
-    interval: r.data.interval ?? 5, expires_in: r.data.expires_in ?? 900,
-  });
-}
-
-async function mailFinish(clientId: unknown, deviceCode: unknown): Promise<Response> {
-  if (typeof clientId !== "string" || !GUID.test(clientId)) return json({ error: "bad_client_id" }, 400);
-  if (typeof deviceCode !== "string" || deviceCode.length > 2000) return json({ error: "bad_device_code" }, 400);
-  const r = await msPost("token", {
-    grant_type: "urn:ietf:params:oauth:grant-type:device_code", client_id: clientId, device_code: deviceCode,
-  });
-  if (r.status !== 200) {
-    const code = String(r.data.error ?? "");
-    if (code === "authorization_pending" || code === "slow_down") return json({ pending: true });
-    return json({ error: "mail_ms", detail: code || r.status }, 400);
-  }
-  let email: string | null = null;
-  const me = await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: `Bearer ${r.data.access_token}` } });
-  if (me.ok) {
-    const who = await me.json();
-    email = who.mail ?? who.userPrincipalName ?? null;
-  }
-  const { error } = await database().from("mail_account").upsert({
-    id: 1, client_id: clientId, refresh_token: r.data.refresh_token, email, updated_at: new Date().toISOString(),
-  });
-  if (error) return json({ error: "database" }, 500);
-  return json({ connected: true, email });
-}
-
-async function mailDisconnect(): Promise<Response> {
-  const { error } = await database().from("mail_account").delete().eq("id", 1);
-  if (error) return json({ error: "database" }, 500);
-  return json({ connected: false });
+  return json({ connected: false, email: null });
 }
 
 // deno-lint-ignore no-explicit-any
-async function mailSend(body: any): Promise<Response> {
+async function mailSend(body: any, claims: Claims): Promise<Response> {
   const { to, subject, text, pdf_base64, filename } = body;
   if (typeof to !== "string" || to.length > 254 || !EMAIL.test(to)) return json({ error: "bad_mail", field: "to" }, 400);
   if (typeof subject !== "string" || subject.trim() === "" || subject.length > 200) return json({ error: "bad_mail", field: "subject" }, 400);
@@ -1009,6 +1069,11 @@ async function mailSend(body: any): Promise<Response> {
     db.from("mail_log").select("id", { count: "exact", head: true }).gte("sent_at", day),
   ]);
   if ((h.count ?? 0) >= MAIL_PER_HOUR || (d.count ?? 0) >= MAIL_PER_DAY) return json({ error: "mail_limit" }, 429);
+  // A client PC's pass sends a handful at most: one visit's documents.
+  if (claims.s !== "full") {
+    const mine = await db.from("mail_log").select("id", { count: "exact", head: true }).eq("jti", claims.j);
+    if ((mine.count ?? 0) >= MAILS_PER_VISIT_PASS) return json({ error: "mail_limit" }, 429);
+  }
 
   if (resendReady()) {
     const { data: settings } = await db.from("settings").select("business_name, owner_name, email").eq("id", 1).maybeSingle();
@@ -1024,7 +1089,7 @@ async function mailSend(body: any): Promise<Response> {
       const detail = e instanceof ResendError ? `${e.status} ${e.kind} ${e.message}` : String(e).slice(0, 200);
       return json({ error: "mail_failed", detail }, 502);
     }
-    await db.from("mail_log").insert({});
+    await db.from("mail_log").insert({ jti: claims.j });
     return json({ sent: true, from: mailFrom() });
   }
 
@@ -1047,43 +1112,25 @@ async function mailSend(body: any): Promise<Response> {
     } finally {
       try { conn?.close(); } catch { /* already closed */ }
     }
-    await db.from("mail_log").insert({});
+    await db.from("mail_log").insert({ jti: claims.j });
     return json({ sent: true, from: gmailUser() });
   }
+  return json({ error: "mail_not_set_up" }, 400);
+}
 
-  const { data: account } = await db.from("mail_account").select("*").eq("id", 1).maybeSingle();
-  if (!account) return json({ error: "mail_not_set_up" }, 400);
-  const t = await msPost("token", {
-    grant_type: "refresh_token", client_id: account.client_id, refresh_token: account.refresh_token, scope: MAIL_SCOPE,
-  });
-  if (t.status !== 200) {
-    if (t.data.error === "invalid_grant") return json({ error: "mail_reconnect" }, 401);
-    return json({ error: "mail_ms", detail: t.data.error ?? t.status }, 502);
-  }
-  // Microsoft hands out a new refresh token now and then; keep the newest.
-  if (t.data.refresh_token && t.data.refresh_token !== account.refresh_token) {
-    await db.from("mail_account").update({ refresh_token: t.data.refresh_token, updated_at: new Date().toISOString() }).eq("id", 1);
-  }
-
-  const message: Record<string, unknown> = {
-    subject: subject.trim(),
-    body: { contentType: "Text", content: text },
-    toRecipients: [{ emailAddress: { address: to } }],
-  };
-  if (pdf_base64) {
-    message.attachments = [{ "@odata.type": "#microsoft.graph.fileAttachment", name: filename, contentType: "application/pdf", contentBytes: pdf_base64 }];
-  }
-  const sent = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${t.data.access_token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ message, saveToSentItems: true }),
-  });
-  if (sent.status !== 202) {
-    const detail = await sent.text().catch(() => "");
-    return json({ error: "mail_failed", status: sent.status, detail: detail.slice(0, 300) }, 502);
-  }
-  await db.from("mail_log").insert({});
-  return json({ sent: true, from: account.email });
+// The AI's daily limits, per pass and for everyone together, so a stolen
+// pass cannot spend the month's credit in an afternoon. Each round counts.
+async function aiAllowed(claims: Claims): Promise<boolean> {
+  const db = database();
+  const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const [mine, all] = await Promise.all([
+    db.from("ai_log").select("id", { count: "exact", head: true }).eq("jti", claims.j),
+    db.from("ai_log").select("id", { count: "exact", head: true }).gte("at", day),
+  ]);
+  if ((mine.count ?? 0) >= AI_ROUNDS_PER_PASS || (all.count ?? 0) >= AI_ROUNDS_PER_DAY) return false;
+  await db.from("ai_log").insert({ jti: claims.j });
+  await db.from("ai_log").delete().lt("at", new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString());
+  return true;
 }
 
 Deno.serve(async (req: Request) => {
@@ -1106,51 +1153,52 @@ Deno.serve(async (req: Request) => {
     return json({ anthropic_key: !!Deno.env.get("ANTHROPIC_API_KEY"), totp_secret: secret.length >= 16, database: db, resend: resendReady(), gmail: gmailReady() });
   }
   if (secret.length < 16) return json({ error: "not_set_up" }, 503);
-  if (body?.action === "unlock") return unlock(secret, body.code, await ipHash(secret, req));
-  if (!(await tokenValid(secret, body?.token))) return json({ error: "locked_out" }, 401);
+  if (body?.action === "unlock") return unlock(secret, body, await ipHash(secret, req));
+  if (body?.action === "device_register") return deviceRegister(secret, body, await ipHash(secret, req));
+  const claims = await readToken(secret, body?.token);
+  // A pass from before the last "cancel all passes" no longer works.
+  if (!claims || claims.e !== await currentEpoch()) return json({ error: "locked_out" }, 401);
+  if (!allowedFor(claims, String(body?.action))) return notYours();
 
   switch (body?.action) {
     case "chat": {
       const messages = readMessages(body.messages);
       if (typeof messages === "string") return json({ error: "bad_messages", detail: messages }, 400);
+      if (!(await aiAllowed(claims))) return json({ error: "ai_limit" }, 429);
       return chat(messages, body.effort);
     }
     case "visit_get":
-      return visitGet(body.pc, body.all);
+      return visitGet(body.pc, body.all, claims);
     case "visit_save":
-      return visitSave(body);
+      return visitSave(body, claims);
     case "visit_delete":
-      return visitDelete(body.pc, body.id);
+      return visitDelete(body.pc, body.id, claims);
     case "settings_get":
       return settingsGet();
     case "settings_save":
       return settingsSave(body.settings);
     case "invoice_create":
-      return invoiceCreate(body);
+      return invoiceCreate(body, claims);
     case "invoice_get":
-      return invoiceGet(body.number);
+      return invoiceGet(body.number, claims);
     case "invoice_correct":
-      return invoiceCorrect(body);
+      return invoiceCorrect(body, claims);
     case "receipt_number":
       return receiptNumber();
     case "mail_status":
       return mailStatus();
-    case "mail_start":
-      return mailStart(body.client_id);
-    case "mail_finish":
-      return mailFinish(body.client_id, body.device_code);
-    case "mail_disconnect":
-      return mailDisconnect();
     case "mail_send":
-      return mailSend(body);
+      return mailSend(body, claims);
     case "doc_save":
-      return docSave(body);
+      return docSave(body, claims);
     case "doc_list":
-      return docList(body.pc);
+      return docList(body.pc, claims);
     case "doc_get":
-      return docGet(body.id);
+      return docGet(body.id, claims);
     case "doc_delete":
       return docDelete(body.id);
+    case "passes_revoke":
+      return passesRevoke();
     default:
       return json({ error: "unknown_action" }, 400);
   }

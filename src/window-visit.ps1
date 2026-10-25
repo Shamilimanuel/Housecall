@@ -331,7 +331,7 @@ function Submit-HcCode {
     foreach ($s in $c.Slots) { $s.IsEnabled = $false }
     if ($c.For -eq 'pair') { $c.Hint.Text = T 'ph.pairing'; Submit-HcPairCode $code; return }
     $c.Hint.Text = T 'win.code.checking'
-    Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'unlock'; code = $code }; For = $c.For; Done = 'Complete-HcUnlock' }
+    Add-HcJob @{ Kind = 'relay'; Body = (New-HcUnlockBody $code (Get-HcWindowPcId)); For = $c.For; Done = 'Complete-HcUnlock' }
 }
 
 function Complete-HcUnlock {
@@ -353,6 +353,7 @@ function Complete-HcUnlock {
     }
     $script:HcToken = $r.Data.token
     $script:HcTokenExpires = [datetime]::Parse($r.Data.expires, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime()
+    $script:HcTokenScope = [string]$r.Data.scope
     $w.Totp = $null
     Update-HcSide
     if ($Job.For -eq 'history') {
@@ -876,6 +877,13 @@ function Invoke-HcVisitClick {
         'histDelete' { $w.Hist.Confirm = $Tag.Id; $w.Hist.Notice = $null; Update-HcOther }
         'histScope'  { $w.Hist.Scope = $Tag.Scope; $w.Hist.Confirm = $null; $w.Hist.Notice = $null; Start-HcHistory; Update-HcOther }
         'histNo'     { $w.Hist.Confirm = $null; Update-HcOther }
+        'histRevoke' { $w.Hist.RevokeAsk = $true; Update-HcOther }
+        'histRevokeNo' { $w.Hist.RevokeAsk = $false; Update-HcOther }
+        'histRevokeYes' {
+            $w.Hist.RevokeAsk = $false
+            Add-HcJob @{ Kind = 'relay'; Body = @{ action = 'passes_revoke'; token = $script:HcToken }; Done = 'Complete-HcRevoke' }
+            Update-HcOther
+        }
         'histDoc'    { Open-HcKeptDoc $Tag.Id }
         default      { [void](Invoke-HcCorrClick $Tag) }
         'histYes'    {
@@ -1224,7 +1232,10 @@ function Format-HcDocLine {
 # command (tools\install-command.ps1), which is never put on a client's PC:
 # there the screen shows that client's history and nobody else's.
 function Test-HcOwnDevice {
-    Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\housecall.cmd')
+    # Since 25 Oct the device key (tools\register-device.ps1), not the housecall
+    # command. This only shows the button: the relay itself refuses "Alle
+    # klanten" to a pass that came without the key.
+    Test-Path -LiteralPath $script:HcDeviceKeyPath
 }
 
 function Start-HcHistory {
@@ -1285,6 +1296,24 @@ function Complete-HcHistory {
     Update-HcOther
 }
 
+# Every pass cancelled, this one too: the next step asks for a new code.
+function Complete-HcRevoke {
+    param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
+    $h = $script:HcWin.Hist
+    $r = Get-HcRelayResult $Output
+    if (-not $ErrorText -and $r -and $r.Ok) {
+        $script:HcToken = $null
+        $script:HcTokenScope = $null
+        $h.Notice = T 'win.hist.revoked'
+        $h.Stage = 'code'
+        $h.AllStage = 'new'
+    } else {
+        $h.Notice = Get-HcRelayMessage $(if ($r) { $r.Error } else { 'unreachable' })
+    }
+    Update-HcOther
+    Update-HcSide
+}
+
 function Complete-HcHistoryDelete {
     param([hashtable]$Job, [object[]]$Output, [string]$ErrorText, [string[]]$Info)
     $h = $script:HcWin.Hist
@@ -1317,7 +1346,13 @@ function Update-HcHistoryPanel {
             $chip.IsEnabled = -not (Test-HcBusy)
             [void]$scopes.Children.Add($chip)
         }
+        # Every pass at once, for a lost laptop or a PC that seemed off.
+        $revoke = New-HcChip (T 'win.hist.revoke') @{ Do = 'histRevoke' }
+        $revoke.IsEnabled = -not (Test-HcBusy) -and (Test-HcUnlocked)
+        $revoke.Margin = New-HcThickness @(18, 0, 6, 6)
+        [void]$scopes.Children.Add($revoke)
         & $add $scopes
+        if ($h.RevokeAsk) { & $add (New-HcQuestion (T 'win.hist.revokeAsk') 'histRevokeYes' 'histRevokeNo') }
     }
     & $add (New-HcText $(if ($all) { T 'mem.titleAll' } else { T 'mem.title' }) 22 'Text' -Bold -Margin @(0, 4, 0, 10))
     if ($h.Notice) { & $add (New-HcText $h.Notice 14.5 'Ok' -Bold) }

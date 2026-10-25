@@ -19,7 +19,9 @@ param([switch]$NoWindow)
 $script:OverviewRelay = 'https://btwbtxjawubtgeizcrir.supabase.co/functions/v1/housecall'
 $script:OverviewNl = [Globalization.CultureInfo]::GetCultureInfo('nl-NL')
 $script:Euro = [string][char]0x20AC
-$script:OverviewKinds = @{ invoice = 'Factuur'; receipt = 'Betaalbewijs'; note = 'Briefje' }
+$script:OverviewKinds = @{ invoice = 'Factuur'; receipt = 'Betaalbewijs'; note = 'Briefje'; credit = 'Creditfactuur' }
+# The overview needs the full pass: only from one of your own devices (25 Oct).
+. (Join-Path $PSScriptRoot 'device-key.ps1')
 $script:OverviewPay = @{ pin = 'pin'; cash = 'contant'; transfer = 'overmaken'; tikkie = 'betaalverzoek' }
 
 # ------------------------------------------------------------ pure parts --
@@ -117,6 +119,7 @@ function Get-HcOverviewError {
         'locked_out'  { 'De sessie is verlopen. Vul een nieuwe code in.' }
         'unreachable' { 'De relay is niet bereikbaar. Is er internet?' }
         'not_found'   { 'Dat document staat niet meer in de opslag.' }
+        'own_device_only' { 'Het overzicht werkt alleen op uw eigen pc: start eerst tools\register-device.ps1.' }
         default       { "De relay gaf een fout: $Code" }
     }
 }
@@ -286,7 +289,7 @@ function Show-HcOverview {
         if ($code -notmatch '^\d{6}$') { & $setStatus 'Vul de 6 cijfers uit Google Authenticator in.'; return }
         $window.Cursor = [Windows.Input.Cursors]::Wait
         try {
-            $r = Invoke-HcOverviewRelay @{ action = 'unlock'; code = $code }
+            $r = Invoke-HcOverviewRelay (New-HcToolUnlock $code)
             if (-not $r.token) { & $setStatus (Get-HcOverviewError $(if ($r.error) { $r.error } else { 'unreachable' })); return }
             $state.Token = $r.token
             $ui.CodeBox.Text = ''

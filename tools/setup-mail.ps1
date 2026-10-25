@@ -87,7 +87,8 @@ if (-not $health.resend) {
 }
 
 $code = (Read-Host '  Code from Google Authenticator').Trim()
-$unlock = Invoke-Relay @{ action = 'unlock'; code = $code }
+. (Join-Path $PSScriptRoot 'device-key.ps1')
+$unlock = Invoke-Relay (New-HcToolUnlock $code)
 if (-not $unlock.token) { Write-Host "  That did not work: $($unlock.error)" -ForegroundColor Red; return }
 $token = $unlock.token
 
