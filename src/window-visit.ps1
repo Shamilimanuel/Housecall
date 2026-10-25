@@ -98,14 +98,16 @@ function Split-HcClientName {
 # salutation, one sentence on what is attached, and Shamil's name (and
 # phone, once it is in his settings) under it. Kind is invoice, receipt or note.
 function New-HcMailText {
-    param([string]$Kind, [string]$Title, [string]$Name, [datetime]$Date, [string]$Number, $Settings)
+    # -Subject and -Body replace the usual ones (a corrected invoice says what it replaces).
+    param([string]$Kind, [string]$Title, [string]$Name, [datetime]$Date, [string]$Number, $Settings, [string]$Subject, [string]$Body)
     $n = "$Name".Trim()
     $greet = if (-not $n) { T 'mail.greet.anon' } else { T "mail.greet.$(if ($Title) { $Title } else { 'none' })" $n }
-    $subject = if ($Kind -eq 'invoice') { T 'mail.subject.invoice' $Number } else { T "mail.subject.$Kind" }
+    $subjectLine = if ($Subject) { $Subject } elseif ($Kind -eq 'invoice') { T 'mail.subject.invoice' $Number } else { T "mail.subject.$Kind" }
     $sign = @((T 'mail.regards'), $(if ($Settings.business_name) { [string]$Settings.business_name } else { 'Housecall' }), (T 'mail.brand'))
     if ($Settings.phone) { $sign += [string]$Settings.phone }
-    $text = @($greet, '', (T "mail.body.$Kind" (Format-HcLongDate $Date)), '', (T 'mail.questions'), '', ($sign -join "`n")) -join "`n"
-    [pscustomobject]@{ Subject = $subject; Text = $text }
+    $bodyLine = if ($Body) { $Body } else { T "mail.body.$Kind" (Format-HcLongDate $Date) }
+    $text = @($greet, '', $bodyLine, '', (T 'mail.questions'), '', ($sign -join "`n")) -join "`n"
+    [pscustomobject]@{ Subject = $subjectLine; Text = $text }
 }
 
 # How the client can pay: a transfer only once an IBAN is set, since the
@@ -138,8 +140,10 @@ function Open-HcVisitTab {
     param([string]$View = 'finish')
     $w = $script:HcWin
     $w.Tab = 'visit'
+    # Corrigeren (window-correct.ps1) has nothing to start: it stays as it was.
+    if ($View -eq 'correct' -and -not $w.Corr) { $View = 'history' }
     $w.VisitView = $View
-    if ($View -eq 'finish') { Start-HcFinish } else { Start-HcHistory }
+    if ($View -eq 'finish') { Start-HcFinish } elseif ($View -eq 'history') { Start-HcHistory }
     Update-HcTabs
     Update-HcVisit
 }
@@ -392,6 +396,7 @@ function Update-HcVisit {
     $w = $script:HcWin
     if ($w.Tab -ne 'visit') { return }
     if ($w.VisitView -eq 'history') { Update-HcOther; return }
+    if ($w.VisitView -eq 'correct') { Update-HcCorrPanel; Update-HcCorrBar; Update-HcCorrPreview; return }
     Update-HcFinishPanel
     Update-HcFinishBar
     Update-HcPreview
@@ -434,10 +439,19 @@ function New-HcField {
     if ($Width) { $stack.Width = $Width }
     [void]$stack.Children.Add((New-HcText $Label 13 'Soft' -Bold -Margin @(0, 0, 0, 3)))
     $box = New-HcTextBox $Value
-    $box.Tag = @{ Field = $Field }
+    $box.Tag = @{ Field = $Field; Case = @{ Name = 'name'; Address = 'address'; Postcode = 'place' }[$Field] }
     $box.Add_TextChanged({ Invoke-HcFieldChanged $this })
+    if ($box.Tag.Case) { $box.Add_LostFocus({ Set-HcBoxCase $this }) }
     [void]$stack.Children.Add($box)
     $stack
+}
+
+# Leaving a box puts the capitals in (ConvertTo-HcCapitals); the box's own
+# TextChanged then writes the new text into the form.
+function Set-HcBoxCase {
+    param($Box)
+    $new = ConvertTo-HcCapitals $Box.Text $Box.Tag.Case
+    if ($new -cne $Box.Text) { $Box.Text = $new }
 }
 
 function New-HcTextBox {
@@ -500,8 +514,9 @@ function Update-HcFinishPanel {
     & $put (New-HcSection (T 'win.fin.asked') (T 'win.fin.askedNote'))
     if (-not "$script:HcAsked".Trim() -and $script:HcVisit.Count) { $script:HcAsked = T "problem.$($script:HcVisit[0].Code)" }
     $asked = New-HcTextBox "$script:HcAsked"
-    $asked.Tag = @{ Field = 'Asked' }
+    $asked.Tag = @{ Field = 'Asked'; Case = 'sentence' }
     $asked.Add_TextChanged({ Invoke-HcFieldChanged $this })
+    $asked.Add_LostFocus({ Set-HcBoxCase $this })
     $asked.Margin = New-HcThickness @(0, 0, 0, 6)
     & $put $asked
     $chips = New-Object Windows.Controls.WrapPanel
@@ -707,6 +722,7 @@ function Update-HcFinishBar {
 function Update-HcPreview {
     $w = $script:HcWin
     $f = $w.Fin
+    if ($w.Tab -eq 'visit' -and $w.VisitView -eq 'correct') { Update-HcCorrPreview; return }
     if ($w.Tab -ne 'visit' -or $w.VisitView -ne 'finish') { return }
     $top = $w.Window.FindName('PreviewTop')
     $top.Children.Clear()
@@ -819,7 +835,7 @@ function Invoke-HcVisitClick {
         'workDone'   { $script:HcWork[$Tag.Index].Done = $Tag.Done; Update-HcVisit }
         'workRemove' { $script:HcWork.RemoveAt($Tag.Index); Update-HcVisit }
         'extraAdd'   {
-            $text = "$($w.ExtraText.Children[1].Text)".Trim()
+            $text = ConvertTo-HcCapitals "$($w.ExtraText.Children[1].Text)".Trim() 'sentence'
             $amount = ConvertTo-HcAmount $w.ExtraPrice.Children[1].Text
             if (-not $text -or $null -eq $amount) { $f.Notice = T 'win.fin.badPart'; Update-HcFinishPanel; return }
             [void]$f.Extras.Add([pscustomobject]@{ Description = $text; Amount = $amount })
@@ -862,6 +878,7 @@ function Invoke-HcVisitClick {
         'histScope'  { $w.Hist.Scope = $Tag.Scope; $w.Hist.Confirm = $null; $w.Hist.Notice = $null; Start-HcHistory; Update-HcOther }
         'histNo'     { $w.Hist.Confirm = $null; Update-HcOther }
         'histDoc'    { Open-HcKeptDoc $Tag.Id }
+        default      { [void](Invoke-HcCorrClick $Tag) }
         'histYes'    {
             $all = $w.Hist.Scope -eq 'all'
             $visit = @($(if ($all) { $w.Hist.AllVisits } else { $w.Hist.Visits }) | Where-Object { [long]$_.id -eq [long]$w.Hist.Confirm }) | Select-Object -First 1
@@ -1194,6 +1211,7 @@ function Remove-HcOpenedDocs {
 function Format-HcDocLine {
     param($Doc)
     $parts = @(if ($Doc.kind -eq 'invoice' -and $Doc.invoice_number) { T 'mem.invoice' $Doc.invoice_number }
+               elseif ($Doc.kind -eq 'credit' -and $Doc.invoice_number) { T 'mem.credit' $Doc.invoice_number }
                elseif ($Doc.kind -eq 'receipt' -and $Doc.receipt_number) { T 'mem.receipt' $Doc.receipt_number }
                else { T "doc.kind.$($Doc.kind)" })
     if ($null -ne $Doc.total -and "$($Doc.total)" -ne '') { $parts += Format-HcMoney ([decimal]$Doc.total) }
@@ -1244,6 +1262,7 @@ function Complete-HcHistory {
         } else {
             $h.AllVisits = @($r.Data.visits | Where-Object { $_ })
             $h.AllDocs = @($r.Data.documents | Where-Object { $_ })
+            $h.AllCredits = @($r.Data.credits | Where-Object { $_ })
             $h.AllStage = 'list'
         }
         Update-HcOther
@@ -1256,6 +1275,7 @@ function Complete-HcHistory {
     } else {
         $h.Visits = @($r.Data.visits | Where-Object { $_ })
         $h.Docs = @($r.Data.documents | Where-Object { $_ })
+        $h.Credits = @($r.Data.credits | Where-Object { $_ })
         $h.Stage = 'list'
         $label = @($h.Visits | Where-Object { $_.label } | Select-Object -First 1).label
         if ($label) {
@@ -1304,6 +1324,7 @@ function Update-HcHistoryPanel {
     if ($h.Notice) { & $add (New-HcText $h.Notice 14.5 'Ok' -Bold) }
     $visits = if ($all) { $h.AllVisits } else { $h.Visits }
     $docs = if ($all) { $h.AllDocs } else { $h.Docs }
+    $credits = @(if ($all) { $h.AllCredits } else { $h.Credits })
     $stage = if ($h.Stage -in @('offline', 'code') -or -not $all) { $h.Stage } else { $h.AllStage }
     switch ($stage) {
         'offline' { & $add (New-HcText (T 'win.hist.offline') 15 'Soft') }
@@ -1330,10 +1351,25 @@ function Update-HcHistoryPanel {
                 if ($v.label) { $title += '  ' + [char]0x00B7 + '  ' + $v.label }
                 [void]$head.Children.Add((New-HcText $title 16 'Text' -Bold -Margin @(0, 4, 0, 4)))
                 [void]$card.Children.Add($head)
-                if ($v.invoice_number) { [void]$card.Children.Add((New-HcText (T 'mem.invoice' $v.invoice_number) 13.5 'Hi' -Bold -Margin @(0, 0, 0, 4))) }
+                $cardDocs = @($docs | Where-Object { $_.visit_id -and [long]$_.visit_id -eq [long]$v.id })
+                if ($v.invoice_number) {
+                    # Corrigeren here only when the invoice has no kept PDF in this card (its row has the button).
+                    $row = New-Object Windows.Controls.DockPanel
+                    $kept = @($cardDocs | Where-Object { $_.kind -eq 'invoice' -and $_.invoice_number -eq $v.invoice_number }).Count -gt 0
+                    $credit = Get-HcCreditOf $v.invoice_number $credits
+                    if (-not $kept -and -not $credit) {
+                        $fix = New-HcChip (T 'win.corr.button') @{ Do = 'corrOpen'; Number = [string]$v.invoice_number; VisitId = [long]$v.id }
+                        $fix.IsEnabled = -not (Test-HcBusy)
+                        [Windows.Controls.DockPanel]::SetDock($fix, 'Right')
+                        [void]$row.Children.Add($fix)
+                    }
+                    [void]$row.Children.Add((New-HcText (T 'mem.invoice' $v.invoice_number) 13.5 'Hi' -Bold -Margin @(0, 0, 0, 4)))
+                    [void]$card.Children.Add($row)
+                    if ($credit -and -not $kept) { [void]$card.Children.Add((New-HcText (Format-HcCreditLine $credit) 13 'Soft' -Margin @(0, 0, 0, 4))) }
+                }
                 foreach ($p in @($v.problems)) { [void]$card.Children.Add((New-HcText ($p.code + '  ' + (T "problem.$($p.code)")) 14 'Soft' -Margin @(0, 0, 0, 2))) }
                 foreach ($c in @($v.changes)) { [void]$card.Children.Add((New-HcLine 'ok' $c)) }
-                foreach ($d in @($docs | Where-Object { $_.visit_id -and [long]$_.visit_id -eq [long]$v.id })) { [void]$card.Children.Add((New-HcDocRow $d)) }
+                foreach ($d in $cardDocs) { [void]$card.Children.Add((New-HcDocRow $d -Credits $credits)) }
                 if ($h.Confirm -eq [long]$v.id) {
                     [void]$card.Children.Add((New-HcQuestion (T 'win.hist.deleteAsk' (Format-HcVisitLine $v)) 'histYes' 'histNo'))
                 }
@@ -1347,7 +1383,7 @@ function Update-HcHistoryPanel {
             if ($other.Count) {
                 $card = New-Object Windows.Controls.StackPanel
                 [void]$card.Children.Add((New-HcText (T 'doc.other') 16 'Text' -Bold -Margin @(0, 4, 0, 4)))
-                foreach ($d in $other) { [void]$card.Children.Add((New-HcDocRow $d -WithDate)) }
+                foreach ($d in $other) { [void]$card.Children.Add((New-HcDocRow $d -WithDate -Credits $credits)) }
                 $box = New-HcBox '' @($card) 'Panel'
                 $box.Padding = New-HcThickness @(16, 12, 12, 8)
                 & $add $box
@@ -1356,19 +1392,44 @@ function Update-HcHistoryPanel {
     }
 }
 
-# One kept document in the history: what it is, and Openen.
+# The credit invoice that cancelled an invoice, or $null (from visit_get's credits).
+function Get-HcCreditOf {
+    param([string]$Number, [object[]]$Credits)
+    if (-not $Number) { return $null }
+    @($Credits | Where-Object { $_ -and "$($_.credit_for)" -eq $Number }) | Select-Object -First 1
+}
+
+# "gecrediteerd door 2026-0006, vervangen door 2026-0007"
+function Format-HcCreditLine {
+    param($Credit)
+    if ($Credit.replaced_by) { T 'mem.creditedReplaced' $Credit.number $Credit.replaced_by } else { T 'mem.credited' $Credit.number }
+}
+
+# One kept document in the history: what it is, and Openen. An invoice
+# that was not credited yet also gets Corrigeren; one that was says by what.
 function New-HcDocRow {
-    param($Doc, [switch]$WithDate)
+    param($Doc, [switch]$WithDate, [object[]]$Credits = @())
+    $stack = New-Object Windows.Controls.StackPanel
     $row = New-Object Windows.Controls.DockPanel
     $row.Margin = New-HcThickness @(0, 4, 0, 0)
-    $open = New-HcChip (T 'doc.open') @{ Do = 'histDoc'; Id = [string]$Doc.id }
-    [Windows.Controls.DockPanel]::SetDock($open, 'Right')
-    [void]$row.Children.Add($open)
+    $buttons = New-Object Windows.Controls.StackPanel
+    $buttons.Orientation = 'Horizontal'
+    [Windows.Controls.DockPanel]::SetDock($buttons, 'Right')
+    $credit = if ($Doc.kind -eq 'invoice') { Get-HcCreditOf ([string]$Doc.invoice_number) $Credits } else { $null }
+    if ($Doc.kind -eq 'invoice' -and $Doc.invoice_number -and -not $credit) {
+        $fix = New-HcChip (T 'win.corr.button') @{ Do = 'corrOpen'; Number = [string]$Doc.invoice_number; VisitId = $(if ($Doc.visit_id) { [long]$Doc.visit_id } else { $null }) }
+        $fix.IsEnabled = -not (Test-HcBusy)
+        [void]$buttons.Children.Add($fix)
+    }
+    [void]$buttons.Children.Add((New-HcChip (T 'doc.open') @{ Do = 'histDoc'; Id = [string]$Doc.id }))
+    [void]$row.Children.Add($buttons)
     $text = Format-HcDocLine $Doc
     if ($WithDate -and $Doc.created_at) {
         $when = Format-HcDate ([datetime]::Parse([string]$Doc.created_at, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime())
         $text = $when + '  ' + [char]0x00B7 + '  ' + $text
     }
     [void]$row.Children.Add((New-HcText $text 14 'Hi' -Bold -Margin @(0, 4, 0, 4)))
-    $row
+    [void]$stack.Children.Add($row)
+    if ($credit) { [void]$stack.Children.Add((New-HcText (Format-HcCreditLine $credit) 13 'Soft' -Margin @(0, 0, 0, 2))) }
+    $stack
 }

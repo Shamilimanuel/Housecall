@@ -71,6 +71,8 @@ function Get-HcRelayMessage {
         'mail_failed'     { T 'relay.mailFailed' }
         'mail_ms'         { T 'relay.mailFailed' }
         'not_found'       { T 'doc.notFound' }
+        'already_credited' { T 'corr.already' }
+        'is_credit'       { T 'corr.isCredit' }
         default       { T 'relay.error' $Code }
     }
 }

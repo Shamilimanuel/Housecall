@@ -32,6 +32,7 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'src\invoice-page.ps1')
 . (Join-Path $root 'src\window.ps1')
 . (Join-Path $root 'src\window-visit.ps1')
+. (Join-Path $root 'src\window-correct.ps1')
 . (Join-Path $root 'src\window-pc.ps1')
 . (Join-Path $root 'src\window-phone.ps1')
 . (Join-Path $root 'src\window-start.ps1')
@@ -1676,7 +1677,7 @@ Describe 'The window (phase 6)' {
     }
 
     It 'has every text it shows, in both languages' {
-        $source = [IO.File]::ReadAllText((Join-Path $root 'src\window.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-visit.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-pc.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-ai.ps1'))
+        $source = [IO.File]::ReadAllText((Join-Path $root 'src\window.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-visit.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-correct.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-pc.ps1')) + [IO.File]::ReadAllText((Join-Path $root 'src\window-ai.ps1'))
         $keys = @([regex]::Matches($source, "T '(win\.[\w.]+)'") | ForEach-Object { $_.Groups[1].Value }) +
                 @($script:HcTabs | ForEach-Object { "win.tab.$_" }) + @('F1', 'F2', 'F3' | ForEach-Object { "win.safety.$_" })
         $keys.Count | Should BeGreaterThan 20
@@ -3408,5 +3409,167 @@ Describe 'The internet badge (17 Oct)' {
         foreach ($lang in 'en', 'nl') {
             foreach ($key in 'net.online', 'net.offline', 'net.tipOnline', 'net.tipOffline') { "$lang $key $([bool]$script:Strings[$lang][$key])" | Should Be "$lang $key True" }
         }
+    }
+}
+
+Describe 'Corrigeren: credit invoice and corrected invoice, and capitals (25 Oct)' {
+    $script:Lang = 'en'
+    $settings = [pscustomobject]@{ business_name = 'Shamil Imanuel'; phone = '06-11111111'; email = 'x@example.nl'
+        btw_mode = 'unset'; start_fee = 25; start_minutes = 30; hourly_rate = 30; payment_days = 14 }
+    $orig = [pscustomobject]@{ number = '2026-0005'; issued_at = '2026-10-17T12:00:00Z'; pc = $null; lang = 'nl'
+        client_name = 'Mevr. de Vries'; client_address = 'Dorpsstraat 1'; client_postcode_city = '1234 AB Ergens'; client_email = ''
+        lines = @([pscustomobject]@{ description = 'Starttarief, eerste 30 minuten'; amount = 25 },
+                  [pscustomobject]@{ description = 'Extra tijd, 30 minuten (2 x EUR 7,50)'; amount = 15 },
+                  [pscustomobject]@{ description = 'Draadloze muis'; amount = 19.95 })
+        btw_mode = 'unset'; subtotal = 59.95; btw_amount = 0; total = 59.95; payment = 'tikkie'
+        problems = @([pscustomobject]@{ code = 'D1'; finding = 'x' }); changes = @('Opstartprogramma uitgezet')
+        subject = $null; work = @(); credit_for = $null; replaces = $null; seller = $settings }
+    $start = {
+        $c = New-HcCorrState '2026-0005' 7
+        $c.Orig = $orig; $c.Settings = $settings
+        $n = Split-HcClientName $orig.client_name
+        $c.Title = $n.Title; $c.Name = $n.Name; $c.Address = $orig.client_address; $c.Postcode = $orig.client_postcode_city; $c.Email = ''
+        $s = Split-HcLabourLines @($orig.lines) 'nl'
+        $c.Minutes = $s.Minutes; $c.OrigMinutes = $s.Minutes; $c.Labour = @($s.Labour)
+        foreach ($l in @($s.Rest)) { [void]$c.Lines.Add(@{ Description = $l.Description; Amount = (Format-HcAmountText $l.Amount) }) }
+        $c.Payment = $orig.payment
+        $c }
+
+    It 'finds the time lines and the minutes they add up to, in either language' {
+        $s = Split-HcLabourLines @($orig.lines) 'nl'
+        $s.Minutes | Should Be 60
+        @($s.Labour).Count | Should Be 2
+        @($s.Rest).Count | Should Be 1
+        (Split-HcLabourLines @([pscustomobject]@{ description = 'Labour, 45 minutes (EUR 30,00 per hour)'; amount = 22.5 }) 'nl').Minutes | Should Be 45
+        # An old invoice ("Arbeid 60 min: ...") has no line it knows: all ordinary lines.
+        $old = Split-HcLabourLines @([pscustomobject]@{ description = 'Arbeid 60 min: starttarief'; amount = 25 }) 'nl'
+        $old.Minutes | Should Be $null
+        @($old.Rest).Count | Should Be 1
+    }
+
+    It 'keeps the old time lines until the minutes change, then makes them again in the invoice language' {
+        $c = & $start
+        $lines = @(Get-HcCorrLines $c)
+        $lines.Count | Should Be 3
+        $lines[1].Description | Should Be 'Extra tijd, 30 minuten (2 x EUR 7,50)'
+        $c.Minutes = 45
+        $lines = @(Get-HcCorrLines $c)
+        $lines[1].Description | Should Match '^Extra tijd, 15 minuten'
+        $lines[1].Amount | Should Be 7.5
+        $lines[2].Amount | Should Be 19.95
+    }
+
+    It 'only lets something be made once it differs from the old invoice' {
+        $c = & $start
+        Test-HcCorrChanged $c | Should Be $false
+        $c.Address = 'Dorpsstraat 11'
+        Test-HcCorrChanged $c | Should Be $true
+        $c = & $start
+        $c.CreditOnly = $true
+        Test-HcCorrChanged $c | Should Be $true
+        $c = & $start
+        $c.Lines[0].Amount = '24,95'
+        Test-HcCorrChanged $c | Should Be $true
+        $c.Lines[0].Amount = 'abc'
+        Test-HcCorrForm $c | Should Be (T 'inv.win.badLine' 1)
+        $c.Name = ' '
+        Test-HcCorrForm $c | Should Be (T 'inv.win.needName')
+    }
+
+    It 'sends the relay the old number, the new invoice in the old language, and what the old one was about' {
+        $script:HcToken = 'token'
+        $c = & $start
+        $c.Minutes = 45; $c.Payment = 'pin'
+        $body = New-HcCorrBody $c
+        $body.action | Should Be 'invoice_correct'
+        $body.number | Should Be '2026-0005'
+        $body.credit_only | Should Be $false
+        $body.lang | Should Be 'nl'
+        $body.client.name | Should Be 'Mevr. de Vries'
+        @($body.lines).Count | Should Be 3
+        $body.payment | Should Be 'pin'
+        $body.subject | Should Be 'De hele computer is traag'
+        $body.work[0].text | Should Be 'Opstartprogramma uitgezet'
+        $c.CreditOnly = $true
+        $only = New-HcCorrBody $c
+        $only.credit_only | Should Be $true
+        $only.ContainsKey('lines') | Should Be $false
+        $script:HcToken = $null
+    }
+
+    It 'draws the credit invoice with minus amounts, no stamp, and the sentence about the money' {
+        $script:Lang = 'nl'
+        $credit = New-HcCreditDraft $orig $settings '2026-0007'
+        $credit.number = '2026-0006'
+        $steps = @(Get-HcInvoiceLayout $credit | ForEach-Object { $_ })
+        $texts = @($steps | ForEach-Object { $_.Text })
+        $texts -contains 'Creditfactuur' | Should Be $true
+        $texts -contains 'Correctie van factuur 2026-0005' | Should Be $true
+        $texts -contains 'Het bedrag wordt terugbetaald of verrekend met factuur 2026-0007.' | Should Be $true
+        $texts -contains (Format-HcMoney ([decimal]-59.95)) | Should Be $true
+        @($texts | Where-Object { $_ -match '^2026-0005 van 17 oktober 2026$' }).Count | Should Be 1
+        @($steps | Where-Object { $_.Kind -eq 'stamp' }).Count | Should Be 0
+        (@(Get-HcInvoiceLayout (New-HcCreditDraft $orig $settings $null) | ForEach-Object { $_ } | ForEach-Object { $_.Text }) -contains 'Wat al betaald is, wordt terugbetaald.') | Should Be $true
+        $script:Lang = 'en'
+    }
+
+    It 'draws the corrected invoice from what it kept, with what it replaces' {
+        $script:Lang = 'nl'
+        $script:HcAdvice = @('Advies dat bij dit bezoek hoort')
+        $inv = [pscustomobject]@{ number = '2026-0007'; issued_at = '2026-10-25T12:00:00Z'; seller = $settings
+            client_name = 'Mevr. de Vries'; client_address = 'Dorpsstraat 11'; client_postcode_city = '1234 AB Ergens'; client_email = ''
+            lines = @([pscustomobject]@{ description = 'Starttarief, eerste 30 minuten'; amount = 25 })
+            btw_mode = 'unset'; subtotal = 25; btw_amount = 0; total = 25; payment = 'pin'; due_date = $null
+            subject = 'Laptop traag'; work = @([pscustomobject]@{ text = 'Printer ingesteld'; done = $true }, [pscustomobject]@{ text = 'Accu'; done = $false })
+            replaces = '2026-0005'; credit_for = $null }
+        $texts = @(Get-HcInvoiceLayout $inv -Record | ForEach-Object { $_ } | ForEach-Object { $_.Text })
+        $texts -contains 'Laptop traag' | Should Be $true
+        $texts -contains 'Vervangt factuur 2026-0005' | Should Be $true
+        $texts -contains 'Printer ingesteld' | Should Be $true
+        $texts -contains (T 'doc.notFixed' 'Accu') | Should Be $true
+        $texts -contains 'Advies dat bij dit bezoek hoort' | Should Be $false
+        $script:HcAdvice = @()
+        $script:Lang = 'en'
+    }
+
+    It 'shows in the history what was credited, and by what' {
+        $credits = @([pscustomobject]@{ number = '2026-0006'; credit_for = '2026-0005'; replaced_by = '2026-0007' })
+        (Get-HcCreditOf '2026-0005' $credits).number | Should Be '2026-0006'
+        Get-HcCreditOf '2026-0007' $credits | Should Be $null
+        Format-HcCreditLine $credits[0] | Should Be 'credited by 2026-0006, replaced by 2026-0007'
+        Format-HcDocLine ([pscustomobject]@{ kind = 'credit'; invoice_number = '2026-0006'; total = -40; payment = 'tikkie' }) | Should Match '^credit invoice 2026-0006'
+    }
+
+    It 'keeps the subject and the work with a new invoice' {
+        $script:HcAsked = 'Laptop traag'
+        $script:HcWork.Clear()
+        [void]$script:HcWork.Add([pscustomobject]@{ Text = 'Printer ingesteld'; Done = $true })
+        $form = [pscustomobject]@{ Client = @{ name = 'X' }; Lines = @([pscustomobject]@{ Description = 'Arbeid'; Amount = [decimal]15 }); Payment = 'pin' }
+        $body = New-HcInvoiceBody $form ('a' * 64)
+        $body.subject | Should Be 'Laptop traag'
+        @($body.work | Where-Object { $_.text -eq 'Printer ingesteld' -and $_.done }).Count | Should Be 1
+        $script:HcAsked = ''; $script:HcWork.Clear()
+    }
+
+    It 'lets a mail say what a corrected invoice replaces' {
+        $m = New-HcMailText 'invoice' 'mrs' 'de Vries' (Get-Date '2026-10-25') '' $settings -Subject 'S' -Body 'B'
+        $m.Subject | Should Be 'S'
+        $m.Text | Should Match "`nB`n"
+    }
+
+    It 'puts in capitals, the Dutch way for names, and never lowers anything' {
+        ConvertTo-HcCapitals 'jan de vries' 'name' | Should BeExactly 'Jan de Vries'
+        ConvertTo-HcCapitals 'de vries' 'name' | Should BeExactly 'De Vries'
+        ConvertTo-HcCapitals 'van der berg-de boer' 'name' | Should BeExactly 'Van der Berg-de Boer'
+        # A name typed with a capital somewhere was typed with care: left alone.
+        ConvertTo-HcCapitals 'de Vries' 'name' | Should BeExactly 'de Vries'
+        ConvertTo-HcCapitals 'anna mcdonald' 'name' | Should BeExactly 'Anna Mcdonald'
+        ConvertTo-HcCapitals 'dorpsstraat 1a' 'address' | Should BeExactly 'Dorpsstraat 1a'
+        ConvertTo-HcCapitals '1234ab almere' 'place' | Should BeExactly '1234 AB Almere'
+        ConvertTo-HcCapitals '2400 aa alphen aan den rijn' 'place' | Should BeExactly '2400 AA Alphen aan den Rijn'
+        ConvertTo-HcCapitals "'s-hertogenbosch" 'place' | Should BeExactly "'s-Hertogenbosch"
+        ConvertTo-HcCapitals 'printer opnieuw ingesteld' 'sentence' | Should BeExactly 'Printer opnieuw ingesteld'
+        ConvertTo-HcCapitals 'x@example.nl' '' | Should BeExactly 'x@example.nl'
+        ConvertTo-HcCapitals '' 'name' | Should BeExactly ''
     }
 }

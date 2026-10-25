@@ -13,6 +13,9 @@
 //   visit_delete  removes one visit of a PC (its invoice is kept)
 //   settings_get / settings_save   business details and prices for invoices
 //   invoice_create  numbers and stores an invoice, totals worked out here
+//   invoice_get     one stored invoice, for Corrigeren in the history
+//   invoice_correct a credit invoice for a wrong invoice and (unless only
+//               crediting) the corrected invoice, both numbered in one go
 //   receipt_number  the next betaalbewijs number, B-YYYY-NNNN (own counter)
 //   mail_status / mail_start / mail_finish / mail_disconnect
 //               connect Shamil's Outlook once (Microsoft's device-code
@@ -21,7 +24,7 @@
 //               his own domain when RESEND_API_KEY and MAIL_FROM are set, else
 //               through Gmail when GMAIL_USER and GMAIL_APP_PASSWORD are, else
 //               that Outlook
-//   doc_save    keeps the PDF a visit ended with (invoice, receipt, note) in
+//   doc_save    keeps the PDF a visit ended with (invoice, receipt, note, credit) in
 //               the private bucket "documents", one per visit (same id = replaced)
 //   doc_list    the kept documents: one PC's, or all of them (the overview)
 //   doc_get     one kept PDF
@@ -351,7 +354,7 @@ async function visitGet(pc: unknown, all: unknown): Promise<Response> {
       .order("visited_at", { ascending: false }).limit(100);
     if (error) return json({ error: "database" }, 500);
     const docs = await db.from("documents").select(DOC_FIELDS).order("created_at", { ascending: false }).limit(300);
-    return json({ visits: data, documents: docs.error ? [] : docs.data });
+    return json({ visits: data, documents: docs.error ? [] : docs.data, credits: await creditList() });
   }
   if (typeof pc !== "string" || !PC.test(pc)) return json({ error: "bad_pc" }, 400);
   const { data, error } = await database().from("visits")
@@ -360,7 +363,19 @@ async function visitGet(pc: unknown, all: unknown): Promise<Response> {
   if (error) return json({ error: "database" }, 500);
   const docs = await database().from("documents").select(DOC_FIELDS)
     .eq("pc", pc).order("created_at", { ascending: false }).limit(20);
-  return json({ visits: data, documents: docs.error ? [] : docs.data });
+  return json({ visits: data, documents: docs.error ? [] : docs.data, credits: await creditList() });
+}
+
+// Which invoices were credited, and by which credit invoice, so the history
+// shows "gecrediteerd" and offers Corrigeren only where it can still be done.
+async function creditList(): Promise<{ number: string; credit_for: string; replaced_by: string | null }[]> {
+  const db = database();
+  const { data } = await db.from("invoices").select("number, credit_for").not("credit_for", "is", null);
+  const { data: repl } = await db.from("invoices").select("number, replaces").not("replaces", "is", null);
+  return (data ?? []).map((c) => ({
+    number: c.number, credit_for: c.credit_for,
+    replaced_by: (repl ?? []).find((r) => r.replaces === c.credit_for)?.number ?? null,
+  }));
 }
 
 // deno-lint-ignore no-explicit-any
@@ -455,7 +470,32 @@ async function invoiceCreate(body: any): Promise<Response> {
   const db = database();
   const { data: settings } = await db.from("settings").select("*").eq("id", 1).maybeSingle();
   if (!settings?.business_name) return json({ error: "no_settings" }, 400);
+  const inv = readInvoice(body, settings);
+  if (inv instanceof Response) return inv;
+  const { data, error } = await db.rpc("issue_invoice", { inv });
+  if (error) return json({ error: "database" }, 500);
+  return json({ invoice: data });
+}
 
+// What the visit was about and what was done (25 Oct): kept with the
+// invoice, so a corrected invoice can show them again.
+// deno-lint-ignore no-explicit-any
+function readRecord(body: any): { subject: string | null; work: { text: string; done: boolean }[] } | Response {
+  const { subject, work } = body;
+  if (subject != null && (typeof subject !== "string" || subject.length > 300)) return json({ error: "bad_subject" }, 400);
+  if (work != null && (!Array.isArray(work) || work.length > 40)) return json({ error: "bad_work" }, 400);
+  const clean: { text: string; done: boolean }[] = [];
+  for (const w of work ?? []) {
+    if (typeof w?.text !== "string" || w.text.trim() === "" || w.text.length > 200 || typeof w?.done !== "boolean") return json({ error: "bad_work" }, 400);
+    clean.push({ text: w.text.trim(), done: w.done });
+  }
+  return { subject: typeof subject === "string" && subject.trim() ? subject.trim() : null, work: clean };
+}
+
+// An invoice as issue_invoice takes it: checked, with the totals and the BTW
+// worked out here. Used by invoice_create and by invoice_correct.
+// deno-lint-ignore no-explicit-any
+function readInvoice(body: any, settings: any): Record<string, unknown> | Response {
   const { pc, lang, client, lines, payment, problems, changes } = body;
   if (pc != null && (typeof pc !== "string" || !PC.test(pc))) return json({ error: "bad_pc" }, 400);
   if (lang !== "nl" && lang !== "en") return json({ error: "bad_lang" }, 400);
@@ -485,26 +525,83 @@ async function invoiceCreate(body: any): Promise<Response> {
     const d = new Date(Date.now() + (settings.payment_days ?? 14) * 86400_000);
     due = d.toISOString().slice(0, 10);
   }
-  const seller = {
+  const record = readRecord(body);
+  if (record instanceof Response) return record;
+  return {
+    pc: pc ?? null, lang,
+    client_name: client.name.trim(), client_address: client.address || null,
+    client_postcode_city: client.postcode_city || null, client_email: client.email || null,
+    lines: clean, btw_mode: settings.btw_mode,
+    subtotal: subtotalCents / 100, btw_amount: btwCents / 100, total: totalCents / 100,
+    payment, due_date: due,
+    problems: Array.isArray(problems) ? problems.slice(0, 20) : [],
+    changes: Array.isArray(changes) ? changes.filter((c: unknown) => typeof c === "string").slice(0, 30) : [],
+    seller: sellerOf(settings), subject: record.subject, work: record.work,
+  };
+}
+
+// deno-lint-ignore no-explicit-any
+function sellerOf(settings: any) {
+  return {
     business_name: settings.business_name, owner_name: settings.owner_name, address: settings.address,
     postcode_city: settings.postcode_city, kvk: settings.kvk, btw_number: settings.btw_number,
     iban: settings.iban, email: settings.email, phone: settings.phone,
   };
-  const { data, error } = await db.rpc("issue_invoice", {
-    inv: {
-      pc: pc ?? null, lang,
-      client_name: client.name.trim(), client_address: client.address || null,
-      client_postcode_city: client.postcode_city || null, client_email: client.email || null,
-      lines: clean, btw_mode: settings.btw_mode,
-      subtotal: subtotalCents / 100, btw_amount: btwCents / 100, total: totalCents / 100,
-      payment, due_date: due,
-      problems: Array.isArray(problems) ? problems.slice(0, 20) : [],
-      changes: Array.isArray(changes) ? changes.filter((c: unknown) => typeof c === "string").slice(0, 30) : [],
-      seller,
-    },
-  });
+}
+
+const INVOICE_NUMBER = /^\d{4}-\d{4,}$/;
+
+// One stored invoice, with whether it was credited already.
+async function invoiceGet(number: unknown): Promise<Response> {
+  if (typeof number !== "string" || !INVOICE_NUMBER.test(number)) return json({ error: "bad_invoice_number" }, 400);
+  const db = database();
+  const { data, error } = await db.from("invoices").select("*").eq("number", number).maybeSingle();
   if (error) return json({ error: "database" }, 500);
-  return json({ invoice: data });
+  if (!data) return json({ error: "not_found" }, 404);
+  const { data: credit } = await db.from("invoices").select("number").eq("credit_for", number).maybeSingle();
+  return json({ invoice: data, credited_by: credit?.number ?? null });
+}
+
+// Corrigeren (25 Oct): an invoice is never changed. A credit invoice cancels
+// it -- its own number, the same client and lines with minus amounts -- and
+// a new invoice (from the form, checked like invoice_create) replaces it.
+// The database makes both in one transaction and refuses a second credit.
+// deno-lint-ignore no-explicit-any
+async function invoiceCorrect(body: any): Promise<Response> {
+  const db = database();
+  const { data: settings } = await db.from("settings").select("*").eq("id", 1).maybeSingle();
+  if (!settings?.business_name) return json({ error: "no_settings" }, 400);
+  const { number, credit_only } = body;
+  if (typeof number !== "string" || !INVOICE_NUMBER.test(number)) return json({ error: "bad_invoice_number" }, 400);
+  const { data: orig, error: readError } = await db.from("invoices").select("*").eq("number", number).maybeSingle();
+  if (readError) return json({ error: "database" }, 500);
+  if (!orig) return json({ error: "not_found" }, 404);
+  if (orig.credit_for) return json({ error: "is_credit" }, 400);
+
+  let inv: Record<string, unknown> | null = null;
+  if (credit_only !== true) {
+    const read = readInvoice(body, settings);
+    if (read instanceof Response) return read;
+    inv = read;
+  }
+  const minus = (n: unknown) => -Math.round(Number(n) * 100) / 100;
+  const credit = {
+    pc: orig.pc, lang: orig.lang,
+    client_name: orig.client_name, client_address: orig.client_address,
+    client_postcode_city: orig.client_postcode_city, client_email: orig.client_email,
+    lines: (orig.lines ?? []).map((l: { description: string; amount: number }) => ({ description: l.description, amount: minus(l.amount) })),
+    btw_mode: orig.btw_mode,
+    subtotal: minus(orig.subtotal), btw_amount: minus(orig.btw_amount), total: minus(orig.total),
+    payment: orig.payment, due_date: null, problems: orig.problems ?? [], changes: [],
+    seller: sellerOf(settings), subject: null, work: [], credit_for: orig.number,
+  };
+  const { data, error } = await db.rpc("issue_correction", { credit, inv });
+  if (error) {
+    const known = ["already_credited", "is_credit", "not_found"].find((k) => error.message?.includes(k));
+    if (known) return json({ error: known }, known === "not_found" ? 404 : 409);
+    return json({ error: "database" }, 500);
+  }
+  return json({ credit: data.credit, invoice: data.invoice });
 }
 
 // A betaalbewijs gets its number when the visit switches to one (17 Oct).
@@ -537,11 +634,12 @@ async function docSave(body: any): Promise<Response> {
   if (typeof id !== "string" || !UUID.test(id)) return json({ error: "bad_doc", field: "id" }, 400);
   if (pc != null && (typeof pc !== "string" || !PC.test(pc))) return json({ error: "bad_pc" }, 400);
   if (visit_id != null && (typeof visit_id !== "number" || !Number.isInteger(visit_id))) return json({ error: "bad_doc", field: "visit_id" }, 400);
-  if (!["invoice", "receipt", "note"].includes(kind)) return json({ error: "bad_doc", field: "kind" }, 400);
+  if (!["invoice", "receipt", "note", "credit"].includes(kind)) return json({ error: "bad_doc", field: "kind" }, 400);
   if (client_name != null && (typeof client_name !== "string" || client_name.length > 100)) return json({ error: "bad_doc", field: "client_name" }, 400);
   if (invoice_number != null && (typeof invoice_number !== "string" || !/^\d{4}-\d{4,}$/.test(invoice_number))) return json({ error: "bad_doc", field: "invoice_number" }, 400);
   if (receipt_number != null && (typeof receipt_number !== "string" || !RECEIPT_NUMBER.test(receipt_number))) return json({ error: "bad_doc", field: "receipt_number" }, 400);
-  if (total != null && (typeof total !== "number" || !Number.isFinite(total) || total < 0 || total > 100000)) return json({ error: "bad_doc", field: "total" }, 400);
+  // A credit invoice's total is below zero.
+  if (total != null && (typeof total !== "number" || !Number.isFinite(total) || total < -100000 || total > 100000)) return json({ error: "bad_doc", field: "total" }, 400);
   if (payment != null && !["pin", "cash", "transfer", "tikkie"].includes(payment)) return json({ error: "bad_doc", field: "payment" }, 400);
   if (lang !== "nl" && lang !== "en") return json({ error: "bad_lang" }, 400);
   if (typeof pdf_base64 !== "string" || pdf_base64.length > 4_000_000 || !/^[A-Za-z0-9+/=]+$/.test(pdf_base64)) return json({ error: "bad_doc", field: "pdf" }, 400);
@@ -992,6 +1090,10 @@ Deno.serve(async (req: Request) => {
       return settingsSave(body.settings);
     case "invoice_create":
       return invoiceCreate(body);
+    case "invoice_get":
+      return invoiceGet(body.number);
+    case "invoice_correct":
+      return invoiceCorrect(body);
     case "receipt_number":
       return receiptNumber();
     case "mail_status":

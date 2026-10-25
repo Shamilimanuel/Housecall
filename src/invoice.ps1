@@ -512,7 +512,19 @@ function New-HcInvoiceBody {
         payment  = $Form.Payment
         problems = @($script:HcVisit | Where-Object { $_.FindingId } | ForEach-Object { @{ code = $_.Code; finding = $_.FindingId } })
         changes  = @(Get-HcVisitChanges)
-    }
+    } + (Get-HcInvoiceRecord)
+}
+
+# What the visit was about and what was done, kept with the invoice (25 Oct)
+# so a corrected invoice can show them again.
+function Get-HcInvoiceRecord {
+    $subject = "$(Get-HcInvoiceSubject)".Trim()
+    if ($subject.Length -gt 300) { $subject = $subject.Substring(0, 300) }
+    $work = @(@($script:HcChanges | ForEach-Object { @{ text = "$($_.Label)"; done = $true } }) +
+              @($script:HcWork | ForEach-Object { @{ text = "$($_.Text)"; done = [bool]$_.Done } }) |
+        Where-Object { $_.text.Trim() } | Select-Object -First 40 |
+        ForEach-Object { if ($_.text.Length -gt 200) { $_.text = $_.text.Substring(0, 200) }; $_ })
+    @{ subject = $(if ($subject) { $subject } else { $null }); work = $work }
 }
 
 # ----------------------------------------------------------------- document --

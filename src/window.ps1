@@ -519,7 +519,7 @@ function Update-HcTabs {
         $style = if ($w.Tab -eq $tab) { 'HcTabOn' } else { 'HcTab' }
         [void]$panel.Children.Add((New-HcButton (T "win.tab.$tab") @{ Do = 'tab'; Tab = $tab } $style))
     }
-    $body = if ($w.Tab -eq 'problems') { 'ProblemsTab' } elseif ($w.Tab -eq 'phone') { 'PhoneTab' } elseif ($w.Tab -eq 'visit' -and $w.VisitView -eq 'finish') { 'VisitTab' } else { 'OtherTab' }
+    $body = if ($w.Tab -eq 'problems') { 'ProblemsTab' } elseif ($w.Tab -eq 'phone') { 'PhoneTab' } elseif ($w.Tab -eq 'visit' -and $w.VisitView -in @('finish', 'correct')) { 'VisitTab' } else { 'OtherTab' }
     foreach ($name in @('ProblemsTab', 'PhoneTab', 'VisitTab', 'OtherTab')) {
         $w.Window.FindName($name).Visibility = if ($name -eq $body) { 'Visible' } else { 'Collapsed' }
     }
@@ -1567,7 +1567,8 @@ function Show-HcWindow {
         FromAll = $false; All = $null; BusyText = ''; Clock = $null; SearchFirst = $null; ChangeAsk = $null; UndoInChanges = $false
         Queue = New-Object System.Collections.ArrayList; Job = $null; WasBusy = $false
         Runspace = $null; Outcome = 'done'; Finished = $false; CloseAnyway = $false; CloseAsk = $false
-        VisitView = 'finish'; Fin = (New-HcFinishState); Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null; Scope = 'pc'; AllStage = 'new'; AllVisits = @(); AllDocs = @() }
+        VisitView = 'finish'; Fin = (New-HcFinishState); Corr = $null
+        Hist = @{ Stage = 'new'; Visits = @(); Confirm = $null; Notice = $null; Scope = 'pc'; AllStage = 'new'; AllVisits = @(); AllDocs = @(); Credits = @(); AllCredits = @() }
         Pc = @{ Stage = 'new'; Facts = $null; Advice = @(); Error = $null }; Ai = (New-HcAiState); Ph = (New-HcPhoneState)
         Totp = $null; PcId = $null; PreviewDue = $null; WorkBox = $null; ExtraText = $null; ExtraPrice = $null
         Net = (New-HcNetState)

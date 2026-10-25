@@ -17,7 +17,10 @@ $script:HcPage = @{ Width = 794; Height = 1123; Left = 64; Right = 730; Top = 60
 function Get-HcInvoiceStyle {
     Add-Type -AssemblyName System.Drawing -ErrorAction Stop
     $world = [Drawing.GraphicsUnit]::World
-    $f = { param($size, $style = 'Regular') New-Object Drawing.Font('Segoe UI', [single]$size, [Drawing.FontStyle]$style, $world) }
+    # Verdana (25 Oct): wide, clearly different letters (I l 1, 0 O) at small
+    # sizes, and on every Windows PC. Its sizes are a little under Segoe UI's,
+    # since Verdana runs wider.
+    $f = { param($size, $style = 'Regular') New-Object Drawing.Font('Verdana', [single]($size * 0.92), [Drawing.FontStyle]$style, $world) }
     @{
         Fonts  = @{
             title = & $f 30 'Bold'; body = & $f 14; bodyBold = & $f 14 'Bold'; small = & $f 12.5
@@ -43,8 +46,19 @@ function Get-HcInvoiceSubject {
 }
 
 # The work under "Wat er is gedaan": Housecall's own fixes and the
-# hand-made list, each with Done.
+# hand-made list, each with Done. -Items: the list an invoice kept (text,
+# done), for an invoice drawn again later, such as a corrected one.
 function Get-HcInvoiceWork {
+    param([object[]]$Items, [switch]$Record)
+    if ($Record) {
+        foreach ($i in @($Items | Where-Object { $_ })) {
+            $t = "$(if ($null -ne $i.text) { $i.text } else { $i.Text })"
+            $done = [bool]$(if ($null -ne $i.done) { $i.done } else { $i.Done })
+            if ($done) { [pscustomobject]@{ Text = $t; Done = $true } }
+            else { [pscustomobject]@{ Text = (T 'doc.notFixed' $t); Done = $false } }
+        }
+        return
+    }
     foreach ($c in @($script:HcChanges)) { [pscustomobject]@{ Text = $c.Label; Done = $true } }
     foreach ($w in @($script:HcWork)) {
         if ($w.Done) { [pscustomobject]@{ Text = $w.Text; Done = $true } }
@@ -69,7 +83,11 @@ function Get-HcAskText {
 function Get-HcInvoiceLayout {
     # -Receipt: a betaalbewijs, the amounts and "voldaan" with its own
     # number (B-2026-0001), for visits before the KvK registration.
-    param($Invoice, [switch]$Note, [switch]$Receipt)
+    # -Record: an invoice drawn from what it kept (subject, work) instead of
+    # from this visit, such as a corrected one. An invoice with credit_for is
+    # a credit invoice (25 Oct): minus amounts, no work, no stamp, and the
+    # sentence about the money (settle_with: the invoice that replaces it).
+    param($Invoice, [switch]$Note, [switch]$Receipt, [switch]$Record)
     $style = Get-HcInvoiceStyle
     $F = $style.Fonts
     $P = $script:HcPage
@@ -105,15 +123,16 @@ function Get-HcInvoiceLayout {
     $colX = $P.Left + $half + 32
     $amountW = 120
     $descW = $full - $amountW - 16
+    $credit = -not $Note -and -not $Receipt -and [bool]"$($Invoice.credit_for)"
     # Paid on the spot: a receipt, or an invoice paid by card or in cash. Those get the stamp.
-    $paid = -not $Note -and ($Receipt -or "$($Invoice.payment)" -in @('pin', 'cash'))
+    $paid = -not $Note -and -not $credit -and ($Receipt -or "$($Invoice.payment)" -in @('pin', 'cash'))
     $number = if ($Note) { '' } elseif ($Receipt) { "$($Invoice.receipt_number)" } else { "$($Invoice.number)" }
 
     # Top: a heavy line; the document's name and number on the left; on the
     # right the logo with Housecall and Shamil's details, as on his card.
     & $line ($y + 3) 'ink' 7
     $y += 24
-    & $text $(if ($Note) { T 'doc.noteWord' } elseif ($Receipt) { T 'doc.receiptWord' } else { T 'doc.invoiceWord' }) 'title' ($P.Left - 4) $y $half
+    & $text $(if ($Note) { T 'doc.noteWord' } elseif ($Receipt) { T 'doc.receiptWord' } elseif ($credit) { T 'doc.creditWord' } else { T 'doc.invoiceWord' }) 'title' ($P.Left - 4) $y $half
     # GDI+ pads text by a sixth of its size; at 30 px that shows, so the title sits 4 px left.
     $leftY = $y + (& $measure 'F' 'title' $half)
     $under = if ($Note) { Format-HcLongDate $issued } else { $number }
@@ -153,6 +172,15 @@ function Get-HcInvoiceLayout {
             @{ Cap = (T 'doc.dateCap'); Value = (Format-HcLongDate $issued); W = $unit; Font = 'bodyBold'; Pen = 1 }
             @{ Cap = $(if ($paid) { T 'doc.paidViaCap' } else { T 'doc.paymentCap' }); Value = $payValue; W = $unit; Font = 'bodyBold'; Pen = 1 }
             @{ Cap = $(if ($paid) { T 'doc.totalPaidCap' } else { T 'doc.totalDueCap' }); Value = (Format-HcMoney ([decimal]$Invoice.total)); W = ($full - 2 * $unit - 2 * $gap); Font = 'tile'; Pen = 3 })
+        if ($credit) {
+            # The middle box names the invoice it cancels, with that invoice's date.
+            $was = "$($Invoice.credit_for)"
+            if ($Invoice.credit_for_date) {
+                $was = T 'doc.creditOf' $was (Format-HcLongDate ([datetime]::Parse([string]$Invoice.credit_for_date, [Globalization.CultureInfo]::InvariantCulture).ToLocalTime()))
+            }
+            $tiles[1] = @{ Cap = (T 'doc.creditForCap'); Value = $was; W = $unit; Font = 'bodyBold'; Pen = 1 }
+            $tiles[2].Cap = T 'doc.creditTotalCap'
+        }
         $tileH = 70
         foreach ($t in $tiles) { $tileH = [Math]::Max($tileH, 30 + (& $measure $t.Value $t.Font ($t.W - 32)) + 12) }
         $x = $P.Left
@@ -174,16 +202,21 @@ function Get-HcInvoiceLayout {
         & $text $l 'body' $P.Left $clientY $half
         $clientY += (& $measure $l 'body' $half)
     }
-    $subject = Get-HcInvoiceSubject
+    $subject = if ($credit) { T 'doc.creditSubject' $Invoice.credit_for } elseif ($Record) { "$($Invoice.subject)".Trim() } else { Get-HcInvoiceSubject }
     $subjectY = $y
     if ($subject) {
         & $text $subject 'body' $colX $y $half
         $subjectY += (& $measure $subject 'body' $half)
     }
+    if ($Invoice.replaces -and -not $credit) {
+        $replaces = T 'doc.replaces' $Invoice.replaces
+        & $text $replaces 'small' $colX $subjectY $half 'muted'
+        $subjectY += (& $measure $replaces 'small' $half)
+    }
     $y = [Math]::Max($clientY, $subjectY) + 26
 
     # What was done, with ticks; not fixed in italics with a dash.
-    $work = @(Get-HcInvoiceWork)
+    $work = @(if ($credit) { } elseif ($Record) { Get-HcInvoiceWork $Invoice.work -Record } else { Get-HcInvoiceWork })
     if ($work.Count) {
         & $room 30
         & $text (T 'doc.doneTitle') 'head' $P.Left $y $full
@@ -199,7 +232,7 @@ function Get-HcInvoiceLayout {
         $y += 12
     }
     # Advice from the Pc-overzicht, under the work: what would help next.
-    $advice = @($script:HcAdvice)
+    $advice = @(if (-not $Record -and -not $credit) { $script:HcAdvice })
     if ($advice.Count) {
         & $room 30
         & $text (T 'doc.adviceTitle') 'head' $P.Left $y $full
@@ -286,7 +319,8 @@ function Get-HcInvoiceLayout {
             $y += 10
         }
         $paidOn = Format-HcLongDate $issued
-        $pay = if ($paid) { $null } else { switch ($Invoice.payment) {
+        $pay = if ($credit) { if ($Invoice.settle_with) { T 'doc.creditSettle' $Invoice.settle_with } else { T 'doc.creditRefund' } }
+               elseif ($paid) { $null } else { switch ($Invoice.payment) {
             'tikkie'   { T 'doc.paidTikkie' $paidOn }
             'transfer' {
                 $due = Format-HcLongDate ([datetime]::Parse([string]$Invoice.due_date, [Globalization.CultureInfo]::InvariantCulture))
@@ -381,7 +415,9 @@ function Write-HcInvoicePage {
     param([Drawing.Graphics]$Graphics, [object[]]$Steps)
     $style = Get-HcInvoiceStyle
     $Graphics.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $Graphics.TextRenderingHint = [Drawing.Text.TextRenderingHint]::AntiAliasGridFit
+    # Plain AntiAlias, not GridFit: snapping Verdana's letters to whole
+    # pixels gave uneven gaps in small wrapped text (25 Oct).
+    $Graphics.TextRenderingHint = [Drawing.Text.TextRenderingHint]::AntiAlias
     foreach ($s in $Steps) {
         $color = $style.Colors[$s.Color]
         switch ($s.Kind) {

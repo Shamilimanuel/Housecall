@@ -79,6 +79,7 @@ $HcSource = @(
     'invoice-page.ps1'
     'window.ps1'
     'window-visit.ps1'
+    'window-correct.ps1'
     'window-pc.ps1'
     'window-phone.ps1'
     'window-start.ps1'

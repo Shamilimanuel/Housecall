@@ -45,9 +45,57 @@ function Get-HcWorkPresets {
 }
 
 # Adds one item; $false when it is empty or already on the list.
+<#
+    Capitals where Shamil typed none (25 Oct, his wish): only first letters
+    are raised, nothing is ever lowered, so "McDonald" stays as typed.
+      sentence  "printer opnieuw ingesteld" -> "Printer opnieuw ingesteld"
+      address   "dorpsstraat 1"             -> "Dorpsstraat 1"
+      place     "1234ab almere"             -> "1234 AB Almere" (and "aan den" stays small)
+      name      "jan de vries" -> "Jan de Vries"; "de vries" -> "De Vries": the
+                Dutch rule, a tussenvoegsel gets a capital only when no first
+                name or initial comes before it. A name with any capital in
+                it was typed with care ("de Vries") and stays as it is.
+#>
+function ConvertTo-HcCapitals {
+    param([string]$Text, [string]$Kind)
+    $t = "$Text"
+    if (-not $t.Trim() -or -not $Kind) { return $t }
+    $nl = [Globalization.CultureInfo]::GetCultureInfo('nl-NL')
+    $up = { param($s) if ($s -match '^([^\p{L}]*)(\p{Ll})(.*)$') { $Matches[1] + $Matches[2].ToUpper($nl) + $Matches[3] } else { $s } }
+    $small = @('van', 'de', 'der', 'den', 'het', 'ter', 'ten', 'te', 'op', 'in', 'aan', 'bij', 'onder', 'over', 'uit', 'voor', 'la', 'le', 'du', 'da', 'von', 'zu', "'t", "'s", 'a/d')
+    switch ($Kind) {
+        { $_ -in @('sentence', 'address') } { return (& $up $t) }
+        'place' {
+            $postcode = ''
+            if ($t -match '^\s*(\d{4})\s*([a-zA-Z]{2})(?![a-zA-Z])\s*(.*)$') { $postcode = $Matches[1] + ' ' + $Matches[2].ToUpper($nl); $t = $Matches[3] }
+            $words = @($t -split ' ')
+            for ($i = 0; $i -lt $words.Count; $i++) {
+                if ($i -gt 0 -and $words[$i].ToLower($nl) -in $small) { continue }
+                # 's-Hertogenbosch: a part that starts with an apostrophe stays as typed.
+                $words[$i] = (@($words[$i] -split '-') | ForEach-Object { if ($_ -like "'*") { $_ } else { & $up $_ } }) -join '-'
+            }
+            return (@($postcode, ($words -join ' ')) | Where-Object { $_ }) -join ' '
+        }
+        'name' {
+            if ($t -cmatch '\p{Lu}') { return $t }
+            $words = @($t -split ' ')
+            $first = $true
+            for ($i = 0; $i -lt $words.Count; $i++) {
+                if (-not $words[$i]) { continue }
+                if (-not $first -and $words[$i].ToLower($nl) -in $small) { continue }
+                $words[$i] = (@($words[$i] -split '-') | ForEach-Object { if ($_.ToLower($nl) -in $small) { $_ } else { & $up $_ } }) -join '-'
+                if ($first) { $words[$i] = & $up $words[$i] }
+                $first = $false
+            }
+            return ($words -join ' ')
+        }
+    }
+    $t
+}
+
 function Add-HcWorkItem {
     param([string]$Text, [bool]$Done)
-    $t = ("$Text" -replace '\s+', ' ').Trim()
+    $t = ConvertTo-HcCapitals ("$Text" -replace '\s+', ' ').Trim() 'sentence'
     if (-not $t) { return $false }
     if ($t.Length -gt 150) { $t = $t.Substring(0, 150) }
     if (@($script:HcWork | Where-Object { $_.Text -eq $t }).Count) { return $false }
