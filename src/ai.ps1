@@ -114,7 +114,7 @@ function Invoke-HcAiTurn {
     $content = @(@($Convo.Pending) | Where-Object { $_ })
     foreach ($p in @($Convo.PendingIds | Where-Object { $_ })) {
         if ($p.Kind -eq 'ask' -and $Text) { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = $Text }; $Text = '' }
-        else { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = 'Shown to the technician and the client.' } }
+        else { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = 'Shown to Shamil and the client.' } }
     }
     if ($Text) { $content += @{ type = 'text'; text = $Text } }
     [void]$history.Add(@{ role = 'user'; content_json = (ConvertTo-HcContentJson $content) })

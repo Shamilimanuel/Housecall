@@ -390,7 +390,7 @@ function Complete-HcAiDirect {
         $item.Text = T 'win.ai.direct' $code
         $item.Problems = @(@{ Code = $code; FixIds = @(@($report.Actions) | ForEach-Object { [string]$_.FixId }); All = $true })
         # The AI hears of it with the technician's next message.
-        $a.Extra += "The technician ran check $code himself:`n$(Format-HcReportForAi $report)"
+        $a.Extra += "Shamil ran check $code himself:`n$(Format-HcReportForAi $report)"
     }
     Update-HcAiPanel
     Update-HcSide

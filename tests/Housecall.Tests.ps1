@@ -2448,8 +2448,8 @@ Describe 'AI-hulp as a conversation (25 Oct)' {
         New-HcAiPayload $ai 'slow' $null | Should Be "[en]`nslow"
         $ai.Convo = New-HcAiConvo
         $ai.AnswerLang = 'nl'
-        $ai.Extra = @('The technician ran check C1 himself')
-        New-HcAiPayload $ai 'en nu?' $null | Should Be "[nl]`nThe technician ran check C1 himself`nen nu?"
+        $ai.Extra = @('Shamil ran check C1 himself')
+        New-HcAiPayload $ai 'en nu?' $null | Should Be "[nl]`nShamil ran check C1 himself`nen nu?"
         $script:HcVisit.Clear()
     }
 

@@ -42,7 +42,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'a6720080930f'
+$HcBuild = '7a6a6862bd87'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -1953,7 +1953,7 @@ $script:Strings = @{
         'relay.wrongCode'    = 'That code is not right. Type the code the app shows now.'
         'relay.codeUsed'     = 'That code was already used. Wait for the next one (every 30 seconds).'
         'relay.locked'       = 'Too many wrong codes: wait 15 minutes.'
-        'relay.lockedDay'    = 'Too many wrong codes today: Housecall is locked for a day. The technician got an email about it.'
+        'relay.lockedDay'    = 'Too many wrong codes today: Housecall is locked for a day. Shamil got an email about it.'
         'relay.notSetUp'     = 'The relay is not set up yet: run tools\setup-ai.ps1 on your own PC.'
         'relay.expired'      = 'The unlock has expired: type a new code.'
         'relay.unreachable'  = 'The relay cannot be reached. Is the Supabase project paused? Restore it in the Supabase dashboard.'
@@ -4262,7 +4262,7 @@ $script:Strings = @{
         'relay.wrongCode'    = 'Die code klopt niet. Typ de code die de app nu laat zien.'
         'relay.codeUsed'     = 'Die code is al gebruikt. Wacht op de volgende (elke 30 seconden).'
         'relay.locked'       = 'Te veel verkeerde codes: wacht 15 minuten.'
-        'relay.lockedDay'    = 'Te veel verkeerde codes vandaag: Housecall zit een dag op slot. De technicus heeft er een mail over gekregen.'
+        'relay.lockedDay'    = 'Te veel verkeerde codes vandaag: Housecall zit een dag op slot. Shamil heeft er een mail over gekregen.'
         'relay.notSetUp'     = 'De relay is nog niet ingesteld: start tools\setup-ai.ps1 op uw eigen pc.'
         'relay.expired'      = 'De ontgrendeling is verlopen: typ een nieuwe code.'
         'relay.unreachable'  = 'De relay is niet bereikbaar. Staat het Supabase-project op pauze? Herstel het in het Supabase-dashboard.'
@@ -19624,7 +19624,7 @@ function Complete-HcAiDirect {
         $item.Text = T 'win.ai.direct' $code
         $item.Problems = @(@{ Code = $code; FixIds = @(@($report.Actions) | ForEach-Object { [string]$_.FixId }); All = $true })
         # The AI hears of it with the technician's next message.
-        $a.Extra += "The technician ran check $code himself:`n$(Format-HcReportForAi $report)"
+        $a.Extra += "Shamil ran check $code himself:`n$(Format-HcReportForAi $report)"
     }
     Update-HcAiPanel
     Update-HcSide
@@ -20259,7 +20259,7 @@ function Invoke-HcAiTurn {
     $content = @(@($Convo.Pending) | Where-Object { $_ })
     foreach ($p in @($Convo.PendingIds | Where-Object { $_ })) {
         if ($p.Kind -eq 'ask' -and $Text) { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = $Text }; $Text = '' }
-        else { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = 'Shown to the technician and the client.' } }
+        else { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = 'Shown to Shamil and the client.' } }
     }
     if ($Text) { $content += @{ type = 'text'; text = $Text } }
     [void]$history.Add(@{ role = 'user'; content_json = (ConvertTo-HcContentJson $content) })
