@@ -14,9 +14,6 @@ The long form does the same: `irm github.com/Shamilimanuel/Housecall/raw/main/se
   <img src="docs/screenshots/problems.png" alt="Housecall's Problems tab: problems grouped A to G, with what it found and what to do next" width="49%">
   <img src="docs/screenshots/phone-check.png" alt="The Phone and tablet tab: a phone checked over USB, with storage, memory and battery" width="49%">
 </p>
-<p align="center">
-  <img src="docs/screenshots/text-menu.png" alt="The same Housecall as a text menu in PowerShell" width="60%">
-</p>
 
 <sub>The screenshots show a demo PC and a made-up phone.</sub>
 
