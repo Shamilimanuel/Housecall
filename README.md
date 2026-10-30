@@ -36,7 +36,7 @@ internet), or `?` for the AI.
   findings, Housecall offers fixes; each one asks first, is checked again
   afterwards, and can be undone. Or follow the step-by-step instructions to
   do it by hand.
-- **Nothing is installed.** Close the window and it's gone.
+- **Nothing is installed**, except an optional ADB download (Google's Android platform-tools, signature-checked and cached in `%LOCALAPPDATA%\Housecall\platform-tools`), which the phone checks can ask for and which can be deleted. Close the window and the rest is gone.
 - **Works offline, from a USB stick.** The one-liner needs internet to download
   Housecall, but once running, the menu and the checks don't. For a PC with no
   internet, bring it on a USB stick (below).
@@ -122,7 +122,7 @@ fixes ask for them when they need them. The Android checks need a phone on a USB
 
 ## Privacy
 
-- **Checks stay on the PC.** Checking only reads; nothing is changed without a yes, and nothing is installed.
+- **Checks stay on the PC.** Checking only reads; nothing is changed without a yes, and nothing is installed (apart from that optional ADB download).
 - **The AI chat and visit history are optional.** They go through a small relay and need a one-time code from the
   owner's authenticator app. Only the problem you typed and the check results are sent to the AI: no files,
   passwords or documents.
