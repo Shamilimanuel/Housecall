@@ -1680,7 +1680,7 @@ function Show-HcWindow {
     Pure: how much bigger everything is drawn. The window is laid out for an
     old 1280x800 laptop; on a bigger screen, or maximised, it grows with the
     window (by the side that runs out first) instead of staying small in
-    the top left corner, up to 30% (Shamil's maximised screen, 6 Oct).
+    the top left corner, up to 30% (the technician's maximised screen, 6 Oct).
 #>
 function Get-HcZoom {
     param([double]$Width, [double]$Height)

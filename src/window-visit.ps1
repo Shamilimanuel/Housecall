@@ -95,7 +95,7 @@ function Split-HcClientName {
 }
 
 # The mail that goes with the PDF, in the visit's language: the greeting by
-# salutation, one sentence on what is attached, and Shamil's name (and
+# salutation, one sentence on what is attached, and the technician's name (and
 # phone, once it is in his settings) under it. Kind is invoice, receipt or note.
 function New-HcMailText {
     # -Subject and -Body replace the usual ones (a corrected invoice says what it replaces).
@@ -525,7 +525,7 @@ function Update-HcFinishPanel {
     }
     & $put $chips
 
-    # What was done: Housecall's own fixes, then Shamil's list.
+    # What was done: Housecall's own fixes, then the technician's list.
     & $put (New-HcSection (T 'note.done') (T 'win.fin.doneNote'))
     foreach ($c in @($script:HcChanges)) {
         $row = New-Object Windows.Controls.DockPanel
@@ -1014,7 +1014,7 @@ function Request-HcMail {
 }
 
 # The page as a PDF (Windows' own PDF printer, into a temporary file that is
-# gone straight after), then through the relay from Shamil's Outlook.
+# gone straight after), then through the relay from the technician's Outlook.
 function Send-HcMail {
     $w = $script:HcWin
     $f = $w.Fin
@@ -1077,7 +1077,7 @@ function Save-HcWindowPdf {
 
 # --------------------------------------------------- the kept document --
 
-# Klaar keeps the PDF the visit ended with in Shamil's own storage behind
+# Klaar keeps the PDF the visit ended with in the technician's own storage behind
 # the relay (7 Oct): the invoice once it is made, else the receipt, else the
 # note. It needs the code; a note without the code is not kept.
 function Test-HcDocWanted {
@@ -1228,7 +1228,7 @@ function Format-HcDocLine {
 
 # -------------------------------------------------------------- history --
 
-# "Alle klanten" only on Shamil's own devices, recognised by the housecall
+# "Alle klanten" only on the technician's own devices, recognised by the housecall
 # command (tools\install-command.ps1), which is never put on a client's PC:
 # there the screen shows that client's history and nobody else's.
 function Test-HcOwnDevice {

@@ -27,11 +27,11 @@ function Set-HcContact {
 # one after any fixes). Filled by Invoke-HcProblem.
 $script:HcVisit = New-Object System.Collections.ArrayList
 
-# What the client asked for help with, typed by Shamil in the invoice
+# What the client asked for help with, typed by the technician in the invoice
 # window. Empty: every problem opened this visit is listed instead.
 $script:HcAsked = ''
 
-# What Shamil did by hand, from the invoice window: Text, and Done ($true
+# What the technician did by hand, from the invoice window: Text, and Done ($true
 # for fixed, $false for not fixed).
 $script:HcWork = New-Object System.Collections.ArrayList
 
@@ -50,7 +50,7 @@ function Get-HcWorkPresets {
 
 # Adds one item; $false when it is empty or already on the list.
 <#
-    Capitals where Shamil typed none (25 Oct, his wish): only first letters
+    Capitals where the technician typed none (25 Oct, his wish): only first letters
     are raised, nothing is ever lowered, so "McDonald" stays as typed.
       sentence  "printer opnieuw ingesteld" -> "Printer opnieuw ingesteld"
       address   "dorpsstraat 1"             -> "Dorpsstraat 1"

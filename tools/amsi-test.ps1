@@ -1,7 +1,7 @@
 <#
     Finds which part of Housecall an antivirus blocks.
 
-    Found on 2 Oct 2026: on Shamil's laptop McAfee stopped the one-liner with
+    Found on 2 Oct 2026: on the technician's laptop McAfee stopped the one-liner with
     "This script contains malicious content and has been blocked by your
     antivirus software" (ScriptContainedMaliciousContent, line 1 char 1).
     Windows hands every script that PowerShell is about to run to the

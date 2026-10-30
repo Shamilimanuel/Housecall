@@ -1,6 +1,6 @@
 <#
     The window's Start tab (6 Oct, layout A of
-    https://claude.ai/artifact/SmkY8P7PSzrzcRfHr1k6TH, chosen by Shamil):
+    https://claude.ai/artifact/SmkY8P7PSzrzcRfHr1k6TH, chosen by the technician):
     the first thing he sees at a client's.
 
       left    what Housecall already sees on this PC (the Pc-overzicht's own

@@ -1,6 +1,6 @@
 <#
     The invoice as a drawn A4 page. Since 17 Oct the "Kader" look, made for
-    Shamil's black-and-white laser printer: a heavy line on top, the logo
+    The technician's black-and-white laser printer: a heavy line on top, the logo
     with Housecall as on his business card, three boxes with the date, the
     payment and the total, what was done, the costs, a VOLDAAN stamp when
     it is paid, and a box with how to reach him. Only black, white and dark
@@ -80,7 +80,7 @@ function Get-HcAskText {
 }
 
 # -Note: the same page as a plain note, for a visit without an invoice: no
-# number and no amounts, but what was found, and how to reach Shamil.
+# number and no amounts, but what was found, and how to reach the technician.
 function Get-HcInvoiceLayout {
     # -Receipt: a betaalbewijs, the amounts and "voldaan" with its own
     # number (B-2026-0001), for visits before the KvK registration.
@@ -130,7 +130,7 @@ function Get-HcInvoiceLayout {
     $number = if ($Note) { '' } elseif ($Receipt) { "$($Invoice.receipt_number)" } else { "$($Invoice.number)" }
 
     # Top: a heavy line; the document's name and number on the left; on the
-    # right the logo with Housecall and Shamil's details, as on his card.
+    # right the logo with Housecall and the technician's details, as on his card.
     & $line ($y + 3) 'ink' 7
     $y += 24
     & $text $(if ($Note) { T 'doc.noteWord' } elseif ($Receipt) { T 'doc.receiptWord' } elseif ($credit) { T 'doc.creditWord' } else { T 'doc.invoiceWord' }) 'title' ($P.Left - 4) $y $half
@@ -337,7 +337,7 @@ function Get-HcInvoiceLayout {
             $y += $h + 10
         }
 
-        # How to reach Shamil again, with the number to mention.
+        # How to reach the technician again, with the number to mention.
         $ask = Get-HcAskText $s $number
         if ($ask) {
             $innerW = $full - 36

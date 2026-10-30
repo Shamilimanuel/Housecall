@@ -29,7 +29,7 @@ $script:RecycleBinId = '{645FF040-5081-101B-9F08-00AA002F954E}'
 # Where Windows really keeps "Show desktop icons": the desktop's own view
 # settings. Bit 0x1000 of FFlags means no icons. HideIcons under Advanced is
 # only a copy, which Explorer overwrites from FFlags when it starts (found
-# on Shamil's PC, 27 Sep: setting HideIcons alone came back within seconds).
+# on the technician's PC, 27 Sep: setting HideIcons alone came back within seconds).
 $script:DesktopBagKey = 'HKCU:\Software\Microsoft\Windows\Shell\Bags\1\Desktop'
 $script:NoIconsFlag = 0x1000
 
@@ -101,7 +101,7 @@ function ConvertTo-HcInt32 {
     Taskbar auto-hide, through the same call the Settings switch uses
     (SHAppBarMessage). It changes it live, without restarting Explorer, and
     Explorer stores it itself. Changing the stored copy and restarting
-    Explorer did not hold on Shamil's PC (27 Sep): a Windhawk taskbar mod,
+    Explorer did not hold on the technician's PC (27 Sep): a Windhawk taskbar mod,
     reloaded with Explorer, switched auto-hide straight back on.
 #>
 function Initialize-HcAppBar {

@@ -8,20 +8,20 @@
     session and is never written to disk.
 
     Visit memory: each PC gets a scrambled id (SHA-256 of its BIOS serial
-    and machine UUID), never a name. The relay keeps the visits in Shamil's
+    and machine UUID), never a name. The relay keeps the visits in the technician's
     Supabase; nothing is kept on the client's PC.
 #>
 
 $script:RelayUrl = 'https://btwbtxjawubtgeizcrir.supabase.co/functions/v1/housecall'
 $script:HcToken = $null
 $script:HcTokenExpires = [datetime]::MinValue
-# Which pass the code gave (25 Oct): 'full' on Shamil's own devices, 'visit'
+# Which pass the code gave (25 Oct): 'full' on the technician's own devices, 'visit'
 # on a client's PC (only that PC's records; the relay holds it to that).
 $script:HcTokenScope = $null
 $script:HcKnownLabel = $null
 
 <#
-    The device key: what makes a PC one of Shamil's own (25 Oct). A random
+    The device key: what makes a PC one of the technician's own (25 Oct). A random
     secret in %LOCALAPPDATA%\Housecall\device.key, locked to his Windows
     account with Windows' own encryption (DPAPI), made and registered by
     tools\register-device.ps1 -- never on a client's PC. With it, the code
@@ -167,7 +167,7 @@ function Get-HcPcId {
 
 # The visits of this PC as Ok, Visits and Error. Not a bare list: an empty
 # list returned from a PowerShell function arrives as $null, which looked
-# exactly like a failed request (found by Shamil on his first try, 26 Sep).
+# exactly like a failed request (found by the technician on his first try, 26 Sep).
 function Get-HcVisits {
     if (-not (Test-HcUnlocked)) { return [pscustomobject]@{ Ok = $false; Visits = @(); Error = 'locked_out' } }
     $r = Invoke-HcRelay @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcPcId) }
@@ -243,7 +243,7 @@ function Show-HcHistory {
 <#
     At the end of a visit (Q): offers to save it. Asks for the code when
     the session is not unlocked yet, and for an optional name or note, so
-    Shamil can find it again for the invoice. Skipped in a dry run, offline,
+    The technician can find it again for the invoice. Skipped in a dry run, offline,
     or when no problem was opened.
 #>
 function Save-HcVisitRecord {

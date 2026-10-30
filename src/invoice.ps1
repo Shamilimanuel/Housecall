@@ -2,7 +2,7 @@
     The invoice: at the end of a visit (Q), a short form, then a proper
     invoice instead of the plain client note.
 
-    Shamil's business details, hourly rate, call-out fee and BTW setting
+    The technician's business details, hourly rate, call-out fee and BTW setting
     live in his Supabase (tools\setup-invoice.ps1 fills them in), never in
     this public script. The relay gives out the consecutive invoice number,
     works out the totals and BTW, and keeps the invoice (7 years: fiscale
@@ -123,7 +123,7 @@ function Read-HcField {
 
 <#
     The form. Returns the client, the lines and the payment, or $null when
-    Shamil cancels (0) -- then the plain note is shown instead.
+    The technician cancels (0) -- then the plain note is shown instead.
 #>
 function Read-HcInvoiceForm {
     param($Settings)
@@ -196,7 +196,7 @@ function Read-HcInvoiceForm {
 }
 
 <#
-    The invoice form as a window (Shamil's request: click, fix, then make
+    The invoice form as a window (the technician's request: click, fix, then make
     it). Its fields go through ConvertTo-HcInvoiceForm, which checks them
     and builds the same result as the console form, so it can be tested
     without a window. Without a desktop, the console form is used.
@@ -258,7 +258,7 @@ function Show-HcInvoiceWindow {
     $form.MinimumSize = New-Object Drawing.Size(560, 480)
     $form.Font = $font
     # Every colour set explicitly: Windows themes with custom system colours
-    # (Shamil's PC has one) otherwise give white text on white, or dark fields.
+    # (the technician's PC has one) otherwise give white text on white, or dark fields.
     $form.BackColor = [Drawing.Color]::White
     $form.ForeColor = [Drawing.Color]::Black
     $form.TopMost = $true
@@ -289,7 +289,7 @@ function Show-HcInvoiceWindow {
     $address = & $field (T 'inv.address') ''
     $postcode = & $field (T 'inv.postcode') ''
     $email = & $field (T 'inv.email') ''
-    # The client's question in Shamil's words; the problems checked this
+    # The client's question in the technician's words; the problems checked this
     # visit are offered, since he may have checked more than was asked.
     $l = New-Object Windows.Forms.Label
     $l.Text = T 'inv.win.asked'; $l.AutoSize = $true; $l.Anchor = 'Left'; $l.Margin = New-Object Windows.Forms.Padding(0, 6, 8, 0)
@@ -602,7 +602,7 @@ function Get-HcInvoiceBlocks {
             & $block 'payment' (T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number)
         }
     }
-    # No BTW line until BTW is set: Shamil is not a registered business yet.
+    # No BTW line until BTW is set: the technician is not a registered business yet.
     if ($Invoice.btw_mode -eq 'kor') { & $block 'small' (T 'doc.kor') }
     & $block 'small' (T 'doc.thanks')
 }

@@ -75,7 +75,7 @@ function Split-HcLabourLines {
     [pscustomobject]@{ Minutes = $(if ($found) { $minutes } else { $null }); Labour = $labour; Rest = $rest }
 }
 
-# "15,00" for a text box: the amount as Shamil would type it.
+# "15,00" for a text box: the amount as the technician would type it.
 function Format-HcAmountText {
     param([decimal]$Amount)
     $Amount.ToString('0.00', [Globalization.CultureInfo]::GetCultureInfo('nl-NL'))

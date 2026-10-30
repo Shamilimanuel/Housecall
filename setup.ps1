@@ -42,7 +42,7 @@ $ErrorActionPreference = 'Stop'
 # Which build this is: build.ps1 puts a fingerprint of the code here, and
 # writes the same one to version.txt. A copy run from a USB stick compares
 # the two and says when it is out of date. 'dev' = straight from src\.
-$HcBuild = 'ac406ab717d5'
+$HcBuild = 'a6720080930f'
 
 <#
     All of Housecall's code is kept as text in $HcSource and run from there.
@@ -1953,7 +1953,7 @@ $script:Strings = @{
         'relay.wrongCode'    = 'That code is not right. Type the code the app shows now.'
         'relay.codeUsed'     = 'That code was already used. Wait for the next one (every 30 seconds).'
         'relay.locked'       = 'Too many wrong codes: wait 15 minutes.'
-        'relay.lockedDay'    = 'Too many wrong codes today: Housecall is locked for a day. Shamil got an email about it.'
+        'relay.lockedDay'    = 'Too many wrong codes today: Housecall is locked for a day. The technician got an email about it.'
         'relay.notSetUp'     = 'The relay is not set up yet: run tools\setup-ai.ps1 on your own PC.'
         'relay.expired'      = 'The unlock has expired: type a new code.'
         'relay.unreachable'  = 'The relay cannot be reached. Is the Supabase project paused? Restore it in the Supabase dashboard.'
@@ -4262,7 +4262,7 @@ $script:Strings = @{
         'relay.wrongCode'    = 'Die code klopt niet. Typ de code die de app nu laat zien.'
         'relay.codeUsed'     = 'Die code is al gebruikt. Wacht op de volgende (elke 30 seconden).'
         'relay.locked'       = 'Te veel verkeerde codes: wacht 15 minuten.'
-        'relay.lockedDay'    = 'Te veel verkeerde codes vandaag: Housecall zit een dag op slot. Shamil heeft er een mail over gekregen.'
+        'relay.lockedDay'    = 'Te veel verkeerde codes vandaag: Housecall zit een dag op slot. De technicus heeft er een mail over gekregen.'
         'relay.notSetUp'     = 'De relay is nog niet ingesteld: start tools\setup-ai.ps1 op uw eigen pc.'
         'relay.expired'      = 'De ontgrendeling is verlopen: typ een nieuwe code.'
         'relay.unreachable'  = 'De relay is niet bereikbaar. Staat het Supabase-project op pauze? Herstel het in het Supabase-dashboard.'
@@ -6099,7 +6099,7 @@ $script:RemoteToolList = @(
     @{ Name = 'Quick Assist';          Pattern = $null;                          Processes = @('QuickAssist');                      Traces = @() }
 )
 
-# Scheduled tasks of tools Shamil installs himself. They start a hidden
+# Scheduled tasks of tools the technician installs himself. They start a hidden
 # script from AppData, like malware does, so they are recognised by name AND
 # by the script they run -- a look-alike name alone does not pass.
 $script:KnownTasks = @(
@@ -6695,7 +6695,7 @@ function Add-HcKeyboardLines {
         if ($layouts.Count -gt 1) {
             Add-HcLine $Report warn (T 'dev.manyLayouts' $layouts.Count)
             $Found['manyLayouts'] = @($layouts.Count)
-            # One can go, never a language's last one: Shamil picks which,
+            # One can go, never a language's last one: the technician picks which,
             # with the client. A layout that is its language's only one gets steps.
             foreach ($l in @($layouts | Where-Object { $_.Tip })) {
                 $siblings = @($layouts | Where-Object { $_.Tag -eq $l.Tag -and $_.Tip }).Count
@@ -8147,7 +8147,7 @@ $script:RecycleBinId = '{645FF040-5081-101B-9F08-00AA002F954E}'
 # Where Windows really keeps "Show desktop icons": the desktop's own view
 # settings. Bit 0x1000 of FFlags means no icons. HideIcons under Advanced is
 # only a copy, which Explorer overwrites from FFlags when it starts (found
-# on Shamil's PC, 27 Sep: setting HideIcons alone came back within seconds).
+# on the technician's PC, 27 Sep: setting HideIcons alone came back within seconds).
 $script:DesktopBagKey = 'HKCU:\Software\Microsoft\Windows\Shell\Bags\1\Desktop'
 $script:NoIconsFlag = 0x1000
 
@@ -8219,7 +8219,7 @@ function ConvertTo-HcInt32 {
     Taskbar auto-hide, through the same call the Settings switch uses
     (SHAppBarMessage). It changes it live, without restarting Explorer, and
     Explorer stores it itself. Changing the stored copy and restarting
-    Explorer did not hold on Shamil's PC (27 Sep): a Windhawk taskbar mod,
+    Explorer did not hold on the technician's PC (27 Sep): a Windhawk taskbar mod,
     reloaded with Explorer, switched auto-hide straight back on.
 #>
 function Initialize-HcAppBar {
@@ -10661,7 +10661,7 @@ function ConvertFrom-HcBattery {
     foreach ($source in @('AC powered', 'USB powered', 'Wireless powered', 'Dock powered')) {
         if ((& $get $source) -eq 'true') { $plugged = $true }
     }
-    # 0 means "not known": Shamil's Galaxy S24 Ultra reported 0 (5 Oct).
+    # 0 means "not known": a Samsung phone reported 0 (5 Oct).
     $cycles = $null
     if ($Text -match '(?im)cycle[ _]?count:\s*(\d+)' -and [int]$Matches[1] -gt 0) { $cycles = [int]$Matches[1] }
     [pscustomobject]@{
@@ -10721,9 +10721,9 @@ function ConvertFrom-HcPing {
 }
 
 # The name the owner knows, with the model code after it: "Samsung Galaxy
-# S24 Ultra (SM-S928B)". Samsung keeps the sales name out of the build
+# S23 Ultra (SM-S918B)". Samsung keeps the sales name out of the build
 # properties but puts it in the device name (Settings > About phone), which
-# the owner can also have changed: "Phone of Gerda (Samsung SM-S928B)".
+# the owner can also have changed: "Phone of Gerda (Samsung SM-S918B)".
 $script:PhoneSeries = '^(Galaxy|Pixel|Redmi|POCO|Mi |Xiaomi|Xperia|moto|Nokia|OnePlus|realme|OPPO|Find|Reno|vivo|HUAWEI|nova|P\d)'
 function Get-HcPhoneName {
     param([hashtable]$Props, [string]$DeviceName)
@@ -11250,7 +11250,7 @@ function Test-HcPhoneSafety {
     foreach ($kind in @(@{ List = $Facts.Accessibility; Line = 'and.accessApp'; Id = 'phoneAccessibilityApp'; None = 'and.accessNone' },
                         @{ List = $Facts.Listeners; Line = 'and.notifyApp'; Id = 'phoneNotifyApp'; None = 'and.notifyNone' })) {
         # "$_ -and": an empty setting ("null") came through as one empty entry
-        # and showed as a nameless warning on Shamil's phone (5 Oct).
+        # and showed as a nameless warning on the technician's phone (5 Oct).
         $apps = @($kind.List | Where-Object { $_ -and -not (Test-HcMakerPackage $_) })
         foreach ($pkg in $apps) {
             if ($outside -contains $pkg) {
@@ -11327,7 +11327,7 @@ function Test-HcPhoneSafety {
 
 <#
     Pure: what was typed. "482915" = only the code: Housecall finds the
-    device's pairing address on the network itself (Shamil's wish, 6 Oct).
+    device's pairing address on the network itself (the technician's wish, 6 Oct).
     "192.168.1.50:41235 482915" = pair at that address, for networks where
     finding does not work; "192.168.1.50:38497" = connect only (already
     paired). Returns Address ($null = find it), Port, Code ($null = connect
@@ -11938,7 +11938,7 @@ $script:Fixes = @{
     # DISM repairs Windows' own store of system files (from Windows Update),
     # then SFC repairs the files in use from that store. Their progress shows
     # in the window while they run.
-    # Needs admin: Set-TimeZone from a normal PowerShell failed on Shamil's PC
+    # Needs admin: Set-TimeZone from a normal PowerShell failed on the technician's PC
     # with "a required privilege is not held" (27 Sep). Undo puts the old one back.
     setTimeZone = @{
         Note = 'undo'; Admin = $true
@@ -12216,7 +12216,7 @@ $script:Fixes = @{
     openDefaultApps = @{
         Note = 'safe'; Admin = $false; NoLog = $true
         # Through explorer.exe: a bare Start-Process of the ms-settings link did
-        # not reliably open Settings on Shamil's PC (27 Sep); this route did.
+        # not reliably open Settings on the technician's PC (27 Sep); this route did.
         Apply = { param($t) Start-Process explorer.exe -ArgumentList 'ms-settings:defaultapps' -ErrorAction Stop }
         Undo  = $null
     }
@@ -12574,11 +12574,11 @@ function Set-HcContact {
 # one after any fixes). Filled by Invoke-HcProblem.
 $script:HcVisit = New-Object System.Collections.ArrayList
 
-# What the client asked for help with, typed by Shamil in the invoice
+# What the client asked for help with, typed by the technician in the invoice
 # window. Empty: every problem opened this visit is listed instead.
 $script:HcAsked = ''
 
-# What Shamil did by hand, from the invoice window: Text, and Done ($true
+# What the technician did by hand, from the invoice window: Text, and Done ($true
 # for fixed, $false for not fixed).
 $script:HcWork = New-Object System.Collections.ArrayList
 
@@ -12597,7 +12597,7 @@ function Get-HcWorkPresets {
 
 # Adds one item; $false when it is empty or already on the list.
 <#
-    Capitals where Shamil typed none (25 Oct, his wish): only first letters
+    Capitals where the technician typed none (25 Oct, his wish): only first letters
     are raised, nothing is ever lowered, so "McDonald" stays as typed.
       sentence  "printer opnieuw ingesteld" -> "Printer opnieuw ingesteld"
       address   "dorpsstraat 1"             -> "Dorpsstraat 1"
@@ -12881,20 +12881,20 @@ function Invoke-HcNotePrint {
     session and is never written to disk.
 
     Visit memory: each PC gets a scrambled id (SHA-256 of its BIOS serial
-    and machine UUID), never a name. The relay keeps the visits in Shamil's
+    and machine UUID), never a name. The relay keeps the visits in the technician's
     Supabase; nothing is kept on the client's PC.
 #>
 
 $script:RelayUrl = 'https://btwbtxjawubtgeizcrir.supabase.co/functions/v1/housecall'
 $script:HcToken = $null
 $script:HcTokenExpires = [datetime]::MinValue
-# Which pass the code gave (25 Oct): 'full' on Shamil's own devices, 'visit'
+# Which pass the code gave (25 Oct): 'full' on the technician's own devices, 'visit'
 # on a client's PC (only that PC's records; the relay holds it to that).
 $script:HcTokenScope = $null
 $script:HcKnownLabel = $null
 
 <#
-    The device key: what makes a PC one of Shamil's own (25 Oct). A random
+    The device key: what makes a PC one of the technician's own (25 Oct). A random
     secret in %LOCALAPPDATA%\Housecall\device.key, locked to his Windows
     account with Windows' own encryption (DPAPI), made and registered by
     tools\register-device.ps1 -- never on a client's PC. With it, the code
@@ -13040,7 +13040,7 @@ function Get-HcPcId {
 
 # The visits of this PC as Ok, Visits and Error. Not a bare list: an empty
 # list returned from a PowerShell function arrives as $null, which looked
-# exactly like a failed request (found by Shamil on his first try, 26 Sep).
+# exactly like a failed request (found by the technician on his first try, 26 Sep).
 function Get-HcVisits {
     if (-not (Test-HcUnlocked)) { return [pscustomobject]@{ Ok = $false; Visits = @(); Error = 'locked_out' } }
     $r = Invoke-HcRelay @{ action = 'visit_get'; token = $script:HcToken; pc = (Get-HcPcId) }
@@ -13116,7 +13116,7 @@ function Show-HcHistory {
 <#
     At the end of a visit (Q): offers to save it. Asks for the code when
     the session is not unlocked yet, and for an optional name or note, so
-    Shamil can find it again for the invoice. Skipped in a dry run, offline,
+    The technician can find it again for the invoice. Skipped in a dry run, offline,
     or when no problem was opened.
 #>
 function Save-HcVisitRecord {
@@ -13159,7 +13159,7 @@ function New-HcVisitBody {
     The invoice: at the end of a visit (Q), a short form, then a proper
     invoice instead of the plain client note.
 
-    Shamil's business details, hourly rate, call-out fee and BTW setting
+    The technician's business details, hourly rate, call-out fee and BTW setting
     live in his Supabase (tools\setup-invoice.ps1 fills them in), never in
     this public script. The relay gives out the consecutive invoice number,
     works out the totals and BTW, and keeps the invoice (7 years: fiscale
@@ -13280,7 +13280,7 @@ function Read-HcField {
 
 <#
     The form. Returns the client, the lines and the payment, or $null when
-    Shamil cancels (0) -- then the plain note is shown instead.
+    The technician cancels (0) -- then the plain note is shown instead.
 #>
 function Read-HcInvoiceForm {
     param($Settings)
@@ -13353,7 +13353,7 @@ function Read-HcInvoiceForm {
 }
 
 <#
-    The invoice form as a window (Shamil's request: click, fix, then make
+    The invoice form as a window (the technician's request: click, fix, then make
     it). Its fields go through ConvertTo-HcInvoiceForm, which checks them
     and builds the same result as the console form, so it can be tested
     without a window. Without a desktop, the console form is used.
@@ -13415,7 +13415,7 @@ function Show-HcInvoiceWindow {
     $form.MinimumSize = New-Object Drawing.Size(560, 480)
     $form.Font = $font
     # Every colour set explicitly: Windows themes with custom system colours
-    # (Shamil's PC has one) otherwise give white text on white, or dark fields.
+    # (the technician's PC has one) otherwise give white text on white, or dark fields.
     $form.BackColor = [Drawing.Color]::White
     $form.ForeColor = [Drawing.Color]::Black
     $form.TopMost = $true
@@ -13446,7 +13446,7 @@ function Show-HcInvoiceWindow {
     $address = & $field (T 'inv.address') ''
     $postcode = & $field (T 'inv.postcode') ''
     $email = & $field (T 'inv.email') ''
-    # The client's question in Shamil's words; the problems checked this
+    # The client's question in the technician's words; the problems checked this
     # visit are offered, since he may have checked more than was asked.
     $l = New-Object Windows.Forms.Label
     $l.Text = T 'inv.win.asked'; $l.AutoSize = $true; $l.Anchor = 'Left'; $l.Margin = New-Object Windows.Forms.Padding(0, 6, 8, 0)
@@ -13759,7 +13759,7 @@ function Get-HcInvoiceBlocks {
             & $block 'payment' (T 'doc.transfer' (Format-HcMoney ([decimal]$Invoice.total)) $due $s.iban $Invoice.number)
         }
     }
-    # No BTW line until BTW is set: Shamil is not a registered business yet.
+    # No BTW line until BTW is set: the technician is not a registered business yet.
     if ($Invoice.btw_mode -eq 'kor') { & $block 'small' (T 'doc.kor') }
     & $block 'small' (T 'doc.thanks')
 }
@@ -13776,7 +13776,7 @@ function Show-HcInvoice {
 # ==================================================== src\invoice-page.ps1 ==
 <#
     The invoice as a drawn A4 page. Since 17 Oct the "Kader" look, made for
-    Shamil's black-and-white laser printer: a heavy line on top, the logo
+    The technician's black-and-white laser printer: a heavy line on top, the logo
     with Housecall as on his business card, three boxes with the date, the
     payment and the total, what was done, the costs, a VOLDAAN stamp when
     it is paid, and a box with how to reach him. Only black, white and dark
@@ -13856,7 +13856,7 @@ function Get-HcAskText {
 }
 
 # -Note: the same page as a plain note, for a visit without an invoice: no
-# number and no amounts, but what was found, and how to reach Shamil.
+# number and no amounts, but what was found, and how to reach the technician.
 function Get-HcInvoiceLayout {
     # -Receipt: a betaalbewijs, the amounts and "voldaan" with its own
     # number (B-2026-0001), for visits before the KvK registration.
@@ -13906,7 +13906,7 @@ function Get-HcInvoiceLayout {
     $number = if ($Note) { '' } elseif ($Receipt) { "$($Invoice.receipt_number)" } else { "$($Invoice.number)" }
 
     # Top: a heavy line; the document's name and number on the left; on the
-    # right the logo with Housecall and Shamil's details, as on his card.
+    # right the logo with Housecall and the technician's details, as on his card.
     & $line ($y + 3) 'ink' 7
     $y += 24
     & $text $(if ($Note) { T 'doc.noteWord' } elseif ($Receipt) { T 'doc.receiptWord' } elseif ($credit) { T 'doc.creditWord' } else { T 'doc.invoiceWord' }) 'title' ($P.Left - 4) $y $half
@@ -14113,7 +14113,7 @@ function Get-HcInvoiceLayout {
             $y += $h + 10
         }
 
-        # How to reach Shamil again, with the number to mention.
+        # How to reach the technician again, with the number to mention.
         $ask = Get-HcAskText $s $number
         if ($ask) {
             $innerW = $full - 36
@@ -16107,7 +16107,7 @@ function Show-HcWindow {
     Pure: how much bigger everything is drawn. The window is laid out for an
     old 1280x800 laptop; on a bigger screen, or maximised, it grows with the
     window (by the side that runs out first) instead of staying small in
-    the top left corner, up to 30% (Shamil's maximised screen, 6 Oct).
+    the top left corner, up to 30% (the technician's maximised screen, 6 Oct).
 #>
 function Get-HcZoom {
     param([double]$Width, [double]$Height)
@@ -16268,7 +16268,7 @@ function Split-HcClientName {
 }
 
 # The mail that goes with the PDF, in the visit's language: the greeting by
-# salutation, one sentence on what is attached, and Shamil's name (and
+# salutation, one sentence on what is attached, and the technician's name (and
 # phone, once it is in his settings) under it. Kind is invoice, receipt or note.
 function New-HcMailText {
     # -Subject and -Body replace the usual ones (a corrected invoice says what it replaces).
@@ -16698,7 +16698,7 @@ function Update-HcFinishPanel {
     }
     & $put $chips
 
-    # What was done: Housecall's own fixes, then Shamil's list.
+    # What was done: Housecall's own fixes, then the technician's list.
     & $put (New-HcSection (T 'note.done') (T 'win.fin.doneNote'))
     foreach ($c in @($script:HcChanges)) {
         $row = New-Object Windows.Controls.DockPanel
@@ -17187,7 +17187,7 @@ function Request-HcMail {
 }
 
 # The page as a PDF (Windows' own PDF printer, into a temporary file that is
-# gone straight after), then through the relay from Shamil's Outlook.
+# gone straight after), then through the relay from the technician's Outlook.
 function Send-HcMail {
     $w = $script:HcWin
     $f = $w.Fin
@@ -17250,7 +17250,7 @@ function Save-HcWindowPdf {
 
 # --------------------------------------------------- the kept document --
 
-# Klaar keeps the PDF the visit ended with in Shamil's own storage behind
+# Klaar keeps the PDF the visit ended with in the technician's own storage behind
 # the relay (7 Oct): the invoice once it is made, else the receipt, else the
 # note. It needs the code; a note without the code is not kept.
 function Test-HcDocWanted {
@@ -17401,7 +17401,7 @@ function Format-HcDocLine {
 
 # -------------------------------------------------------------- history --
 
-# "Alle klanten" only on Shamil's own devices, recognised by the housecall
+# "Alle klanten" only on the technician's own devices, recognised by the housecall
 # command (tools\install-command.ps1), which is never put on a client's PC:
 # there the screen shows that client's history and nobody else's.
 function Test-HcOwnDevice {
@@ -17719,7 +17719,7 @@ function Split-HcLabourLines {
     [pscustomobject]@{ Minutes = $(if ($found) { $minutes } else { $null }); Labour = $labour; Rest = $rest }
 }
 
-# "15,00" for a text box: the amount as Shamil would type it.
+# "15,00" for a text box: the amount as the technician would type it.
 function Format-HcAmountText {
     param([decimal]$Amount)
     $Amount.ToString('0.00', [Globalization.CultureInfo]::GetCultureInfo('nl-NL'))
@@ -18555,7 +18555,7 @@ function Invoke-HcPcClick {
 # ==================================================== src\window-phone.ps1 ==
 <#
     The window's "Telefoon & tablet" tab (6 Oct, layout A of the mockup at
-    https://claude.ai/artifact/DAQnEZNLsMhEY1s9p8orZx, chosen by Shamil):
+    https://claude.ai/artifact/DAQnEZNLsMhEY1s9p8orZx, chosen by the technician):
     the devices on the left, the chosen device in the middle (its tools,
     four figures, the checks M2-M7 as tiles), and a check's result on the
     right, in the same result view as Problemen.
@@ -18776,7 +18776,7 @@ function Add-HcPhoneDevice {
     $culture = if ($script:Lang -eq 'nl') { 'nl-NL' } else { 'en-GB' }
     $dot = '  ' + [char]0x00B7 + '  '
 
-    # "S24 Ultra van shamil (Samsung SM-S928B)": the name big, the model under it.
+    # "Galaxy S23 van Jan (Samsung SM-S918B)": the name big, the model under it.
     $title = $f.Name
     $sub = @()
     if ("$($f.Name)" -match '^(.+) \(([^()]+)\)$') { $title = $Matches[1]; $sub += $Matches[2] }
@@ -19021,7 +19021,7 @@ function Submit-HcPairCode {
 # ==================================================== src\window-start.ps1 ==
 <#
     The window's Start tab (6 Oct, layout A of
-    https://claude.ai/artifact/SmkY8P7PSzrzcRfHr1k6TH, chosen by Shamil):
+    https://claude.ai/artifact/SmkY8P7PSzrzcRfHr1k6TH, chosen by the technician):
     the first thing he sees at a client's.
 
       left    what Housecall already sees on this PC (the Pc-overzicht's own
@@ -19234,13 +19234,13 @@ function Submit-HcStartSearch {
 # ==================================================== src\window-ai.ps1 ==
 <#
     The window's AI-hulp tab. Since 25 Oct a chat session, styled the way
-    Shamil liked in the preview: one calm column in the middle, his words in
+    The technician liked in the preview: one calm column in the middle, his words in
     a soft bubble on the right, the AI's replies as plain text next to the
     house mark, the checks it ran as rows that fold open, and one rounded box
     at the bottom whose send button becomes Stop while it works.
 
     A conversation goes on after an answer: the AI can ask the client a
-    question back (ask_client) with answers to click, Shamil can ask more,
+    question back (ask_client) with answers to click, the technician can ask more,
     edit his last message or try again. Each turn (Invoke-HcAiTurn, ai.ps1)
     runs in the worker, checks included. "/" opens commands; "+ Wat
     Housecall al weet" sends this visit's findings along with the first
@@ -19339,7 +19339,7 @@ function Get-HcAiNearest {
 
 # What goes to the AI for a message: the first one carries the language and
 # what Housecall already knows; later ones a language switch and anything
-# Shamil ran himself in between.
+# The technician ran himself in between.
 function New-HcAiPayload {
     param([hashtable]$Ai, [string]$Text, $Environment)
     if (-not $Ai.Convo) {
@@ -19623,8 +19623,8 @@ function Complete-HcAiDirect {
         $item.Tools = @(New-HcAiTool $code $report)
         $item.Text = T 'win.ai.direct' $code
         $item.Problems = @(@{ Code = $code; FixIds = @(@($report.Actions) | ForEach-Object { [string]$_.FixId }); All = $true })
-        # The AI hears of it with Shamil's next message.
-        $a.Extra += "Shamil ran check $code himself:`n$(Format-HcReportForAi $report)"
+        # The AI hears of it with the technician's next message.
+        $a.Extra += "The technician ran check $code himself:`n$(Format-HcReportForAi $report)"
     }
     Update-HcAiPanel
     Update-HcSide
@@ -19770,7 +19770,7 @@ function Update-HcAiPanel {
     if ($scroll) { $scroll.UpdateLayout(); $scroll.ScrollToEnd() }
 }
 
-# Shamil's message: a soft bubble on the right; the last one can be edited.
+# The technician's message: a soft bubble on the right; the last one can be edited.
 function New-HcAiMine {
     param([hashtable]$Item, [int]$Index, [bool]$CanEdit)
     $stack = New-Object Windows.Controls.StackPanel
@@ -20240,7 +20240,7 @@ function New-HcAiConvo {
 
 <#
     One turn of a conversation (25 Oct: the chat goes on after an answer).
-    Shamil's message -- or the client's answer to the AI's question -- goes
+    The technician's message -- or the client's answer to the AI's question -- goes
     in; Claude runs Housecall's checks; the turn ends at an answer
     (give_answer), a question back (ask_client), or an error. Returns what
     happened and, in .Convo, the conversation to pass to the next turn.
@@ -20259,7 +20259,7 @@ function Invoke-HcAiTurn {
     $content = @(@($Convo.Pending) | Where-Object { $_ })
     foreach ($p in @($Convo.PendingIds | Where-Object { $_ })) {
         if ($p.Kind -eq 'ask' -and $Text) { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = $Text }; $Text = '' }
-        else { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = 'Shown to Shamil and the client.' } }
+        else { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = 'Shown to the technician and the client.' } }
     }
     if ($Text) { $content += @{ type = 'text'; text = $Text } }
     [void]$history.Add(@{ role = 'user'; content_json = (ConvertTo-HcContentJson $content) })

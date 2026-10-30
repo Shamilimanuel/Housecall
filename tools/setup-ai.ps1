@@ -1,5 +1,5 @@
 <#
-    One-time setup of the AI chat and visit memory, on Shamil's own PC.
+    One-time setup of the AI chat and visit memory, on the technician's own PC.
 
         powershell -ExecutionPolicy Bypass -File tools\setup-ai.ps1
 
@@ -141,7 +141,7 @@ $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
 $rng.GetBytes($random)
 $rng.Dispose()
 $secret = ConvertTo-Base32 $random
-$uri = "otpauth://totp/Housecall:Shamil?secret=$secret&issuer=Housecall&algorithm=SHA1&digits=6&period=30"
+$uri = "otpauth://totp/Housecall:Technician?secret=$secret&issuer=Housecall&algorithm=SHA1&digits=6&period=30"
 
 $qr = Join-Path $env:TEMP ('housecall-qr-' + [guid]::NewGuid().ToString('N') + '.html')
 $html = @"

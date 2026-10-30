@@ -411,7 +411,7 @@ $script:Fixes = @{
     # DISM repairs Windows' own store of system files (from Windows Update),
     # then SFC repairs the files in use from that store. Their progress shows
     # in the window while they run.
-    # Needs admin: Set-TimeZone from a normal PowerShell failed on Shamil's PC
+    # Needs admin: Set-TimeZone from a normal PowerShell failed on the technician's PC
     # with "a required privilege is not held" (27 Sep). Undo puts the old one back.
     setTimeZone = @{
         Note = 'undo'; Admin = $true
@@ -689,7 +689,7 @@ $script:Fixes = @{
     openDefaultApps = @{
         Note = 'safe'; Admin = $false; NoLog = $true
         # Through explorer.exe: a bare Start-Process of the ms-settings link did
-        # not reliably open Settings on Shamil's PC (27 Sep); this route did.
+        # not reliably open Settings on the technician's PC (27 Sep); this route did.
         Apply = { param($t) Start-Process explorer.exe -ArgumentList 'ms-settings:defaultapps' -ErrorAction Stop }
         Undo  = $null
     }

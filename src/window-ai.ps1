@@ -1,12 +1,12 @@
 <#
     The window's AI-hulp tab. Since 25 Oct a chat session, styled the way
-    Shamil liked in the preview: one calm column in the middle, his words in
+    The technician liked in the preview: one calm column in the middle, his words in
     a soft bubble on the right, the AI's replies as plain text next to the
     house mark, the checks it ran as rows that fold open, and one rounded box
     at the bottom whose send button becomes Stop while it works.
 
     A conversation goes on after an answer: the AI can ask the client a
-    question back (ask_client) with answers to click, Shamil can ask more,
+    question back (ask_client) with answers to click, the technician can ask more,
     edit his last message or try again. Each turn (Invoke-HcAiTurn, ai.ps1)
     runs in the worker, checks included. "/" opens commands; "+ Wat
     Housecall al weet" sends this visit's findings along with the first
@@ -105,7 +105,7 @@ function Get-HcAiNearest {
 
 # What goes to the AI for a message: the first one carries the language and
 # what Housecall already knows; later ones a language switch and anything
-# Shamil ran himself in between.
+# The technician ran himself in between.
 function New-HcAiPayload {
     param([hashtable]$Ai, [string]$Text, $Environment)
     if (-not $Ai.Convo) {
@@ -389,8 +389,8 @@ function Complete-HcAiDirect {
         $item.Tools = @(New-HcAiTool $code $report)
         $item.Text = T 'win.ai.direct' $code
         $item.Problems = @(@{ Code = $code; FixIds = @(@($report.Actions) | ForEach-Object { [string]$_.FixId }); All = $true })
-        # The AI hears of it with Shamil's next message.
-        $a.Extra += "Shamil ran check $code himself:`n$(Format-HcReportForAi $report)"
+        # The AI hears of it with the technician's next message.
+        $a.Extra += "The technician ran check $code himself:`n$(Format-HcReportForAi $report)"
     }
     Update-HcAiPanel
     Update-HcSide
@@ -536,7 +536,7 @@ function Update-HcAiPanel {
     if ($scroll) { $scroll.UpdateLayout(); $scroll.ScrollToEnd() }
 }
 
-# Shamil's message: a soft bubble on the right; the last one can be edited.
+# The technician's message: a soft bubble on the right; the last one can be edited.
 function New-HcAiMine {
     param([hashtable]$Item, [int]$Index, [bool]$CanEdit)
     $stack = New-Object Windows.Controls.StackPanel

@@ -46,7 +46,7 @@ $script:RemoteToolList = @(
     @{ Name = 'Quick Assist';          Pattern = $null;                          Processes = @('QuickAssist');                      Traces = @() }
 )
 
-# Scheduled tasks of tools Shamil installs himself. They start a hidden
+# Scheduled tasks of tools the technician installs himself. They start a hidden
 # script from AppData, like malware does, so they are recognised by name AND
 # by the script they run -- a look-alike name alone does not pass.
 $script:KnownTasks = @(

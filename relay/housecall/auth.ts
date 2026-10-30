@@ -2,7 +2,7 @@
 // its own file so the rules can be tested without starting the relay
 // (auth_test.ts: deno test relay/housecall/auth_test.ts).
 //
-// A "full" pass comes from Shamil's own devices (a registered device key);
+// A "full" pass comes from the technician's own devices (a registered device key);
 // a "visit" pass is what a client's PC gets, tied to that PC's id.
 
 // What a pass says about itself: s = the kind, pc = the client PC a visit

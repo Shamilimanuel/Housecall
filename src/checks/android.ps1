@@ -532,7 +532,7 @@ function ConvertFrom-HcBattery {
     foreach ($source in @('AC powered', 'USB powered', 'Wireless powered', 'Dock powered')) {
         if ((& $get $source) -eq 'true') { $plugged = $true }
     }
-    # 0 means "not known": Shamil's Galaxy S24 Ultra reported 0 (5 Oct).
+    # 0 means "not known": a Samsung phone reported 0 (5 Oct).
     $cycles = $null
     if ($Text -match '(?im)cycle[ _]?count:\s*(\d+)' -and [int]$Matches[1] -gt 0) { $cycles = [int]$Matches[1] }
     [pscustomobject]@{
@@ -592,9 +592,9 @@ function ConvertFrom-HcPing {
 }
 
 # The name the owner knows, with the model code after it: "Samsung Galaxy
-# S24 Ultra (SM-S928B)". Samsung keeps the sales name out of the build
+# S23 Ultra (SM-S918B)". Samsung keeps the sales name out of the build
 # properties but puts it in the device name (Settings > About phone), which
-# the owner can also have changed: "Phone of Gerda (Samsung SM-S928B)".
+# the owner can also have changed: "Phone of Gerda (Samsung SM-S918B)".
 $script:PhoneSeries = '^(Galaxy|Pixel|Redmi|POCO|Mi |Xiaomi|Xperia|moto|Nokia|OnePlus|realme|OPPO|Find|Reno|vivo|HUAWEI|nova|P\d)'
 function Get-HcPhoneName {
     param([hashtable]$Props, [string]$DeviceName)
@@ -1121,7 +1121,7 @@ function Test-HcPhoneSafety {
     foreach ($kind in @(@{ List = $Facts.Accessibility; Line = 'and.accessApp'; Id = 'phoneAccessibilityApp'; None = 'and.accessNone' },
                         @{ List = $Facts.Listeners; Line = 'and.notifyApp'; Id = 'phoneNotifyApp'; None = 'and.notifyNone' })) {
         # "$_ -and": an empty setting ("null") came through as one empty entry
-        # and showed as a nameless warning on Shamil's phone (5 Oct).
+        # and showed as a nameless warning on the technician's phone (5 Oct).
         $apps = @($kind.List | Where-Object { $_ -and -not (Test-HcMakerPackage $_) })
         foreach ($pkg in $apps) {
             if ($outside -contains $pkg) {
@@ -1198,7 +1198,7 @@ function Test-HcPhoneSafety {
 
 <#
     Pure: what was typed. "482915" = only the code: Housecall finds the
-    device's pairing address on the network itself (Shamil's wish, 6 Oct).
+    device's pairing address on the network itself (the technician's wish, 6 Oct).
     "192.168.1.50:41235 482915" = pair at that address, for networks where
     finding does not work; "192.168.1.50:38497" = connect only (already
     paired). Returns Address ($null = find it), Port, Code ($null = connect

@@ -166,7 +166,7 @@ function Add-HcKeyboardLines {
         if ($layouts.Count -gt 1) {
             Add-HcLine $Report warn (T 'dev.manyLayouts' $layouts.Count)
             $Found['manyLayouts'] = @($layouts.Count)
-            # One can go, never a language's last one: Shamil picks which,
+            # One can go, never a language's last one: the technician picks which,
             # with the client. A layout that is its language's only one gets steps.
             foreach ($l in @($layouts | Where-Object { $_.Tip })) {
                 $siblings = @($layouts | Where-Object { $_.Tag -eq $l.Tag -and $_.Tip }).Count

@@ -1,6 +1,6 @@
 <#
     The window's "Telefoon & tablet" tab (6 Oct, layout A of the mockup at
-    https://claude.ai/artifact/DAQnEZNLsMhEY1s9p8orZx, chosen by Shamil):
+    https://claude.ai/artifact/DAQnEZNLsMhEY1s9p8orZx, chosen by the technician):
     the devices on the left, the chosen device in the middle (its tools,
     four figures, the checks M2-M7 as tiles), and a check's result on the
     right, in the same result view as Problemen.
@@ -221,7 +221,7 @@ function Add-HcPhoneDevice {
     $culture = if ($script:Lang -eq 'nl') { 'nl-NL' } else { 'en-GB' }
     $dot = '  ' + [char]0x00B7 + '  '
 
-    # "S24 Ultra van shamil (Samsung SM-S928B)": the name big, the model under it.
+    # "Galaxy S23 van Jan (Samsung SM-S918B)": the name big, the model under it.
     $title = $f.Name
     $sub = @()
     if ("$($f.Name)" -match '^(.+) \(([^()]+)\)$') { $title = $Matches[1]; $sub += $Matches[2] }

@@ -1,6 +1,6 @@
 <#
     Overzicht: every PDF a visit ended with (invoice, receipt, note), kept by
-    the relay since 7 Oct 2026, per month with the totals. For Shamil's own
+    the relay since 7 Oct 2026, per month with the totals. For the technician's own
     PC only: it shows every client, so never on a client's PC.
 
         housecall -Overzicht

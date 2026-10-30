@@ -95,7 +95,7 @@ function New-HcAiConvo {
 
 <#
     One turn of a conversation (25 Oct: the chat goes on after an answer).
-    Shamil's message -- or the client's answer to the AI's question -- goes
+    The technician's message -- or the client's answer to the AI's question -- goes
     in; Claude runs Housecall's checks; the turn ends at an answer
     (give_answer), a question back (ask_client), or an error. Returns what
     happened and, in .Convo, the conversation to pass to the next turn.
@@ -114,7 +114,7 @@ function Invoke-HcAiTurn {
     $content = @(@($Convo.Pending) | Where-Object { $_ })
     foreach ($p in @($Convo.PendingIds | Where-Object { $_ })) {
         if ($p.Kind -eq 'ask' -and $Text) { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = $Text }; $Text = '' }
-        else { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = 'Shown to Shamil and the client.' } }
+        else { $content += @{ type = 'tool_result'; tool_use_id = $p.Id; content = 'Shown to the technician and the client.' } }
     }
     if ($Text) { $content += @{ type = 'text'; text = $Text } }
     [void]$history.Add(@{ role = 'user'; content_json = (ConvertTo-HcContentJson $content) })
