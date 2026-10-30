@@ -1,13 +1,24 @@
 # Housecall
 
-Finds and fixes computer problems at the client's desk. Paste one line into
-PowerShell on the PC with the problem:
+**A PC repair helper that finds and fixes computer problems at the client's desk, always with your okay.**
+
+Paste one line into PowerShell on the PC with the problem:
 
 ```powershell
 irm housecall.shamilimanuel.nl | iex
 ```
 
 The long form does the same: `irm github.com/Shamilimanuel/Housecall/raw/main/setup.ps1 | iex`.
+
+<p align="center">
+  <img src="docs/screenshots/problems.png" alt="Housecall's Problems tab: problems grouped A to G, with what it found and what to do next" width="49%">
+  <img src="docs/screenshots/phone-check.png" alt="The Phone and tablet tab: a phone checked over USB, with storage, memory and battery" width="49%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/text-menu.png" alt="The same Housecall as a text menu in PowerShell" width="60%">
+</p>
+
+<sub>The screenshots show a demo PC and a made-up phone.</sub>
 
 Housecall opens as a window: click a problem (grouped A to G), or `Alles
 controleren` to check everything at once. Housecall checks that part of the
@@ -70,7 +81,7 @@ date; run `make-usb.ps1` again then.
 | E | Windows & updates | E1 updates, E2 error message, E3 won't shut down: working |
 | F | Safety & scams | F1 fake virus pop-up, F2 someone got into my PC (AnyDesk, TeamViewer, …), F3 full check: working |
 | G | Files, desktop & accounts | G1 desktop or taskbar gone, G2 files gone or not everywhere, G3 a file not found or opening wrong: working |
-| M | Phone, tablet or car screen (Android, on this laptop's USB cable) | M1 overview, M2 slow, M3 storage full, M4 battery, M5 Google sign-in / no connection (incl. a wrong date), M6 updates, M7 virus or scam app (apps with access to the screen or messages, from outside a store, remote-access apps, Play Protect); M1 also shows the phone's screen on the laptop, takes a screenshot and restarts the phone: built, first real test on Shamil's phone. Uses Google's ADB, downloaded once with a yes and signature-checked; the device needs USB debugging on, and the last fix switches it off again |
+| M | Phone, tablet or car screen (Android, on this laptop's USB cable) | M1 overview, M2 slow, M3 storage full, M4 battery, M5 Google sign-in / no connection (incl. a wrong date), M6 updates, M7 virus or scam app (apps with access to the screen or messages, from outside a store, remote-access apps, Play Protect); M1 also shows the phone's screen on the laptop, takes a screenshot and restarts the phone: built, first real test done on the author's own phone. Uses Google's ADB, downloaded once with a yes and signature-checked; the device needs USB debugging on, and the last fix switches it off again |
 | | Pc-overzicht | model, processor age, Windows support, memory, disks, battery, with upgrade advice: working |
 | ? | AI chat | working, after a one-time setup (below) |
 | H | Visit history | working, after the same setup |
@@ -103,3 +114,28 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1                        # wr
 ```
 
 Windows PowerShell 5.1, plain ASCII source files.
+
+## Requirements
+
+Windows 10 or 11 with Windows PowerShell 5.1 (already built in). No administrator rights are needed to run it; a few
+fixes ask for them when they need them. The Android checks need a phone on a USB cable with USB debugging on.
+
+## Privacy
+
+- **Checks stay on the PC.** Checking only reads; nothing is changed without a yes, and nothing is installed.
+- **The AI chat and visit history are optional.** They go through a small relay and need a one-time code from the
+  owner's authenticator app. Only the problem you typed and the check results are sent to the AI: no files,
+  passwords or documents.
+- **Visit history** keeps a visit under a scrambled id of the PC (a SHA-256 hash of its BIOS serial and machine
+  UUID), never a name. Nothing is kept on the client's PC. Invoices and receipts made with the invoice feature are
+  stored in the owner's own database too, not on the client's PC.
+- **The relay holds the secrets** (the AI key and the authenticator secret), so they are never in this public repo.
+
+## Licence
+
+**Source available as a showcase. All rights reserved: please don't reuse it for your own repair service without asking.**
+
+You are welcome to read the code and learn from it. There is no open-source licence, so copying it for your own
+use or business needs permission first.
+
+More projects: https://github.com/Shamilimanuel
