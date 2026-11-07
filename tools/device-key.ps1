@@ -2,7 +2,7 @@
     The device key for the tools in this folder (25 Oct): the same file and
     the same reading as Housecall itself (src\relay.ps1, Get-HcDeviceKey).
     Dot-sourced by overview.ps1, setup-invoice.ps1, setup-mail.ps1 and
-    register-device.ps1, which run only on Shamil's own PCs. With the key, a
+    register-device.ps1, which run only on the technician's own PCs. With the key, a
     code gives the full pass; without it the relay refuses the overview and
     the business details.
 #>
