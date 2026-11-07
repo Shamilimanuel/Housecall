@@ -51,7 +51,7 @@ $s = 'github.com/Shamilimanuel/Housecall/raw/main/setup.ps1'
 
 ## What it covers
 
-| | Area | |
+| | Area | What it checks |
 |---|---|---|
 | A | Internet & Wi-Fi | no internet, slow or dropping Wi-Fi, one website, email |
 | B | Sound, screen & video calls | no sound, microphone or camera, screen |
